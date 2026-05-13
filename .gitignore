@@ -1,0 +1,84 @@
+# Environment & secrets
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.netrwhist
+*.sublime-project
+*.sublime-workspace
+
+# Python (in case features F-23/F-24 introduce a backend)
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+.ipynb_checkpoints/
+
+# Node (in case any feature pulls in tooling)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+
+# Build artifacts (we currently have none, but pre-emptive)
+dist/
+build/
+*.tsbuildinfo
+
+# Open Food Facts data dumps (multi-GB, never commit)
+data/*.csv
+data/*.csv.gz
+data/*.parquet
+data/*.duckdb
+
+# Trained models (regenerate from notebooks, never commit)
+*.pkl
+*.joblib
+*.h5
+
+# Backend KNN index — rebuild with scripts/build_knn_index.py; never commit
+backend/data/*.pkl
+
+# Test suites — kept out of commits for now (revisit in the future).
+# These directories live on disk locally; do not delete them.
+backend/tests/
+frontend/tests/
+
+# Logs and temporary
+*.log
+tmp/
+.tmp/
+
+# Local agent artefacts (Claude Code, Cursor caches, etc.)
+.claude/
+.cursor/
+.aider*
+
+# Local IDE / agent-harness tooling (per-developer, not project-wide).
+# These hold each contributor's local agent setup; never commit.
+.atl/
+.pi/
