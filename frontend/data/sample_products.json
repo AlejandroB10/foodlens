@@ -1,0 +1,261 @@
+{
+  "_meta": {
+    "description": "Seed sample of Open Food Facts products used as fallback when the live API returns 5xx or when developing offline.",
+    "schema": "Matches the normalised product shape documented in docs/architecture.md.",
+    "captured_at": "2026-05-13",
+    "source": "Mix of products verified live via the OFF API and products cited in OFF_ML_Demo.ipynb. Fields marked null mean OFF did not have that datum at capture time — never invent values.",
+    "todo": "F-03 owner: expand to at least 30 products covering all five Nutri-Score grades, beverages with not-applicable eco score, and at least 2 products with unknown nutriscore_grade."
+  },
+  "products": [
+    {
+      "source": "sample",
+      "code": "5449000131805",
+      "name": "Coca-Cola Zero Sugar",
+      "brands": ["Coca-Cola"],
+      "image": "https://images.openfoodfacts.org/images/products/544/900/013/1805/front_en.687.400.jpg",
+      "category": "en:diet-cola-soft-drink",
+      "nutriScore": { "grade": "c", "numeric": 3 },
+      "ecoScore": { "grade": "not-applicable", "numeric": null, "sourceField": "ecoscore_grade" },
+      "nutrientLevels": {
+        "fat": "low",
+        "salt": "low",
+        "saturatedFat": "low",
+        "sugars": "low"
+      },
+      "nutrients": {
+        "energyKcal_100g": 0.2,
+        "fat_100g": 0,
+        "saturatedFat_100g": 0,
+        "sugars_100g": 0,
+        "salt_100g": 0.02,
+        "fiber_100g": null,
+        "proteins_100g": 0
+      }
+    },
+    {
+      "source": "sample",
+      "code": "8480000094742",
+      "name": "Granola baja en azúcares",
+      "brands": ["Hacendado"],
+      "image": null,
+      "category": "en:granolas",
+      "nutriScore": { "grade": "a", "numeric": 5 },
+      "ecoScore": { "grade": "c", "numeric": 3, "sourceField": "environmental_score_grade" },
+      "nutrientLevels": {
+        "fat": "high",
+        "salt": "low",
+        "saturatedFat": "moderate",
+        "sugars": "low"
+      },
+      "nutrients": {
+        "energyKcal_100g": 476.3,
+        "fat_100g": 22.7,
+        "saturatedFat_100g": 3.5,
+        "sugars_100g": 4.7,
+        "salt_100g": 0.02,
+        "fiber_100g": 8.5,
+        "proteins_100g": 13.6
+      }
+    },
+    {
+      "source": "sample",
+      "code": "3256223377406",
+      "name": "Boisson avoine",
+      "brands": ["Carrefour Bio"],
+      "image": null,
+      "category": "en:oat-milks",
+      "nutriScore": { "grade": "c", "numeric": 3 },
+      "ecoScore": { "grade": "a", "numeric": 5, "sourceField": "environmental_score_grade" },
+      "nutrientLevels": {
+        "fat": "low",
+        "salt": "low",
+        "saturatedFat": "low",
+        "sugars": "moderate"
+      },
+      "nutrients": {
+        "energyKcal_100g": 43.5,
+        "fat_100g": 1.2,
+        "saturatedFat_100g": 0.2,
+        "sugars_100g": 5.0,
+        "salt_100g": 0.08,
+        "fiber_100g": 0.8,
+        "proteins_100g": 0.5
+      }
+    },
+    {
+      "source": "sample",
+      "code": "3281780893465",
+      "name": "Quinoa croquant, amandes et noisettes",
+      "brands": ["Bjorg"],
+      "image": null,
+      "category": "en:breakfast-cereals",
+      "nutriScore": { "grade": "b", "numeric": 4 },
+      "ecoScore": { "grade": "e", "numeric": 1, "sourceField": "environmental_score_grade" },
+      "nutrientLevels": {
+        "fat": "moderate",
+        "salt": "moderate",
+        "saturatedFat": "low",
+        "sugars": "low"
+      },
+      "nutrients": {
+        "energyKcal_100g": 217.0,
+        "fat_100g": 10.0,
+        "saturatedFat_100g": 0.9,
+        "sugars_100g": 4.5,
+        "salt_100g": 0.68,
+        "fiber_100g": 4.5,
+        "proteins_100g": 7.2
+      }
+    },
+    {
+      "source": "sample",
+      "code": "3229820167398",
+      "name": "Galettes riz sésame",
+      "brands": ["Bjorg"],
+      "image": null,
+      "category": "en:rice-cakes",
+      "nutriScore": { "grade": "b", "numeric": 4 },
+      "ecoScore": { "grade": "unknown", "numeric": null, "sourceField": null },
+      "nutrientLevels": {
+        "fat": "moderate",
+        "salt": "moderate",
+        "saturatedFat": "low",
+        "sugars": "low"
+      },
+      "nutrients": {
+        "energyKcal_100g": 395.0,
+        "fat_100g": 5.6,
+        "saturatedFat_100g": 0.8,
+        "sugars_100g": 0.6,
+        "salt_100g": 0.275,
+        "fiber_100g": 3.9,
+        "proteins_100g": 9.2
+      }
+    },
+    {
+      "source": "sample",
+      "code": "3165440008782",
+      "name": "Couscous parfumé aux épices douces",
+      "brands": ["Tipiak"],
+      "image": null,
+      "category": "en:prepared-couscous",
+      "nutriScore": { "grade": "a", "numeric": 5 },
+      "ecoScore": { "grade": "unknown", "numeric": null, "sourceField": null },
+      "nutrientLevels": {
+        "fat": "moderate",
+        "salt": "moderate",
+        "saturatedFat": "low",
+        "sugars": "low"
+      },
+      "nutrients": {
+        "energyKcal_100g": 326.0,
+        "fat_100g": 7.6,
+        "saturatedFat_100g": 1.6,
+        "sugars_100g": 6.8,
+        "salt_100g": 0.37,
+        "fiber_100g": 6.3,
+        "proteins_100g": 9.2
+      }
+    },
+    {
+      "source": "sample",
+      "code": "3017624010701",
+      "name": "Nutella",
+      "brands": ["Ferrero"],
+      "image": "https://images.openfoodfacts.org/images/products/301/762/401/0701/front_en.405.400.jpg",
+      "category": "en:cocoa-and-hazelnuts-spreads",
+      "nutriScore": { "grade": "e", "numeric": 1 },
+      "ecoScore": { "grade": "d", "numeric": 2, "sourceField": "environmental_score_grade" },
+      "nutrientLevels": {
+        "fat": "high",
+        "salt": "low",
+        "saturatedFat": "high",
+        "sugars": "high"
+      },
+      "nutrients": {
+        "energyKcal_100g": 539.0,
+        "fat_100g": 30.9,
+        "saturatedFat_100g": 10.6,
+        "sugars_100g": 56.3,
+        "salt_100g": 0.107,
+        "fiber_100g": 3.4,
+        "proteins_100g": 6.3
+      }
+    },
+    {
+      "source": "sample",
+      "code": "3274080005003",
+      "name": "Eau de source Cristaline",
+      "brands": ["Cristaline"],
+      "image": null,
+      "category": "en:spring-waters",
+      "nutriScore": { "grade": "a", "numeric": 5 },
+      "ecoScore": { "grade": "b", "numeric": 4, "sourceField": "environmental_score_grade" },
+      "nutrientLevels": {
+        "fat": "low",
+        "salt": "low",
+        "saturatedFat": "low",
+        "sugars": "low"
+      },
+      "nutrients": {
+        "energyKcal_100g": 0,
+        "fat_100g": 0,
+        "saturatedFat_100g": 0,
+        "sugars_100g": 0,
+        "salt_100g": 0.001,
+        "fiber_100g": 0,
+        "proteins_100g": 0
+      }
+    },
+    {
+      "source": "sample",
+      "code": "8410297410014",
+      "name": "Yogur natural Hacendado",
+      "brands": ["Hacendado"],
+      "image": null,
+      "category": "en:plain-yogurts",
+      "nutriScore": { "grade": "a", "numeric": 5 },
+      "ecoScore": { "grade": "c", "numeric": 3, "sourceField": "environmental_score_grade" },
+      "nutrientLevels": {
+        "fat": "moderate",
+        "salt": "low",
+        "saturatedFat": "moderate",
+        "sugars": "low"
+      },
+      "nutrients": {
+        "energyKcal_100g": 56.0,
+        "fat_100g": 3.0,
+        "saturatedFat_100g": 2.0,
+        "sugars_100g": 4.5,
+        "salt_100g": 0.12,
+        "fiber_100g": 0,
+        "proteins_100g": 3.7
+      }
+    },
+    {
+      "source": "sample",
+      "code": "8480000196507",
+      "name": "Patatas fritas onduladas",
+      "brands": ["Hacendado"],
+      "image": null,
+      "category": "en:potato-chips",
+      "nutriScore": { "grade": "d", "numeric": 2 },
+      "ecoScore": { "grade": "d", "numeric": 2, "sourceField": "environmental_score_grade" },
+      "nutrientLevels": {
+        "fat": "high",
+        "salt": "high",
+        "saturatedFat": "moderate",
+        "sugars": "low"
+      },
+      "nutrients": {
+        "energyKcal_100g": 535.0,
+        "fat_100g": 32.0,
+        "saturatedFat_100g": 2.8,
+        "sugars_100g": 0.5,
+        "salt_100g": 1.4,
+        "fiber_100g": 4.2,
+        "proteins_100g": 6.5
+      }
+    }
+  ]
+}

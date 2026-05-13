@@ -1,0 +1,234 @@
+// Open Food Facts API client with graceful fallback to sample data.
+// See docs/api-reference.md for the full contract.
+
+const BASE_URL = 'https://world.openfoodfacts.org/api/v2';
+const USER_AGENT = 'FoodLens-MVP/0.1 (team@uib.cat)';
+
+// MVP-only: backend integration. Default null = disabled (no behaviour change).
+// Set via <meta name="foodlens-backend-url" content="http://localhost:5000"> in index.html,
+// or by editing this constant for local dev.
+const BACKEND_URL = (
+  document.querySelector('meta[name="foodlens-backend-url"]')?.content || null
+);
+
+const PRODUCT_FIELDS = [
+  'code',
+  'product_name',
+  'brands',
+  'image_front_url',
+  'nutriscore_grade',
+  'environmental_score_grade',
+  'ecoscore_grade',
+  'nutrient_levels',
+  'nutriments',
+  'categories_tags',
+].join(',');
+
+const GRADE_TO_NUMERIC = { a: 5, b: 4, c: 3, d: 2, e: 1 };
+const NUTRIENT_LEVEL_KEY_MAP = {
+  fat: 'fat',
+  salt: 'salt',
+  'saturated-fat': 'saturatedFat',
+  sugars: 'sugars',
+};
+
+let sampleProductsCache = null;
+
+async function loadSampleProducts() {
+  if (sampleProductsCache) return sampleProductsCache;
+  const res = await fetch('./data/sample_products.json');
+  const data = await res.json();
+  sampleProductsCache = data.products;
+  return sampleProductsCache;
+}
+
+function isValidBarcode(barcode) {
+  return typeof barcode === 'string' && /^\d{8,13}$/.test(barcode);
+}
+
+function normaliseGrade(raw) {
+  if (!raw || typeof raw !== 'string') return { grade: 'unknown', numeric: null };
+  const lower = raw.toLowerCase();
+  if (['a', 'b', 'c', 'd', 'e'].includes(lower)) {
+    return { grade: lower, numeric: GRADE_TO_NUMERIC[lower] };
+  }
+  if (lower === 'not-applicable' || lower === 'unknown') {
+    return { grade: lower, numeric: null };
+  }
+  return { grade: 'unknown', numeric: null };
+}
+
+function readEcoScore(rawProduct) {
+  const newField = rawProduct.environmental_score_grade;
+  if (newField) {
+    const { grade, numeric } = normaliseGrade(newField);
+    return { grade, numeric, sourceField: 'environmental_score_grade' };
+  }
+  const legacy = rawProduct.ecoscore_grade;
+  if (legacy) {
+    const { grade, numeric } = normaliseGrade(legacy);
+    return { grade, numeric, sourceField: 'ecoscore_grade' };
+  }
+  return { grade: 'unknown', numeric: null, sourceField: null };
+}
+
+function readNutrientLevels(raw) {
+  const levels = raw || {};
+  const result = { fat: null, salt: null, saturatedFat: null, sugars: null };
+  for (const [offKey, ourKey] of Object.entries(NUTRIENT_LEVEL_KEY_MAP)) {
+    const v = levels[offKey];
+    if (v === 'low' || v === 'moderate' || v === 'high') {
+      result[ourKey] = v;
+    }
+  }
+  return result;
+}
+
+function readNutrients(raw) {
+  const n = raw || {};
+  const pickNumeric = (key) => {
+    const v = n[key];
+    return typeof v === 'number' ? v : null;
+  };
+  return {
+    energyKcal_100g: pickNumeric('energy-kcal_100g'),
+    fat_100g: pickNumeric('fat_100g'),
+    saturatedFat_100g: pickNumeric('saturated-fat_100g'),
+    sugars_100g: pickNumeric('sugars_100g'),
+    salt_100g: pickNumeric('salt_100g'),
+    fiber_100g: pickNumeric('fiber_100g'),
+    proteins_100g: pickNumeric('proteins_100g'),
+  };
+}
+
+function pickCategory(categoriesTags) {
+  if (!Array.isArray(categoriesTags) || categoriesTags.length === 0) return null;
+  // The most specific tag is the last one in OFF's hierarchical array.
+  return categoriesTags[categoriesTags.length - 1];
+}
+
+function splitBrands(brands) {
+  if (!brands || typeof brands !== 'string') return [];
+  return brands.split(',').map((b) => b.trim()).filter(Boolean);
+}
+
+export function normaliseProduct(raw) {
+  if (!raw) return null;
+  return {
+    source: 'api',
+    code: raw.code || null,
+    name: raw.product_name || null,
+    brands: splitBrands(raw.brands),
+    image: raw.image_front_url || null,
+    category: pickCategory(raw.categories_tags),
+    nutriScore: normaliseGrade(raw.nutriscore_grade),
+    ecoScore: readEcoScore(raw),
+    nutrientLevels: readNutrientLevels(raw.nutrient_levels),
+    nutrients: readNutrients(raw.nutriments),
+  };
+}
+
+async function fallbackByBarcode(barcode) {
+  const sample = await loadSampleProducts();
+  const match = sample.find((p) => p.code === barcode);
+  return match ? { ...match, source: 'sample' } : null;
+}
+
+async function fallbackBySearch(query) {
+  const sample = await loadSampleProducts();
+  const q = (query || '').toLowerCase().trim();
+  if (!q) return sample.map((p) => ({ ...p, source: 'sample' }));
+  const filtered = sample.filter((p) => {
+    const haystack = [p.name, p.category, ...p.brands].filter(Boolean).join(' ').toLowerCase();
+    return haystack.includes(q);
+  });
+  return filtered.map((p) => ({ ...p, source: 'sample' }));
+}
+
+export async function getProductByBarcode(barcode) {
+  if (!isValidBarcode(barcode)) return null;
+
+  const url = `${BASE_URL}/product/${barcode}?fields=${PRODUCT_FIELDS}`;
+  try {
+    const res = await fetch(url, { headers: { 'User-Agent': USER_AGENT } });
+    if (!res.ok) {
+      return fallbackByBarcode(barcode);
+    }
+    const data = await res.json();
+    if (data.status === 0 || !data.product) {
+      return fallbackByBarcode(barcode);
+    }
+    return normaliseProduct(data.product);
+  } catch (err) {
+    console.warn('OFF API unreachable, using sample data', err);
+    return fallbackByBarcode(barcode);
+  }
+}
+
+export async function searchProducts(query, opts = {}) {
+  const { categoryTag = null, pageSize = 20, page = 1 } = opts;
+
+  const params = new URLSearchParams({
+    fields: PRODUCT_FIELDS,
+    page_size: String(pageSize),
+    page: String(page),
+  });
+  if (categoryTag) params.set('categories_tags', categoryTag);
+  if (query) params.set('search_terms', query);
+
+  const url = `${BASE_URL}/search?${params.toString()}`;
+
+  try {
+    const res = await fetch(url, { headers: { 'User-Agent': USER_AGENT } });
+    if (!res.ok) {
+      return fallbackBySearch(query);
+    }
+    const data = await res.json();
+    const products = Array.isArray(data.products) ? data.products : [];
+    if (products.length === 0) {
+      return fallbackBySearch(query);
+    }
+    return products.map(normaliseProduct).filter(Boolean);
+  } catch (err) {
+    console.warn('OFF API unreachable, using sample data', err);
+    return fallbackBySearch(query);
+  }
+}
+
+export async function getAllSampleProducts() {
+  const sample = await loadSampleProducts();
+  return sample.map((p) => ({ ...p, source: 'sample' }));
+}
+
+/**
+ * Fetch alternatives for a barcode from the FoodLens backend.
+ *
+ * Returns the parsed response object on success, or null on any failure
+ * (network error, timeout, 4xx, 5xx, JSON parse error, BACKEND_URL not set).
+ * NEVER throws — the caller can always treat null as "fall back to JS KNN".
+ *
+ * @param {string} barcode
+ * @param {object} opts
+ * @param {number} [opts.k=3] - Number of alternatives to request (1..10).
+ * @param {number} [opts.weight=0.5] - Health weight (0..1).
+ * @param {number} [opts.timeoutMs=1500] - Abort timeout in milliseconds.
+ * @returns {Promise<object|null>}
+ */
+export async function getAlternativesFromBackend(barcode, opts = {}) {
+  if (!BACKEND_URL) return null;
+  const { k = 3, weight = 0.5, timeoutMs = 1500 } = opts;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const url = `${BACKEND_URL}/api/alternatives/${encodeURIComponent(barcode)}?k=${k}&weight=${weight}`;
+    const res = await fetch(url, { signal: controller.signal });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data || !Array.isArray(data.alternatives)) return null;
+    return data;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}

@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FoodLens — Transparent multi-objective food recommendations</title>
+  <meta name="description" content="Search any food product. See its Health and Eco scores side by side. Read the one-sentence reasoning behind each recommendation." />
+
+  <!-- Backend integration (opt-in). Uncomment and set the URL to enable the Flask backend.
+       When disabled (default), the app uses the in-browser JS KNN path — no backend needed.
+       See backend/README.md for how to start the backend server.
+  <meta name="foodlens-backend-url" content="http://localhost:5000" />
+  -->
+
+  <!-- Editorial typography. Newsreader (display serif italic), Bricolage Grotesque (body), JetBrains Mono (data). -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500;1,6..72,600&family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="./css/style.css" />
+</head>
+<body>
+  <div class="shell">
+
+    <!-- ─── Masthead ──────────────────────────────────────────────── -->
+    <header class="site-header" role="banner">
+      <div class="site-header__masthead">
+        <div class="site-header__brand">
+          <h1 class="site-header__title"><em>Food</em>Lens</h1>
+          <p class="site-header__tagline">
+            Transparent multi-objective food recommendations.
+            Two scores, side by side. One sentence of reasoning per product.
+          </p>
+        </div>
+        <div class="site-header__meta">
+          <span class="small-caps">UIB · HCI 11755 · WA4</span>
+          <span class="small-caps">Issue Nº 001 · 2026</span>
+          <span class="small-caps">Open Food Facts</span>
+        </div>
+      </div>
+    </header>
+
+    <main>
+
+      <!-- ─── Search ────────────────────────────────────────────── -->
+      <section class="search" aria-labelledby="search-label">
+        <h2 id="search-label" class="visually-hidden">Search products</h2>
+        <form id="search-form" class="search__form" role="search">
+          <label for="search-input" class="visually-hidden">Search a product or barcode</label>
+          <div class="search__input-wrap">
+            <input
+              type="text"
+              id="search-input"
+              name="q"
+              class="search__input"
+              placeholder="Type a name or paste a barcode…"
+              autocomplete="off"
+              spellcheck="false"
+            />
+            <button type="submit" class="search__submit">Inspect</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- ─── Weighting bar ─────────────────────────────────────── -->
+      <section class="weighting" aria-labelledby="weighting-label">
+        <div class="weighting__header">
+          <h2 id="weighting-label" class="weighting__label">What weighs more in your decision today?</h2>
+          <div class="weighting__readout" aria-live="polite">
+            <span>Health <strong id="weight-health-label">70%</strong></span>
+            <span>Eco <strong id="weight-eco-label">30%</strong></span>
+          </div>
+        </div>
+
+        <input
+          type="range"
+          id="weight-slider"
+          class="weighting__slider"
+          min="0"
+          max="100"
+          step="5"
+          value="70"
+          aria-label="Weighting between Health and Eco (0% Eco, 100% Health)"
+        />
+
+        <div class="weighting__presets" role="group" aria-label="Preset weightings">
+          <button type="button" class="preset" data-preset="eco-first" aria-pressed="false">Eco-first</button>
+          <button type="button" class="preset is-active" data-preset="balanced" aria-pressed="true">Balanced</button>
+          <button type="button" class="preset" data-preset="health-first" aria-pressed="false">Health-first</button>
+        </div>
+      </section>
+
+      <!-- ─── State banners ─────────────────────────────────────── -->
+      <p id="source-badge" class="source-badge" role="status" hidden>
+        Showing offline sample data. The live Open Food Facts API was unreachable; the team should reload once it recovers.
+      </p>
+
+      <p id="loading" class="loading" role="status" hidden>Querying Open Food Facts…</p>
+
+      <!-- ─── Focused product (auto-selected top result) ───────── -->
+      <section id="focused" class="focused" hidden aria-label="Currently selected product"></section>
+
+      <!-- ─── All results ──────────────────────────────────────── -->
+      <section id="results" class="results" aria-labelledby="results-title">
+        <div class="section-head">
+          <h2 id="results-title">Results</h2>
+          <p id="results-count" class="results-count">Loading…</p>
+        </div>
+
+        <div id="empty-state" class="empty-state" hidden>
+          <h2>No products to inspect yet.</h2>
+          <p>Try one of these to begin:</p>
+          <ul class="num">
+            <li>5449000131805 — Coca-Cola Zero Sugar</li>
+            <li>3017624010701 — Nutella</li>
+            <li>yogurt</li>
+          </ul>
+        </div>
+
+        <div id="results-list" class="results-list" aria-live="polite"></div>
+      </section>
+
+    </main>
+
+    <!-- ─── Footer ───────────────────────────────────────────────── -->
+    <footer class="site-footer" role="contentinfo">
+      <p>
+        <span class="small-caps">FoodLens</span> is the WA4 prototype of the
+        <em>Transparent Multi-Objective Food Recommendations</em> project at
+        UIB — Master in Intelligent Systems, course 11755 Human-Computer
+        Interaction.
+      </p>
+      <p>
+        Data sourced from <a href="https://world.openfoodfacts.org" rel="noopener" target="_blank">Open Food Facts</a>,
+        an open, collaborative database of food products from around the
+        world. Scores reflect the official Nutri-Score (French public health
+        authority) and Environmental Score (ADEME) methodologies — we
+        consume them, we do not recompute them.
+      </p>
+      <p>
+        Built with vanilla HTML, CSS and JavaScript. No build step. Open
+        <code>index.html</code> to run.
+      </p>
+    </footer>
+
+  </div>
+
+  <!-- A bit of accessibility-only styling, kept inline because it is two lines. -->
+  <style>
+    .visually-hidden {
+      position: absolute; width: 1px; height: 1px;
+      padding: 0; margin: -1px; overflow: hidden;
+      clip: rect(0,0,0,0); white-space: nowrap; border: 0;
+    }
+  </style>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
