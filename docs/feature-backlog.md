@@ -208,7 +208,9 @@ These features unblock everyone else. Anyone can start with them.
 - **Prio**: P1
 - **Deps**: F-01
 - **Owner**: _available_
-- **Phases**: `[ ] R [ ] D [ ] C [ ] T`
+- **Phases**: `[x] R [ ] D [ ] C [ ] T`
+
+**Requirements.** [`docs/reqs/F-11-requirements.md`](reqs/F-11-requirements.md)
 
 **What.** First-visit modal: goals (multi-select: weight management, dietary preferences, eco priorities), age (number), gender (radio + "prefer not to say"). Body metrics are an optional second step with inline rationale ("we use this to scale calorie ranges — you can skip it"). No lifestyle questions.
 
