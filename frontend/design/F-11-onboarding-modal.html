@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FoodLens — Onboarding Modal (F-11 Design Prototype)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600&family=JetBrains+Mono:wght@400;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+  <style>
+    /* ─── tokens (mirrors frontend/css/style.css) ─────────────────────── */
+    :root {
+      --color-paper: #FAF6EF;
+      --color-paper-2: #F2ECDE;
+      --color-paper-3: #E8E0CB;
+      --color-ink: #1A1A18;
+      --color-ink-soft: #5A574F;
+      --color-ink-mute: #8C8779;
+      --color-rule: #1A1A18;
+      --color-accent: #7B3F00;
+      --color-accent-2: #B05A1A;
+
+      --space-1: 0.25rem;
+      --space-2: 0.5rem;
+      --space-3: 0.75rem;
+      --space-4: 1rem;
+      --space-5: 1.25rem;
+      --space-6: 1.5rem;
+      --space-8: 2rem;
+      --space-10: 2.5rem;
+      --space-12: 3rem;
+
+      --font-display: 'Newsreader', Georgia, serif;
+      --font-body: 'Bricolage Grotesque', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+
+      --leading-tight: 1.1;
+      --leading-snug: 1.25;
+      --leading-normal: 1.5;
+
+      --rule-w: 1px;
+      --rule-w-bold: 2px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      font-family: var(--font-body);
+      font-optical-sizing: auto;
+      font-weight: 400;
+      line-height: var(--leading-normal);
+      color: var(--color-ink);
+      background: var(--color-paper);
+      background-image:
+        radial-gradient(circle at 18% 12%, rgba(123, 63, 0, 0.04) 0, transparent 40%),
+        radial-gradient(circle at 82% 88%, rgba(27, 94, 32, 0.05) 0, transparent 45%);
+      background-attachment: fixed;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: var(--space-6);
+    }
+
+    /* ─── backdrop / overlay ─────────────────────────────────────────── */
+    .onboarding-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(26, 26, 24, 0.6);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      display: grid;
+      place-items: center;
+      padding: var(--space-5);
+      z-index: 100;
+    }
+
+    /* ─── modal ────────────────────────────────────────────────────────── */
+    .onboarding {
+      background: var(--color-paper);
+      border: var(--rule-w-bold) solid var(--color-rule);
+      width: 100%;
+      max-width: 520px;
+      max-height: 90vh;
+      overflow-y: auto;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+    }
+
+    /* ─── header ──────────────────────────────────────────────────────── */
+    .onboarding__header {
+      border-bottom: var(--rule-w) solid var(--color-rule);
+      padding: var(--space-6) var(--space-6) var(--space-5);
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: var(--space-4);
+      align-items: start;
+    }
+
+    .onboarding__title {
+      font-family: var(--font-display);
+      font-style: italic;
+      font-weight: 500;
+      font-size: clamp(1.5rem, 4vw, 2rem);
+      line-height: var(--leading-tight);
+    }
+
+    .onboarding__close-btn {
+      background: none;
+      border: var(--rule-w) solid var(--color-rule);
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      color: var(--color-ink);
+      transition: background-color 120ms ease;
+      flex-shrink: 0;
+    }
+
+    .onboarding__close-btn:hover,
+    .onboarding__close-btn:focus-visible {
+      background: var(--color-paper-3);
+      outline: 0;
+    }
+
+    .onboarding__close-btn svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+    }
+
+    /* ─── progress ────────────────────────────────────────────────────── */
+    .onboarding__progress {
+      display: flex;
+      gap: var(--space-2);
+      padding: var(--space-4) var(--space-6);
+      border-bottom: var(--rule-w) solid var(--color-paper-3);
+    }
+
+    .progress-step {
+      flex: 1;
+      height: 3px;
+      background: var(--color-paper-3);
+      border: var(--rule-w) solid var(--color-rule);
+      transition: background-color 300ms ease;
+    }
+
+    .progress-step.is-active { background: var(--color-accent); }
+    .progress-step.is-done { background: var(--color-ink); }
+
+    /* ─── body ────────────────────────────────────────────────────────── */
+    .onboarding__body {
+      padding: var(--space-8) var(--space-6);
+      display: grid;
+      gap: var(--space-6);
+    }
+
+    .step-title {
+      font-family: var(--font-display);
+      font-style: italic;
+      font-weight: 500;
+      font-size: clamp(1.25rem, 3vw, 1.65rem);
+      line-height: var(--leading-snug);
+      margin-bottom: var(--space-2);
+    }
+
+    .step-subtitle {
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      color: var(--color-ink-soft);
+      line-height: var(--leading-normal);
+    }
+
+    /* ─── goals (multi-select chips) ─────────────────────────────────── */
+    .goals-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--space-3);
+    }
+
+    @media (min-width: 420px) {
+      .goals-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    .goal-card {
+      border: var(--rule-w-bold) solid var(--color-rule);
+      background: var(--color-paper);
+      padding: var(--space-5) var(--space-4);
+      cursor: pointer;
+      transition: background-color 120ms ease, border-color 120ms ease;
+      position: relative;
+      display: grid;
+      gap: var(--space-2);
+    }
+
+    .goal-card:hover {
+      background: var(--color-paper-2);
+    }
+
+    .goal-card.is-selected {
+      background: var(--color-paper-2);
+      border-color: var(--color-accent);
+    }
+
+    .goal-card input[type="checkbox"] {
+      position: absolute;
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .goal-card__check {
+      position: absolute;
+      top: var(--space-3);
+      right: var(--space-3);
+      width: 20px;
+      height: 20px;
+      border: var(--rule-w-bold) solid var(--color-rule);
+      background: var(--color-paper);
+      display: grid;
+      place-items: center;
+      transition: background-color 120ms ease, border-color 120ms ease;
+    }
+
+    .goal-card.is-selected .goal-card__check {
+      background: var(--color-accent);
+      border-color: var(--color-accent);
+    }
+
+    .goal-card__check svg {
+      width: 12px;
+      height: 12px;
+      stroke: var(--color-paper);
+      stroke-width: 3;
+      fill: none;
+      opacity: 0;
+      transition: opacity 120ms ease;
+    }
+
+    .goal-card.is-selected .goal-card__check svg {
+      opacity: 1;
+    }
+
+    .goal-card:focus-within {
+      outline: 2px solid var(--color-accent);
+      outline-offset: 2px;
+    }
+
+    .goal-card__icon {
+      font-size: 1.75rem;
+      line-height: 1;
+      margin-bottom: var(--space-1);
+    }
+
+    .goal-card__label {
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--color-ink);
+      line-height: var(--leading-snug);
+    }
+
+    .goal-card__desc {
+      font-family: var(--font-body);
+      font-size: 0.8rem;
+      color: var(--color-ink-soft);
+      line-height: var(--leading-normal);
+    }
+
+    /* ─── age + gender ───────────────────────────────────────────────── */
+    .field-group {
+      display: grid;
+      gap: var(--space-5);
+    }
+
+    .field {
+      display: grid;
+      gap: var(--space-2);
+    }
+
+    .field__label {
+      font-family: var(--font-body);
+      font-size: 0.8rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--color-ink-soft);
+    }
+
+    .field__input {
+      border: var(--rule-w-bold) solid var(--color-rule);
+      background: var(--color-paper);
+      padding: var(--space-3) var(--space-4);
+      font-family: var(--font-display);
+      font-style: italic;
+      font-size: 1.1rem;
+      color: var(--color-ink);
+      width: 100%;
+      transition: border-color 120ms ease;
+    }
+
+    .field__input::placeholder { color: var(--color-ink-mute); font-style: italic; }
+    .field__input:focus {
+      outline: 0;
+      border-color: var(--color-accent);
+    }
+
+    .field__error {
+      font-family: var(--font-body);
+      font-size: 0.8rem;
+      color: var(--color-nutri-e, #CB342B);
+      display: none;
+    }
+
+    .field__input.has-error {
+      border-color: var(--color-nutri-e, #CB342B);
+    }
+
+    .field__input.has-error + .field__error {
+      display: block;
+    }
+
+    /* ─── radio group ─────────────────────────────────────────────────── */
+    .radio-group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+
+    .radio-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      cursor: pointer;
+      padding: var(--space-2) var(--space-3);
+      border: var(--rule-w) solid transparent;
+      transition: background-color 120ms ease, border-color 120ms ease;
+    }
+
+    .radio-item:hover {
+      background: var(--color-paper-2);
+      border-color: var(--color-rule);
+    }
+
+    .radio-item:focus-within {
+      outline: 2px solid var(--color-accent);
+      outline-offset: 2px;
+    }
+
+    .radio-item input[type="radio"] {
+      accent-color: var(--color-accent);
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+
+    .radio-item__label {
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      color: var(--color-ink);
+    }
+
+    /* ─── optional body metrics ──────────────────────────────────────── */
+    .rationale {
+      background: var(--color-paper-2);
+      border-left: var(--rule-w-bold) solid var(--color-accent);
+      padding: var(--space-4);
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      color: var(--color-ink-soft);
+      line-height: var(--leading-normal);
+      font-style: italic;
+    }
+
+    .metrics-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-4);
+    }
+
+    .field__unit {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--color-ink-mute);
+      margin-top: var(--space-1);
+    }
+
+    /* ─── footer ──────────────────────────────────────────────────────── */
+    .onboarding__footer {
+      border-top: var(--rule-w-bold) solid var(--color-rule);
+      padding: var(--space-5) var(--space-6);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: var(--space-4);
+      flex-wrap: wrap;
+    }
+
+    .step-counter {
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      color: var(--color-ink-mute);
+    }
+
+    .btn-group {
+      display: flex;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: var(--space-3) var(--space-5);
+      background: transparent;
+      border: var(--rule-w-bold) solid var(--color-rule);
+      color: var(--color-ink);
+      cursor: pointer;
+      transition: background-color 120ms ease, color 120ms ease;
+    }
+
+    .btn:hover, .btn:focus-visible {
+      background: var(--color-paper-3);
+      outline: 0;
+    }
+
+    .btn--primary {
+      background: var(--color-ink);
+      color: var(--color-paper);
+    }
+
+    .btn--primary:hover, .btn--primary:focus-visible {
+      background: var(--color-accent);
+      border-color: var(--color-accent);
+    }
+
+    .btn--skip {
+      color: var(--color-ink-soft);
+    }
+
+    .btn--skip:hover, .btn--skip:focus-visible {
+      color: var(--color-ink);
+      background: var(--color-paper-3);
+    }
+
+    /* ─── Tweaks panel ────────────────────────────────────────────────── */
+    .tweaks {
+      position: fixed;
+      bottom: var(--space-5);
+      right: var(--space-5);
+      background: var(--color-paper);
+      border: var(--rule-w-bold) solid var(--color-rule);
+      padding: var(--space-4);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+      z-index: 200;
+    }
+
+    .tweaks__title {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--color-ink-mute);
+    }
+
+    .tweaks button {
+      font-family: var(--font-body);
+      font-size: 0.8rem;
+      padding: var(--space-2) var(--space-3);
+      background: var(--color-paper-2);
+      border: var(--rule-w) solid var(--color-rule);
+      cursor: pointer;
+      text-align: left;
+      transition: background-color 120ms ease;
+    }
+
+    .tweaks button:hover { background: var(--color-paper-3); }
+
+    /* ─── hidden helper ───────────────────────────────────────────────── */
+    .hidden { display: none !important; }
+  </style>
+</head>
+<body>
+
+<!-- ── STEP 1: Goals Multi-Select ────────────────────────────────────── -->
+<section class="onboarding" id="step-1" aria-label="Step 1: Your goals">
+  <header class="onboarding__header">
+    <h2 class="onboarding__title">Let's get started</h2>
+    <button class="onboarding__close-btn" aria-label="Close onboarding">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><line x1="2" y1="2" x2="14" y2="14"/><line x1="14" y1="2" x2="2" y2="14"/></svg>
+    </button>
+  </header>
+
+  <div class="onboarding__progress">
+    <div class="progress-step is-active"></div>
+    <div class="progress-step"></div>
+    <div class="progress-step"></div>
+  </div>
+
+  <div class="onboarding__body">
+    <div>
+      <h3 class="step-title">What brings you here?</h3>
+      <p class="step-subtitle">Select all that apply. You can skip this entirely.</p>
+    </div>
+
+    <fieldset class="goals-grid">
+      <label class="goal-card">
+        <input type="checkbox" name="goals" value="weight_management">
+        <span class="goal-card__check" aria-hidden="true">
+          <svg viewBox="0 0 12 12"><polyline points="1.5,6 4.5,9 10.5,3"/></svg>
+        </span>
+        <span class="goal-card__icon" aria-hidden="true">
+          <!-- scales icon -->
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M3 7h18"/><path d="M5 7l1 10h4l1-10"/><path d="M14 7l1 10h4l1-10"/><circle cx="5" cy="7" r="2"/><circle cx="19" cy="7" r="2"/></svg>
+        </span>
+        <span class="goal-card__label">Weight management</span>
+        <span class="goal-card__desc">Track and balance what you eat</span>
+      </label>
+
+      <label class="goal-card">
+        <input type="checkbox" name="goals" value="dietary_preferences">
+        <span class="goal-card__check" aria-hidden="true">
+          <svg viewBox="0 0 12 12"><polyline points="1.5,6 4.5,9 10.5,3"/></svg>
+        </span>
+        <span class="goal-card__icon" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2z"/><path d="M12 8v4l3 3"/></svg>
+        </span>
+        <span class="goal-card__label">Dietary preferences</span>
+        <span class="goal-card__desc">Follow a specific diet pattern</span>
+      </label>
+
+      <label class="goal-card">
+        <input type="checkbox" name="goals" value="eco_priorities">
+        <span class="goal-card__check" aria-hidden="true">
+          <svg viewBox="0 0 12 12"><polyline points="1.5,6 4.5,9 10.5,3"/></svg>
+        </span>
+        <span class="goal-card__icon" aria-hidden="true">
+          <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22c5.5 0 10-4.5 10-10S17.5 2 12 2 2 6.5 2 12s4.5 10 10 10z"/><path d="M12 6v6l4 2"/></svg>
+        </span>
+        <span class="goal-card__label">Eco priorities</span>
+        <span class="goal-card__desc">Understand environmental impact</span>
+      </label>
+    </fieldset>
+  </div>
+
+  <footer class="onboarding__footer">
+    <span class="step-counter">1 / 3</span>
+    <div class="btn-group">
+      <button class="btn btn--skip" type="button">Skip for now</button>
+      <button class="btn btn--primary" type="button" data-next>Continue</button>
+    </div>
+  </footer>
+</section>
+
+<!-- ── STEP 2: Age + Gender ───────────────────────────────────────────── -->
+<section class="onboarding hidden" id="step-2" aria-label="Step 2: About you">
+  <header class="onboarding__header">
+    <h2 class="onboarding__title">About you</h2>
+    <button class="onboarding__close-btn" aria-label="Close onboarding">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><line x1="2" y1="2" x2="14" y2="14"/><line x1="14" y1="2" x2="2" y2="14"/></svg>
+    </button>
+  </header>
+
+  <div class="onboarding__progress">
+    <div class="progress-step is-done"></div>
+    <div class="progress-step is-active"></div>
+    <div class="progress-step"></div>
+  </div>
+
+  <div class="onboarding__body">
+    <div>
+      <h3 class="step-title">Help us personalise your view</h3>
+      <p class="step-subtitle">All fields are optional — skip anytime.</p>
+    </div>
+
+    <div class="field-group">
+      <div class="field">
+        <label class="field__label" for="age">Your age</label>
+        <input
+          type="number"
+          id="age"
+          class="field__input"
+          placeholder="e.g. 28"
+          min="13"
+          max="120"
+          inputmode="numeric"
+          autocomplete="off"
+        >
+        <span class="field__error" role="alert">Enter a whole number between 13 and 120</span>
+      </div>
+
+      <fieldset class="field">
+        <legend class="field__label">Gender</legend>
+        <div class="radio-group">
+          <label class="radio-item">
+            <input type="radio" name="gender" value="female">
+            <span class="radio-item__label">Female</span>
+          </label>
+          <label class="radio-item">
+            <input type="radio" name="gender" value="male">
+            <span class="radio-item__label">Male</span>
+          </label>
+          <label class="radio-item">
+            <input type="radio" name="gender" value="non_binary">
+            <span class="radio-item__label">Non-binary</span>
+          </label>
+          <label class="radio-item">
+            <input type="radio" name="gender" value="prefer_not_to_say">
+            <span class="radio-item__label">Prefer not to say</span>
+          </label>
+        </div>
+      </fieldset>
+    </div>
+  </div>
+
+  <footer class="onboarding__footer">
+    <span class="step-counter">2 / 3</span>
+    <div class="btn-group">
+      <button class="btn btn--skip" type="button">Skip for now</button>
+      <button class="btn btn--primary" type="button" data-next>Continue</button>
+    </div>
+  </footer>
+</section>
+
+<!-- ── STEP 3: Optional Body Metrics ─────────────────────────────────── -->
+<section class="onboarding hidden" id="step-3" aria-label="Step 3: Body metrics (optional)">
+  <header class="onboarding__header">
+    <h2 class="onboarding__title">One more thing</h2>
+    <button class="onboarding__close-btn" aria-label="Close onboarding">
+      <svg viewBox="0 0 16 16" aria-hidden="true"><line x1="2" y1="2" x2="14" y2="14"/><line x1="14" y1="2" x2="2" y2="14"/></svg>
+    </button>
+  </header>
+
+  <div class="onboarding__progress">
+    <div class="progress-step is-done"></div>
+    <div class="progress-step is-done"></div>
+    <div class="progress-step is-active"></div>
+  </div>
+
+  <div class="onboarding__body">
+    <div>
+      <h3 class="step-title">Body metrics</h3>
+      <p class="step-subtitle">Optional — helps us scale calorie context.</p>
+    </div>
+
+    <div class="rationale" role="note">
+      We use this to scale calorie ranges. You can skip it.
+    </div>
+
+    <div class="metrics-row">
+      <div class="field">
+        <label class="field__label" for="heightCm">Height</label>
+        <input
+          type="number"
+          id="heightCm"
+          class="field__input"
+          placeholder="e.g. 172"
+          min="100"
+          max="250"
+          inputmode="numeric"
+          autocomplete="off"
+        >
+        <span class="field__unit">cm</span>
+        <span class="field__error" role="alert">Enter a whole number between 100 and 250</span>
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="weightKg">Weight</label>
+        <input
+          type="number"
+          id="weightKg"
+          class="field__input"
+          placeholder="e.g. 68"
+          min="30"
+          max="250"
+          inputmode="numeric"
+          autocomplete="off"
+        >
+        <span class="field__unit">kg</span>
+        <span class="field__error" role="alert">Enter a whole number between 30 and 250</span>
+      </div>
+    </div>
+  </div>
+
+  <footer class="onboarding__footer">
+    <span class="step-counter">3 / 3</span>
+    <div class="btn-group">
+      <button class="btn btn--skip" type="button">Skip for now</button>
+      <button class="btn btn--primary" type="button" data-next>Finish</button>
+    </div>
+  </footer>
+</section>
+
+<!-- ── Tweaks panel (for demo only) ──────────────────────────────────── -->
+<div class="tweaks" aria-label="Design variants">
+  <span class="tweaks__title">Steps</span>
+  <button onclick="showStep(1)">Step 1 — Goals</button>
+  <button onclick="showStep(2)">Step 2 — Age + Gender</button>
+  <button onclick="showStep(3)">Step 3 — Body Metrics</button>
+</div>
+
+<script>
+  function showStep(n) {
+    document.querySelectorAll('.onboarding').forEach(el => el.classList.add('hidden'));
+    const target = document.getElementById('step-' + n);
+    if (target) target.classList.remove('hidden');
+  }
+
+  // Goal card toggle
+  document.querySelectorAll('.goal-card input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', () => {
+      cb.closest('.goal-card').classList.toggle('is-selected', cb.checked);
+    });
+  });
+</script>
+
+</body>
+</html>

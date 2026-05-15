@@ -207,10 +207,11 @@ These features unblock everyone else. Anyone can start with them.
 - **Persona**: Marc, Pau
 - **Prio**: P1
 - **Deps**: F-01
-- **Owner**: _available_
-- **Phases**: `[x] R [ ] D [ ] C [ ] T`
+- **Owner**: Alejandro Bordón
+- **Phases**: `[x] R [x] D [ ] C [ ] T`
 
 **Requirements.** [`docs/reqs/F-11-requirements.md`](reqs/F-11-requirements.md)
+**Design.** [frontend/design/F-11-onboarding-modal.html](frontend/design/F-11-onboarding-modal.html)
 
 **What.** First-visit modal: goals (multi-select: weight management, dietary preferences, eco priorities), age (number), gender (radio + "prefer not to say"). Body metrics are an optional second step with inline rationale ("we use this to scale calorie ranges — you can skip it"). No lifestyle questions.
 
