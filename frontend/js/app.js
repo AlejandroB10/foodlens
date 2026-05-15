@@ -13,6 +13,7 @@ import {
   weightedNutrientDistance,
   formatAlternativeDelta,
 } from './xai.js';
+import { init as initOnboarding } from './views/onboarding.js';
 
 const STORAGE_KEY = 'foodlens.state';
 const DEFAULT_STATE = {
@@ -519,6 +520,7 @@ function wireEvents() {
 async function bootstrap() {
   applyWeightToUI();
   wireEvents();
+  initOnboarding();
   // Show all sample products on first load so the UI is never empty.
   await runSearch('');
 }
