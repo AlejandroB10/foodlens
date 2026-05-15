@@ -208,7 +208,7 @@ These features unblock everyone else. Anyone can start with them.
 - **Prio**: P1
 - **Deps**: F-01
 - **Owner**: Alejandro Bordón
-- **Phases**: `[x] R [x] D [ ] C [ ] T`
+- **Phases**: `[x] R [x] D [x] C [x] T`
 
 **Requirements.** [`docs/reqs/F-11-requirements.md`](reqs/F-11-requirements.md)
 **Design.** [frontend/design/F-11-onboarding-modal.html](frontend/design/F-11-onboarding-modal.html)
