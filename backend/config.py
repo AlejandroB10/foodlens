@@ -31,6 +31,7 @@ class Config:
     flask_env: str
     log_level: str
     redis_url: str
+    telemetry_path: Path
 
 
 def load_config(env_file: Path | None = None) -> Config:
@@ -66,4 +67,5 @@ def load_config(env_file: Path | None = None) -> Config:
         flask_env=os.getenv("FLASK_ENV", "development"),
         log_level=os.getenv("BACKEND_LOG_LEVEL", "INFO"),
         redis_url=os.getenv("REDIS_URL", "redis://localhost:6379/0"),
+        telemetry_path=Path(os.getenv("TELEMETRY_PATH", str(_BACKEND_ROOT / "data" / "telemetry.jsonl"))),
     )

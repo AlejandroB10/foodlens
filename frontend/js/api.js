@@ -235,6 +235,21 @@ export async function getAllSampleProducts() {
  * @param {number} [timeoutMs=2000]
  * @returns {Promise<object|null>}
  */
+/**
+ * Send a telemetry event to the backend (F-45).
+ * Fire-and-forget — never throws, never blocks the UI.
+ *
+ * @param {object} payload - Must include an "event" string field.
+ */
+export function postTelemetryEvent(payload) {
+  if (!BACKEND_URL) return;
+  fetch(`${BACKEND_URL}/api/telemetry`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }).catch(() => { /* silently ignore */ });
+}
+
 export async function getCategoryScatter(category, timeoutMs = 2000) {
   if (!BACKEND_URL || !category) return null;
   const controller = new AbortController();

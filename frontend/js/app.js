@@ -8,6 +8,7 @@ import {
   getAlternativesFromBackend,
   getExplainFromBackend,
   getCategoryScatter,
+  postTelemetryEvent,
 } from './api.js';
 import {
   generateContrastiveSentence,
@@ -55,6 +56,29 @@ const GRADE_LABELS = {
 const state = loadState();
 let lastResults = [];
 let focusedProduct = null;
+
+// ─── telemetry (F-45) ──────────────────────────────────────────────────
+
+const TELEMETRY_KEY = 'foodlens.telemetry_opt_in';
+
+const telemetry = {
+  isOptedIn() {
+    return localStorage.getItem(TELEMETRY_KEY) === 'true';
+  },
+  optIn() {
+    localStorage.setItem(TELEMETRY_KEY, 'true');
+  },
+  optOut() {
+    localStorage.setItem(TELEMETRY_KEY, 'false');
+  },
+  send(payload) {
+    if (!this.isOptedIn()) return;
+    postTelemetryEvent(payload);
+  },
+};
+
+// Timestamp set when search completes — used to compute decision_time.
+let _searchCompletedAt = null;
 
 // ─── DOM lookups ──────────────────────────────────────────────────────
 
@@ -498,7 +522,14 @@ function renderAlternativeCard(product, alternative) {
     {
       class: 'alt-card',
       dataset: { code: alternative.code },
-      onClick: () => focusProduct(alternative),
+      onClick: () => {
+      telemetry.send({
+        event: 'alternative_click',
+        viewed_barcode: product?.code,
+        clicked_barcode: alternative?.code,
+      });
+      focusProduct(alternative);
+    },
       role: 'button',
       tabindex: '0',
       onKeydown: (e) => {
@@ -526,6 +557,14 @@ function renderAlternativeCard(product, alternative) {
 // ─── rendering flows ───────────────────────────────────────────────────
 
 function focusProduct(product) {
+  // decision_time: ms from search completion to product selection (F-45).
+  if (_searchCompletedAt && product?.code) {
+    telemetry.send({
+      event: 'decision_time',
+      barcode: product.code,
+      ms: Date.now() - _searchCompletedAt,
+    });
+  }
   focusedProduct = product;
   rerenderFocused();
 }
@@ -660,6 +699,7 @@ async function runSearch(query) {
       results = await getAllSampleProducts();
     }
     lastResults = results || [];
+    _searchCompletedAt = Date.now();
     rerenderResults();
     if (lastResults.length > 0) {
       // Auto-focus the top-ranked product so reasoning is visible (H2).
@@ -702,6 +742,7 @@ function wireEvents() {
   els.weightSlider?.addEventListener('input', (e) => {
     const v = Number(e.target.value);
     setWeight(v, null);
+    telemetry.send({ event: 'slider_change', value: v });
   });
 
   for (const btn of els.presetButtons) {
@@ -714,11 +755,55 @@ function wireEvents() {
   }
 }
 
+// ─── telemetry consent banner (F-45) ───────────────────────────────────
+
+function renderTelemetryBanner() {
+  // Only show if the user hasn't decided yet.
+  if (localStorage.getItem(TELEMETRY_KEY) !== null) return;
+
+  const banner = el(
+    'aside',
+    { class: 'telemetry-banner', role: 'complementary', 'aria-label': 'Usage tracking consent' },
+    el(
+      'p',
+      { class: 'telemetry-banner__text' },
+      'Help improve FoodLens: allow anonymous usage tracking? ',
+      el('span', { class: 'telemetry-banner__detail' },
+        '(decision time, clicked alternatives, slider changes — no personal data)',
+      ),
+    ),
+    el(
+      'div',
+      { class: 'telemetry-banner__actions' },
+      el('button', {
+        type: 'button',
+        class: 'btn btn--primary btn--sm',
+        onClick: () => {
+          telemetry.optIn();
+          banner.remove();
+          toast('Usage tracking enabled. Thank you!');
+        },
+      }, 'Allow'),
+      el('button', {
+        type: 'button',
+        class: 'btn btn--ghost btn--sm',
+        onClick: () => {
+          telemetry.optOut();
+          banner.remove();
+        },
+      }, 'No thanks'),
+    ),
+  );
+
+  document.body.appendChild(banner);
+}
+
 // ─── bootstrap ─────────────────────────────────────────────────────────
 
 async function bootstrap() {
   applyWeightToUI();
   wireEvents();
+  renderTelemetryBanner();
   // Show all sample products on first load so the UI is never empty.
   await runSearch('');
 }

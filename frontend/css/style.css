@@ -867,3 +867,63 @@ summary:focus-visible {
 }
 
 .card__shap-canvas { max-height: 260px; }
+
+/* ─── telemetry consent banner (F-45) ───────────────────────────────── */
+.telemetry-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 9000;
+  background: var(--color-ink);
+  color: var(--color-paper);
+  padding: var(--space-4) var(--space-6);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+  border-top: 3px solid var(--color-accent);
+}
+
+.telemetry-banner__text {
+  flex: 1 1 300px;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.telemetry-banner__detail {
+  display: block;
+  font-size: 0.78rem;
+  color: var(--color-ink-mute);
+  margin-block-start: var(--space-1);
+}
+
+.telemetry-banner__actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.btn--sm {
+  padding: var(--space-1) var(--space-3);
+  font-size: 0.82rem;
+  border-radius: 3px;
+  cursor: pointer;
+  font-family: var(--font-body);
+  border: var(--rule-w) solid currentColor;
+  transition: opacity 0.15s;
+}
+
+.btn--sm:hover { opacity: 0.8; }
+
+.btn--sm.btn--accept {
+  background: var(--color-accent);
+  color: var(--color-paper);
+  border-color: var(--color-accent);
+}
+
+.btn--sm.btn--decline {
+  background: transparent;
+  color: var(--color-ink-mute);
+  border-color: var(--color-ink-mute);
+}

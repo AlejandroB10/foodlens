@@ -74,6 +74,9 @@ frontend/tests/
 tmp/
 .tmp/
 
+# Telemetry data (F-45) — user event log, never commit
+*.jsonl
+
 # Local agent artefacts (Claude Code, Cursor caches, etc.)
 .claude/
 .cursor/

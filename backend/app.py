@@ -6,6 +6,7 @@ Routes: GET /, GET /health, GET /api/search, GET /api/product/<barcode>,
 """
 from __future__ import annotations
 
+import json
 import logging
 import os
 import sys
@@ -28,6 +29,7 @@ from backend.services import recommender as _recommender
 from backend.services import explainer as _explainer
 from backend.services import nutriscore_model as _nutriscore_model
 from backend.services import shap_explainer as _shap_explainer
+from backend.services import collab_filter as _collab_filter
 
 VERSION = "0.1.0"
 
@@ -302,8 +304,10 @@ def create_app(config: Config | None = None, index_store: IndexStore | None = No
             if query_product is None:
                 return _make_error("barcode_not_found", f"Could not normalise product {barcode}.", 404)
 
-        # --- Run recommender ---
+        # --- Run recommender + collaborative filter blend (F-42) ---
         result = _recommender.find_alternatives(query_product, idx, k=k, health_weight=health_weight)
+        cfg: Config = app.extensions["app_config"]
+        result = _collab_filter.blend_alternatives(barcode, result, k, cfg.telemetry_path)
 
         body = {
             "barcode": barcode,
@@ -317,6 +321,53 @@ def create_app(config: Config | None = None, index_store: IndexStore | None = No
         if idx.built_at():
             resp.headers["X-Index-Built-At"] = idx.built_at()
         return resp, 200
+
+    # --- /api/telemetry (F-45) ---
+
+    @app.post("/api/telemetry")
+    def telemetry_route():
+        """Append a telemetry event to telemetry.jsonl (F-45).
+
+        Only called when the user has opted in (frontend enforces this).
+        Accepts any JSON object with at minimum an "event" string field.
+        Unknown fields are stored as-is for future analysis.
+
+        Events logged:
+            decision_time       { event, barcode, ms }
+            alternative_click   { event, viewed_barcode, clicked_barcode }
+            slider_change       { event, value }
+        """
+        import datetime
+
+        cfg: Config = app.extensions["app_config"]
+
+        body = request.get_json(silent=True)
+        if not body or not isinstance(body.get("event"), str):
+            return _make_error("bad_request", "Body must be JSON with an 'event' string field.", 400)
+
+        event_type = body["event"]
+        allowed = {"decision_time", "alternative_click", "slider_change"}
+        if event_type not in allowed:
+            return _make_error("bad_request", f"Unknown event type '{event_type}'.", 400)
+
+        record = {
+            "ts": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            **body,
+        }
+
+        try:
+            cfg.telemetry_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(cfg.telemetry_path, "a", encoding="utf-8") as fh:
+                fh.write(json.dumps(record) + "\n")
+        except OSError as exc:
+            logger.error("Failed to write telemetry event: %s", exc)
+            return _make_error("internal_error", "Could not persist telemetry event.", 500)
+
+        # Invalidate collab filter cache so new clicks are picked up.
+        if event_type == "alternative_click":
+            _collab_filter.reload()
+
+        return jsonify({"ok": True}), 200
 
     # --- /api/scatter ---
 
