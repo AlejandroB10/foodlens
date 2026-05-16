@@ -444,7 +444,7 @@ Eight features in localStorage + DOM. No backend, no new dependencies, no ML.
 ### F-25 · Recently viewed history
 - **Hook**: KI-5 · **Persona**: All · **Owner**: Alejandro Bordón
 - Keep the last 10 product codes visited in `localStorage`. Render a sidebar / collapsed strip "Recently viewed" with thumbnails and dual-axis badges. Click → opens the product.
-- **Phases**: `[x] R [ ] D [ ] C [ ] T`
+- **Phases**: `[x] R [x] D [x] C [ ] T`
 
 ### F-26 · Favourites / Saved
 - **Hook**: H7 · **Persona**: Marc, Lluís · **Owner**: Alejandro Bordón
