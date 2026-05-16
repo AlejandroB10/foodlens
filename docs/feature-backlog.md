@@ -453,6 +453,7 @@ Eight features in localStorage + DOM. No backend, no new dependencies, no ML.
 ### F-27 · Settings page
 - **Hook**: KI-5 · **Persona**: All · **Owner**: Alejandro Bordón
 - Page (or modal) with: unit system (metric/imperial), language preference (placeholder until F-33), default slider weight, "clear my profile" button. Persists to `localStorage.foodlens.settings`.
+- **Phases**: `[x] R [x] D [x] C [x] T` ✓ (14 tests passed)
 
 ### F-28 · Educational tooltips on scores
 - **Hook**: KI-1 · **Persona**: Pau (analyst) · **Owner**: Alejandro Bordón
