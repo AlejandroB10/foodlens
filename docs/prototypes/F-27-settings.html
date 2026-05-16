@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FoodLens — Settings (F-27 Prototype)</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500;1,6..72,600&family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    /* ─── Design tokens (mirrors style.css) ────────────────────────────── */
+    :root {
+      --color-paper: #FAF6EF;
+      --color-paper-2: #F2ECDE;
+      --color-paper-3: #E8E0CB;
+      --color-ink: #1A1A18;
+      --color-ink-soft: #5A574F;
+      --color-ink-mute: #8C8779;
+      --color-rule: #1A1A18;
+      --color-accent: #7B3F00;
+      --color-accent-2: #B05A1A;
+      --color-nutri-a: #1F8A3F;
+      --color-nutri-b: #7AB52E;
+      --color-nutri-c: #E8A823;
+      --color-nutri-e: #CB342B;
+      --color-eco-a: #1B5E20;
+      --color-eco-c: #8C7B2B;
+      --space-1: 0.25rem;
+      --space-2: 0.5rem;
+      --space-3: 0.75rem;
+      --space-4: 1rem;
+      --space-5: 1.25rem;
+      --space-6: 1.5rem;
+      --space-8: 2rem;
+      --space-10: 2.5rem;
+      --font-display: 'Newsreader', Georgia, 'Times New Roman', serif;
+      --font-body: 'Bricolage Grotesque', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+      --leading-tight: 1.1;
+      --leading-snug: 1.25;
+      --leading-normal: 1.5;
+      --rule-w: 1px;
+      --rule-w-bold: 2px;
+    }
+
+    /* ─── reset ────────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body, h1, h2, h3, h4, p, ul, ol, figure, blockquote { margin: 0; }
+    ul, ol { padding: 0; list-style: none; }
+    img { max-width: 100%; display: block; }
+    button { font: inherit; cursor: pointer; }
+    a { color: inherit; }
+
+    /* ─── base ─────────────────────────────────────────────────────────── */
+    html { font-size: 16px; }
+    body {
+      font-family: var(--font-body);
+      font-optical-sizing: auto;
+      font-weight: 400;
+      line-height: var(--leading-normal);
+      color: var(--color-ink);
+      background: var(--color-paper);
+      background-image:
+        radial-gradient(circle at 18% 12%, rgba(123, 63, 0, 0.04) 0, transparent 40%),
+        radial-gradient(circle at 82% 88%, rgba(27, 94, 32, 0.05) 0, transparent 45%);
+      background-attachment: fixed;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+    }
+
+    /* ─── header ────────────────────────────────────────────────────────── */
+    .site-header {
+      border-bottom: var(--rule-w-bold) solid var(--color-rule);
+      padding-bottom: var(--space-6);
+      margin-bottom: var(--space-8);
+    }
+    .site-header__masthead {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: var(--space-4);
+      flex-wrap: wrap;
+      padding-bottom: var(--space-4);
+    }
+    .site-header__brand {
+      display: flex;
+      align-items: baseline;
+      gap: var(--space-4);
+      flex-wrap: wrap;
+    }
+    .site-header__title {
+      font-family: var(--font-display);
+      font-style: italic;
+      font-weight: 400;
+      font-size: clamp(2rem, 5vw, 3.5rem);
+    }
+    .site-header__title em {
+      font-style: normal;
+      color: var(--color-accent);
+      font-weight: 500;
+    }
+    .site-header__tagline {
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      color: var(--color-ink-soft);
+      max-width: 36ch;
+      line-height: var(--leading-snug);
+    }
+    .site-header__actions {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+    }
+
+    /* ─── settings cog button ─────────────────────────────────────────── */
+    .settings-btn {
+      display: grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      background: transparent;
+      border: var(--rule-w-bold) solid var(--color-rule);
+      color: var(--color-ink);
+      transition: background-color 120ms ease, color 120ms ease;
+      cursor: pointer;
+    }
+    .settings-btn:hover,
+    .settings-btn:focus-visible {
+      background: var(--color-paper-3);
+      outline: 0;
+    }
+    .settings-btn:focus-visible {
+      outline: 2px solid var(--color-accent);
+      outline-offset: 2px;
+    }
+    .settings-btn svg {
+      width: 20px;
+      height: 20px;
+      stroke: currentColor;
+      stroke-width: 1.5;
+      fill: none;
+    }
+
+    /* ─── settings overlay backdrop ───────────────────────────────────── */
+    .settings-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(26, 26, 24, 0.6);
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      display: flex;
+      justify-content: flex-end;
+      padding: var(--space-5);
+      z-index: 100;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 250ms ease;
+    }
+    .settings-backdrop.is-open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    /* ─── settings panel ──────────────────────────────────────────────── */
+    .settings-panel {
+      background: var(--color-paper);
+      border: var(--rule-w-bold) solid var(--color-rule);
+      width: 100%;
+      max-width: 400px;
+      max-height: calc(100vh - var(--space-10));
+      overflow-y: auto;
+      position: relative;
+      transform: translateX(40px);
+      transition: transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
+      display: grid;
+      grid-template-rows: auto 1fr;
+    }
+    .settings-backdrop.is-open .settings-panel {
+      transform: translateX(0);
+    }
+
+    /* ─── panel header ─────────────────────────────────────────────────── */
+    .settings-panel__header {
+      border-bottom: var(--rule-w) solid var(--color-rule);
+      padding: var(--space-6) var(--space-6) var(--space-5);
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: var(--space-4);
+      align-items: start;
+      position: sticky;
+      top: 0;
+      background: var(--color-paper);
+      z-index: 1;
+    }
+    .settings-panel__title {
+      font-family: var(--font-display);
+      font-style: italic;
+      font-weight: 500;
+      font-size: clamp(1.4rem, 4vw, 1.85rem);
+      line-height: var(--leading-tight);
+    }
+    .settings-panel__close-btn {
+      background: none;
+      border: var(--rule-w) solid var(--color-rule);
+      width: 36px;
+      height: 36px;
+      display: grid;
+      place-items: center;
+      color: var(--color-ink);
+      transition: background-color 120ms ease;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .settings-panel__close-btn:hover,
+    .settings-panel__close-btn:focus-visible {
+      background: var(--color-paper-3);
+      outline: 0;
+    }
+    .settings-panel__close-btn:focus-visible {
+      outline: 2px solid var(--color-accent);
+      outline-offset: 2px;
+    }
+    .settings-panel__close-btn svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+    }
+
+    /* ─── panel body ───────────────────────────────────────────────────── */
+    .settings-panel__body {
+      padding: var(--space-6);
+      display: grid;
+      gap: var(--space-8);
+    }
+
+    /* ─── settings section ─────────────────────────────────────────────── */
+    .settings-section {
+      display: grid;
+      gap: var(--space-4);
+    }
+    .settings-section__title {
+      font-family: var(--font-body);
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--color-ink-soft);
+      border-bottom: var(--rule-w) solid var(--color-paper-3);
+      padding-bottom: var(--space-2);
+    }
+
+    /* ─── radio group (unit system) ─────────────────────────────────────── */
+    .radio-group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+    .radio-item {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      cursor: pointer;
+      padding: var(--space-3) var(--space-4);
+      border: var(--rule-w) solid transparent;
+      transition: background-color 120ms ease, border-color 120ms ease;
+    }
+    .radio-item:hover {
+      background: var(--color-paper-2);
+      border-color: var(--color-rule);
+    }
+    .radio-item:focus-within {
+      outline: 2px solid var(--color-accent);
+      outline-offset: 2px;
+    }
+    .radio-item input[type="radio"] {
+      accent-color: var(--color-accent);
+      width: 18px;
+      height: 18px;
+      flex-shrink: 0;
+    }
+    .radio-item__label {
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      color: var(--color-ink);
+    }
+    .radio-item__hint {
+      font-family: var(--font-body);
+      font-size: 0.8rem;
+      color: var(--color-ink-mute);
+      margin-top: 2px;
+    }
+
+    /* ─── select / dropdown ─────────────────────────────────────────────── */
+    .field-select {
+      border: var(--rule-w-bold) solid var(--color-rule);
+      background: var(--color-paper);
+      padding: var(--space-3) var(--space-4);
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      color: var(--color-ink);
+      width: 100%;
+      cursor: pointer;
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%231A1A18' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right var(--space-4) center;
+      padding-right: var(--space-8);
+      transition: border-color 120ms ease;
+    }
+    .field-select:focus {
+      outline: 0;
+      border-color: var(--color-accent);
+    }
+    .field-select:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    /* ─── slider (Eco/Health weight) ───────────────────────────────────── */
+    .slider-wrap {
+      display: grid;
+      gap: var(--space-2);
+    }
+    .slider-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+    }
+    .slider-label {
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      color: var(--color-ink);
+    }
+    .slider-readout {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      color: var(--color-ink-soft);
+      display: flex;
+      gap: var(--space-4);
+    }
+    .slider-readout strong { color: var(--color-ink); font-weight: 600; }
+
+    .weight-slider {
+      appearance: none;
+      width: 100%;
+      height: 12px;
+      background: linear-gradient(to right,
+        var(--color-eco-a) 0%,
+        var(--color-eco-c) 50%,
+        var(--color-nutri-c) 50%,
+        var(--color-nutri-a) 100%);
+      border: var(--rule-w) solid var(--color-rule);
+      outline: 0;
+    }
+    .weight-slider::-webkit-slider-thumb {
+      appearance: none;
+      width: 24px;
+      height: 24px;
+      background: var(--color-ink);
+      border: 3px solid var(--color-paper);
+      box-shadow: 0 0 0 1px var(--color-ink);
+      cursor: grab;
+    }
+    .weight-slider::-moz-range-thumb {
+      width: 24px;
+      height: 24px;
+      background: var(--color-ink);
+      border: 3px solid var(--color-paper);
+      box-shadow: 0 0 0 1px var(--color-ink);
+      cursor: grab;
+    }
+    .weight-slider:active::-webkit-slider-thumb { cursor: grabbing; }
+
+    /* ─── danger zone ──────────────────────────────────────────────────── */
+    .settings-danger {
+      display: grid;
+      gap: var(--space-3);
+      padding-top: var(--space-4);
+      border-top: var(--rule-w) solid var(--color-paper-3);
+    }
+    .btn {
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: var(--space-3) var(--space-5);
+      background: transparent;
+      border: var(--rule-w-bold) solid var(--color-rule);
+      color: var(--color-ink);
+      cursor: pointer;
+      transition: background-color 120ms ease, color 120ms ease;
+      width: 100%;
+      text-align: center;
+    }
+    .btn:hover,
+    .btn:focus-visible {
+      background: var(--color-paper-3);
+      outline: 0;
+    }
+    .btn:focus-visible {
+      outline: 2px solid var(--color-accent);
+      outline-offset: 2px;
+    }
+    .btn--destructive {
+      border-color: var(--color-accent-2);
+      color: var(--color-accent-2);
+    }
+    .btn--destructive:hover,
+    .btn--destructive:focus-visible {
+      background: var(--color-accent-2);
+      color: var(--color-paper);
+    }
+    .btn--destructive:focus-visible {
+      outline-color: var(--color-accent-2);
+    }
+
+    /* ─── confirm dialog ───────────────────────────────────────────────── */
+    .confirm-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(26, 26, 24, 0.7);
+      backdrop-filter: blur(6px);
+      -webkit-backdrop-filter: blur(6px);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: var(--space-5);
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 200ms ease;
+    }
+    .confirm-backdrop.is-open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .confirm-dialog {
+      background: var(--color-paper);
+      border: var(--rule-w-bold) solid var(--color-rule);
+      width: 100%;
+      max-width: 380px;
+      padding: var(--space-6);
+      display: grid;
+      gap: var(--space-5);
+      transform: scale(0.96);
+      transition: transform 200ms ease;
+    }
+    .confirm-backdrop.is-open .confirm-dialog {
+      transform: scale(1);
+    }
+    .confirm-dialog__icon {
+      width: 40px;
+      height: 40px;
+      border: var(--rule-w-bold) solid var(--color-accent-2);
+      color: var(--color-accent-2);
+      display: grid;
+      place-items: center;
+    }
+    .confirm-dialog__icon svg {
+      width: 20px;
+      height: 20px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+    }
+    .confirm-dialog__title {
+      font-family: var(--font-display);
+      font-style: italic;
+      font-weight: 500;
+      font-size: 1.3rem;
+      color: var(--color-ink);
+      line-height: var(--leading-snug);
+    }
+    .confirm-dialog__body {
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      color: var(--color-ink-soft);
+      line-height: var(--leading-normal);
+    }
+    .confirm-dialog__actions {
+      display: flex;
+      gap: var(--space-3);
+      flex-wrap: wrap;
+    }
+    .confirm-dialog__actions .btn {
+      flex: 1;
+      min-width: 120px;
+    }
+    .btn--cancel {
+      color: var(--color-ink-soft);
+    }
+    .btn--cancel:hover {
+      color: var(--color-ink);
+      background: var(--color-paper-3);
+    }
+
+    /* ─── success toast ─────────────────────────────────────────────────── */
+    .toast {
+      position: fixed;
+      bottom: var(--space-6);
+      left: 50%;
+      transform: translateX(-50%) translateY(16px);
+      background: var(--color-ink);
+      color: var(--color-paper);
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      padding: var(--space-3) var(--space-6);
+      border: var(--rule-w) solid var(--color-ink);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 200ms ease, transform 200ms ease;
+      z-index: 300;
+      white-space: nowrap;
+    }
+    .toast.is-visible {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+      pointer-events: auto;
+    }
+
+    /* ─── demo content area ─────────────────────────────────────────────── */
+    .demo-area {
+      max-width: 640px;
+      margin: 0 auto;
+      padding: var(--space-10) var(--space-5);
+    }
+    .demo-area h2 {
+      font-family: var(--font-display);
+      font-style: italic;
+      font-weight: 500;
+      font-size: clamp(1.5rem, 3.2vw, 2.25rem);
+      margin-bottom: var(--space-4);
+      border-top: var(--rule-w-bold) solid var(--color-rule);
+      padding-top: var(--space-4);
+    }
+    .demo-area p {
+      font-size: 0.95rem;
+      color: var(--color-ink-soft);
+      line-height: var(--leading-normal);
+      margin-bottom: var(--space-4);
+    }
+    .demo-area ul {
+      list-style: disc;
+      padding-left: var(--space-6);
+      display: grid;
+      gap: var(--space-2);
+      font-size: 0.9rem;
+      color: var(--color-ink-soft);
+    }
+    .demo-area code {
+      font-family: var(--font-mono);
+      font-size: 0.85em;
+      background: var(--color-paper-2);
+      padding: 1px 5px;
+      border: var(--rule-w) solid var(--color-paper-3);
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ─── Site Header ─────────────────────────────────────────────── -->
+  <div class="shell">
+    <header class="site-header" role="banner">
+      <div class="site-header__masthead">
+        <div class="site-header__brand">
+          <h1 class="site-header__title"><em>Food</em>Lens</h1>
+          <p class="site-header__tagline">
+            Transparent multi-objective food recommendations.
+          </p>
+        </div>
+        <div class="site-header__actions">
+          <button
+            class="settings-btn"
+            id="settings-trigger"
+            aria-label="Open settings"
+            aria-expanded="false"
+            aria-controls="settings-backdrop"
+          >
+            <!-- Cog icon -->
+            <svg viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9c.26.604.852.997 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ─── Demo instructions ──────────────────────────────────────────── -->
+    <div class="demo-area">
+      <h2>F-27 · Settings Prototype</h2>
+      <p>
+        This is a standalone HTML prototype for the <strong>Settings panel</strong> feature.
+        Click the cog icon in the header to open the panel.
+      </p>
+      <p>Features demonstrated:</p>
+      <ul>
+        <li><strong>AC1</strong> — Settings cog button in header (opens panel on click)</li>
+        <li><strong>AC27.2</strong> — Unit system toggle: Metric / Imperial radio group</li>
+        <li><strong>AC27.3</strong> — Default slider weight (0–100 range, default 50)</li>
+        <li><strong>AC27.4</strong> — "Clear my profile" destructive button</li>
+        <li><strong>AC27.5–6</strong> — Confirmation dialog: Cancel or Confirm</li>
+      </ul>
+      <p>Interaction notes:</p>
+      <ul>
+        <li>Click <strong>✕</strong> in the panel header, or click the backdrop, to close</li>
+        <li>Select a unit system — visual feedback only (no persistence in prototype)</li>
+        <li>Drag the Eco/Health weight slider — readouts update in real time</li>
+        <li>Click <strong>Clear my profile</strong> to see the confirmation dialog</li>
+        <li>On <strong>Confirm</strong> — toast "Profile cleared" appears</li>
+        <li>On <strong>Cancel</strong> — dialog closes, nothing happens</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ─── Settings Backdrop / Panel ──────────────────────────────────── -->
+  <div
+    class="settings-backdrop"
+    id="settings-backdrop"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="settings-panel-title"
+    aria-hidden="true"
+  >
+    <div class="settings-panel" id="settings-panel" role="document">
+
+      <div class="settings-panel__header">
+        <h2 class="settings-panel__title" id="settings-panel-title">Settings</h2>
+        <button
+          class="settings-panel__close-btn"
+          id="settings-close-btn"
+          aria-label="Close settings"
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M18 6 6 18M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="settings-panel__body">
+
+        <!-- Unit System -->
+        <div class="settings-section">
+          <h3 class="settings-section__title">Unit System</h3>
+          <div class="radio-group" role="radiogroup" aria-label="Unit system preference">
+            <label class="radio-item">
+              <input type="radio" name="unit-system" value="metric" checked />
+              <div>
+                <div class="radio-item__label">Metric</div>
+                <div class="radio-item__hint">kg, cm</div>
+              </div>
+            </label>
+            <label class="radio-item">
+              <input type="radio" name="unit-system" value="imperial" />
+              <div>
+                <div class="radio-item__label">Imperial</div>
+                <div class="radio-item__hint">lb, in</div>
+              </div>
+            </label>
+          </div>
+        </div>
+
+        <!-- Language (placeholder for F-33) -->
+        <div class="settings-section">
+          <h3 class="settings-section__title">Language</h3>
+          <select class="field-select" aria-label="Language preference" disabled>
+            <option value="en" selected>English</option>
+          </select>
+          <p style="font-size:0.8rem;color:var(--color-ink-mute);font-style:italic;">
+            Language switching comes with F-33.
+          </p>
+        </div>
+
+        <!-- Default Eco/Health Weight Slider -->
+        <div class="settings-section">
+          <h3 class="settings-section__title">Default Slider Weight</h3>
+          <div class="slider-wrap">
+            <div class="slider-header">
+              <span class="slider-label">Eco weight / Health weight</span>
+              <div class="slider-readout" aria-live="polite">
+                <span>Eco <strong id="eco-val">50%</strong></span>
+                <span>Health <strong id="health-val">50%</strong></span>
+              </div>
+            </div>
+            <input
+              type="range"
+              id="weight-slider"
+              class="weight-slider"
+              min="0"
+              max="100"
+              step="5"
+              value="50"
+              aria-label="Default Eco/Health weight slider"
+            />
+          </div>
+        </div>
+
+        <!-- Danger Zone -->
+        <div class="settings-danger">
+          <h3 class="settings-section__title">Profile</h3>
+          <button
+            class="btn btn--destructive"
+            id="clear-profile-btn"
+            type="button"
+            aria-describedby="clear-profile-desc"
+          >
+            Clear my profile
+          </button>
+          <p id="clear-profile-desc" style="font-size:0.8rem;color:var(--color-ink-mute);font-style:italic;">
+            Removes all your saved data and resets FoodLens to its first-run state.
+          </p>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Confirmation Dialog ─────────────────────────────────────────── -->
+  <div
+    class="confirm-backdrop"
+    id="confirm-backdrop"
+    role="alertdialog"
+    aria-modal="true"
+    aria-labelledby="confirm-title"
+    aria-describedby="confirm-body"
+    aria-hidden="true"
+  >
+    <div class="confirm-dialog" role="document">
+      <div class="confirm-dialog__icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/>
+          <line x1="12" y1="9" x2="12" y2="13"/>
+          <line x1="12" y1="17" x2="12.01" y2="17"/>
+        </svg>
+      </div>
+      <h3 class="confirm-dialog__title" id="confirm-title">Clear your profile?</h3>
+      <p class="confirm-dialog__body" id="confirm-body">
+        This will reset your profile, history, and saved products. You will need to go through onboarding again.
+      </p>
+      <div class="confirm-dialog__actions">
+        <button class="btn btn--cancel" id="confirm-cancel-btn" type="button">Cancel</button>
+        <button class="btn btn--destructive" id="confirm-clear-btn" type="button">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ─── Success Toast ─────────────────────────────────────────────── -->
+  <div class="toast" id="toast" role="status" aria-live="polite">
+    Profile cleared
+  </div>
+
+  <script>
+    /* ── DOM refs ────────────────────────────────────────────────────── */
+    const settingsTrigger   = document.getElementById('settings-trigger');
+    const settingsBackdrop  = document.getElementById('settings-backdrop');
+    const settingsPanel    = document.getElementById('settings-panel');
+    const settingsCloseBtn  = document.getElementById('settings-close-btn');
+    const weightSlider      = document.getElementById('weight-slider');
+    const ecoVal            = document.getElementById('eco-val');
+    const healthVal         = document.getElementById('health-val');
+    const clearProfileBtn   = document.getElementById('clear-profile-btn');
+    const confirmBackdrop   = document.getElementById('confirm-backdrop');
+    const confirmCancelBtn  = document.getElementById('confirm-cancel-btn');
+    const confirmClearBtn   = document.getElementById('confirm-clear-btn');
+    const toast             = document.getElementById('toast');
+
+    /* ── Open settings panel ─────────────────────────────────────────── */
+    function openSettings() {
+      settingsBackdrop.classList.add('is-open');
+      settingsBackdrop.setAttribute('aria-hidden', 'false');
+      settingsTrigger.setAttribute('aria-expanded', 'true');
+      settingsCloseBtn.focus();
+    }
+
+    /* ── Close settings panel ─────────────────────────────────────────── */
+    function closeSettings() {
+      settingsBackdrop.classList.remove('is-open');
+      settingsBackdrop.setAttribute('aria-hidden', 'true');
+      settingsTrigger.setAttribute('aria-expanded', 'false');
+      settingsTrigger.focus();
+    }
+
+    /* ── Sync slider readouts ────────────────────────────────────────── */
+    function updateSlider(val) {
+      const eco = parseInt(val, 10);
+      const health = 100 - eco;
+      ecoVal.textContent = eco + '%';
+      healthVal.textContent = health + '%';
+    }
+
+    /* ── Open confirm dialog ──────────────────────────────────────────── */
+    function openConfirm() {
+      confirmBackdrop.classList.add('is-open');
+      confirmBackdrop.setAttribute('aria-hidden', 'false');
+      confirmCancelBtn.focus();
+    }
+
+    /* ── Close confirm dialog ────────────────────────────────────────── */
+    function closeConfirm() {
+      confirmBackdrop.classList.remove('is-open');
+      confirmBackdrop.setAttribute('aria-hidden', 'true');
+      clearProfileBtn.focus();
+    }
+
+    /* ── Show toast ──────────────────────────────────────────────────── */
+    function showToast(msg) {
+      toast.textContent = msg;
+      toast.classList.add('is-visible');
+      setTimeout(() => toast.classList.remove('is-visible'), 3000);
+    }
+
+    /* ── Event listeners ─────────────────────────────────────────────── */
+    settingsTrigger.addEventListener('click', openSettings);
+    settingsCloseBtn.addEventListener('click', closeSettings);
+
+    // Click on backdrop (outside panel) closes settings
+    settingsBackdrop.addEventListener('click', (e) => {
+      if (e.target === settingsBackdrop) closeSettings();
+    });
+
+    // Escape key closes settings
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        if (confirmBackdrop.classList.contains('is-open')) {
+          closeConfirm();
+        } else if (settingsBackdrop.classList.contains('is-open')) {
+          closeSettings();
+        }
+      }
+    });
+
+    // Slider updates
+    weightSlider.addEventListener('input', (e) => updateSlider(e.target.value));
+
+    // Clear profile
+    clearProfileBtn.addEventListener('click', openConfirm);
+    confirmCancelBtn.addEventListener('click', closeConfirm);
+    confirmClearBtn.addEventListener('click', () => {
+      closeConfirm();
+      closeSettings();
+      showToast('Profile cleared');
+    });
+
+    // Init slider display
+    updateSlider(weightSlider.value);
+  </script>
+</body>
+</html>
