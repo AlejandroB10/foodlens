@@ -106,7 +106,8 @@ function getSettings() {
 }
 
 /**
- * Clear ALL foodlens localStorage keys AND hasSeenOnboarding, then reload.
+ * Clear ALL foodlens localStorage keys AND hasSeenOnboarding.
+ * Does NOT reload the page — caller is responsible for navigation if needed.
  */
 function clearProfile() {
   const keysToRemove = [];
@@ -121,6 +122,7 @@ function clearProfile() {
   for (const key of keysToRemove) {
     localStorage.removeItem(key);
   }
+  // Trigger a full re-init: clear the profile so init() re-evaluates
   window.location.reload();
 }
 
