@@ -55,10 +55,11 @@ data/*.csv.gz
 data/*.parquet
 data/*.duckdb
 
-# Trained models (regenerate from notebooks, never commit)
+# Trained models (regenerate with scripts/train_nutriscore_rf.py, never commit)
 *.pkl
 *.joblib
 *.h5
+backend/models/
 
 # Backend KNN index — rebuild with scripts/build_knn_index.py; never commit
 backend/data/*.pkl

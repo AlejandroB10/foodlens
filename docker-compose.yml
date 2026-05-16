@@ -10,6 +10,7 @@
 #   docker compose up --build
 #
 # Services:
+#   redis     — Redis 7 cache on localhost:6379
 #   backend   — Flask API on http://localhost:5000
 #   frontend  — nginx SPA on http://localhost:8080
 #
@@ -17,6 +18,16 @@
 # accidentally overwrite the host's pickle file.
 
 services:
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
   backend:
     build:
       context: .
@@ -32,6 +43,10 @@ services:
     environment:
       - FLASK_ENV=${FLASK_ENV:-development}
       - ALT_INDEX_PATH=/app/backend/data/alt_index.pkl
+      - REDIS_URL=redis://redis:6379/0
+    depends_on:
+      redis:
+        condition: service_healthy
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:5000/health || exit 1"]
       interval: 30s

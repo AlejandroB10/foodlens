@@ -214,6 +214,62 @@ export async function getAllSampleProducts() {
  * @param {number} [opts.timeoutMs=1500] - Abort timeout in milliseconds.
  * @returns {Promise<object|null>}
  */
+/**
+ * Fetch SHAP explanation for a barcode from the FoodLens backend (F-24).
+ *
+ * Returns the parsed response (including shap_waterfall) or null on any failure.
+ * NEVER throws.
+ *
+ * @param {string} barcode
+ * @param {object} opts
+ * @param {number} [opts.weight=0.7]     - Health weight (0..1).
+ * @param {number} [opts.timeoutMs=2000] - Abort timeout in milliseconds.
+ * @returns {Promise<object|null>}
+ */
+/**
+ * Fetch all products in a category for the Nutri × Eco scatter plot (F-43).
+ *
+ * Returns null when the backend is unavailable or the category has no data.
+ *
+ * @param {string} category  - OFF category tag, e.g. "en:yogurts"
+ * @param {number} [timeoutMs=2000]
+ * @returns {Promise<object|null>}
+ */
+export async function getCategoryScatter(category, timeoutMs = 2000) {
+  if (!BACKEND_URL || !category) return null;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const url = `${BACKEND_URL}/api/scatter?cat=${encodeURIComponent(category)}`;
+    const res = await fetch(url, { signal: controller.signal });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.count > 0 ? data : null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export async function getExplainFromBackend(barcode, opts = {}) {
+  if (!BACKEND_URL) return null;
+  const { weight = 0.7, timeoutMs = 2000 } = opts;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const url = `${BACKEND_URL}/api/explain/${encodeURIComponent(barcode)}?weight=${weight}`;
+    const res = await fetch(url, { signal: controller.signal });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.shap_waterfall ? data : null;
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function getAlternativesFromBackend(barcode, opts = {}) {
   if (!BACKEND_URL) return null;
   const { k = 3, weight = 0.5, timeoutMs = 1500 } = opts;

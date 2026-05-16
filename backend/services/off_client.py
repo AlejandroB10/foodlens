@@ -1,7 +1,10 @@
-"""Open Food Facts HTTP client with TTL cache, token-bucket rate limiting, and retry logic.
+"""Open Food Facts HTTP client with Redis cache (TTLCache fallback), token-bucket rate limiting, and retry logic.
 
 Design decisions:
+- RedisCache: tries Redis first; falls back silently to in-process TTLCache if Redis is unreachable.
+  Values are JSON-serialised so the cache survives restarts and is shareable across gunicorn workers.
 - TTLCache: lazy eviction on get(), no background thread. NOT thread-safe. Single-worker only.
+  Kept as fallback when Redis is unavailable (e.g. local dev without Docker).
 - TokenBucket: linear refill, checked before every upstream call. NOT thread-safe. Single-worker only.
 - OpenFoodFactsClient: stateful (cache + buckets) — class is justified.
 - One retry on 503 with 1s backoff. On second 503: raise OFFUpstreamError (search) or
@@ -10,6 +13,7 @@ Design decisions:
 """
 from __future__ import annotations
 
+import json
 import logging
 import time
 from typing import Any
@@ -78,6 +82,50 @@ class TTLCache:
 
     def __len__(self) -> int:
         return len(self._store)
+
+
+# ---------------------------------------------------------------------------
+# RedisCache
+# ---------------------------------------------------------------------------
+
+
+class RedisCache:
+    """Redis-backed TTL cache with automatic fallback to TTLCache.
+
+    Values are JSON-serialised, so they survive Redis restarts and are safe to share
+    across gunicorn workers. Falls back to in-process TTLCache when Redis is unreachable
+    (e.g. local dev without Docker) — logs a one-time warning and continues.
+    """
+
+    def __init__(self, redis_url: str, ttl_seconds: int) -> None:
+        self._ttl = ttl_seconds
+        self._redis = None
+        self._fallback: TTLCache | None = None
+        try:
+            import redis as _redis_lib
+            client = _redis_lib.from_url(redis_url, decode_responses=True, socket_connect_timeout=2)
+            client.ping()
+            self._redis = client
+            logger.info("RedisCache connected to %s (TTL %ds)", redis_url, ttl_seconds)
+        except Exception as exc:
+            logger.warning("Redis unavailable (%s) — falling back to in-process TTLCache", exc)
+            self._fallback = TTLCache(ttl_seconds)
+
+    @property
+    def backend(self) -> str:
+        return "redis" if self._redis is not None else "memory"
+
+    def get(self, key: str) -> Any | None:
+        if self._redis is not None:
+            raw = self._redis.get(key)
+            return json.loads(raw) if raw is not None else None
+        return self._fallback.get(key)  # type: ignore[union-attr]
+
+    def set(self, key: str, value: Any) -> None:
+        if self._redis is not None:
+            self._redis.setex(key, self._ttl, json.dumps(value, default=str))
+        else:
+            self._fallback.set(key, value)  # type: ignore[union-attr]
 
 
 # ---------------------------------------------------------------------------
@@ -168,11 +216,16 @@ class OpenFoodFactsClient:
         self._config = config
         self._session = requests.Session()
         self._session.headers.update({"User-Agent": config.off_user_agent})
-        self._cache = TTLCache(config.cache_ttl_seconds)
+        self._cache = RedisCache(config.redis_url, config.cache_ttl_seconds)
         self._buckets: dict[str, TokenBucket] = {
             "search": TokenBucket(config.rate_search_per_min, config.rate_search_per_min),
             "product": TokenBucket(config.rate_product_per_min, config.rate_product_per_min),
         }
+
+    @property
+    def cache_backend(self) -> str:
+        """Returns 'redis' or 'memory' — useful for health checks."""
+        return self._cache.backend
 
     def bucket_for_endpoint(self, endpoint: str) -> TokenBucket:
         """Return the token bucket for a given endpoint name (for Retry-After calculation)."""

@@ -26,6 +26,8 @@ from backend.services.off_client import (
 from backend.services.normaliser import normalise_product
 from backend.services import recommender as _recommender
 from backend.services import explainer as _explainer
+from backend.services import nutriscore_model as _nutriscore_model
+from backend.services import shap_explainer as _shap_explainer
 
 VERSION = "0.1.0"
 
@@ -117,22 +119,28 @@ def create_app(config: Config | None = None, index_store: IndexStore | None = No
     @app.get("/health")
     def health_route():
         idx: IndexStore = app.extensions["index_store"]
+        client: OpenFoodFactsClient = app.extensions["off_client"]
+        cache_backend = client.cache_backend
+        rf_meta = _nutriscore_model.model_meta()
         if idx.is_loaded():
             body = {
                 "status": "ok",
                 "index_built_at": idx.built_at(),
                 "index_size": idx.size(),
+                "cache_backend": cache_backend,
+                "nutriscore_model": rf_meta,
                 "version": VERSION,
             }
             return jsonify(body), 200
         else:
-            # Degraded — index missing or version mismatch
             reason = getattr(idx, "_degraded_reason", "index_not_loaded")
             body = {
                 "status": "degraded",
                 "reason": reason,
                 "index_built_at": None,
                 "index_size": 0,
+                "cache_backend": cache_backend,
+                "nutriscore_model": rf_meta,
                 "version": VERSION,
             }
             return jsonify(body), 200
@@ -310,6 +318,45 @@ def create_app(config: Config | None = None, index_store: IndexStore | None = No
             resp.headers["X-Index-Built-At"] = idx.built_at()
         return resp, 200
 
+    # --- /api/scatter ---
+
+    @app.get("/api/scatter")
+    def scatter_route():
+        """Return all products in a category for the Nutri × Eco scatter plot (F-43).
+
+        Query params:
+            cat  string  OFF category tag (e.g. "en:yogurts")
+
+        Response shape:
+            { category, count, products: [{code, name, nutri_numeric, eco_numeric}] }
+        """
+        idx: IndexStore = app.extensions["index_store"]
+        if not idx.is_loaded():
+            return _make_error("index_not_loaded", "Index not loaded — run build_knn_index.py first.", 503)
+
+        cat = request.args.get("cat", "").strip()
+        if not cat:
+            return _make_error("missing_param", "missing required parameter: cat", 400)
+
+        products = idx.filter_by_category(cat)
+
+        points = []
+        for p in products:
+            nutri_numeric = (p.get("nutriScore") or {}).get("numeric")
+            eco_numeric = (p.get("ecoScore") or {}).get("numeric")
+            if nutri_numeric is None and eco_numeric is None:
+                continue
+            points.append({
+                "code": p.get("code"),
+                "name": p.get("name") or p.get("code"),
+                "nutri_grade": (p.get("nutriScore") or {}).get("grade"),
+                "eco_grade": (p.get("ecoScore") or {}).get("grade"),
+                "nutri_numeric": nutri_numeric,
+                "eco_numeric": eco_numeric,
+            })
+
+        return jsonify({"category": cat, "count": len(points), "products": points}), 200
+
     # --- /api/explain/<barcode> ---
 
     @app.get("/api/explain/<barcode>")
@@ -361,6 +408,10 @@ def create_app(config: Config | None = None, index_store: IndexStore | None = No
             if query_product is None:
                 return _make_error("barcode_not_found", f"Could not normalise product {barcode}.", 404)
 
+        # --- SHAP waterfall (F-24) — computed before reference lookup, no dependency on index ---
+        nutrients = query_product.get("nutrients") or {}
+        shap_waterfall = _shap_explainer.compute_shap_waterfall(nutrients)
+
         # --- Determine reference ---
         # Try top-1 alternative first; fall back to category average.
         alt_result = _recommender.find_alternatives(query_product, idx, k=1, health_weight=health_weight)
@@ -383,17 +434,16 @@ def create_app(config: Config | None = None, index_store: IndexStore | None = No
             reference = _explainer.build_category_average_reference(category_products, category or "")
             if reference is None:
                 # Absolute fallback — no reference available at all.
-                result_sentence = {
-                    "sentence": "Insufficient comparable data for this product.",
-                    "hasComparison": False,
-                }
                 body = {
                     "barcode": barcode,
-                    "sentence": result_sentence["sentence"],
-                    "hasComparison": result_sentence["hasComparison"],
+                    "sentence": "Insufficient comparable data for this product.",
+                    "hasComparison": False,
                     "reference": {"name": "category average"},
                     "factors": [],
-                    "meta": {"explainer_version": "contrastive-stub", "for_replacement_by": "F-24-SHAP"},
+                    "shap_waterfall": shap_waterfall,
+                    "meta": {
+                        "explainer_version": "shap-tree-f24" if shap_waterfall else "contrastive-stub",
+                    },
                 }
                 resp = jsonify(body)
                 resp.headers["X-Data-Source"] = source_tag
@@ -412,7 +462,10 @@ def create_app(config: Config | None = None, index_store: IndexStore | None = No
             "hasComparison": result_sentence["hasComparison"],
             "reference": reference_meta,
             "factors": factors,
-            "meta": {"explainer_version": "contrastive-stub", "for_replacement_by": "F-24-SHAP"},
+            "shap_waterfall": shap_waterfall,
+            "meta": {
+                "explainer_version": "shap-tree-f24" if shap_waterfall else "contrastive-stub",
+            },
         }
 
         resp = jsonify(body)
