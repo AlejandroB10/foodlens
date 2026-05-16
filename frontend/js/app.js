@@ -344,9 +344,12 @@ function renderAlternativeCard(product, alternative) {
 
 // ─── rendering flows ───────────────────────────────────────────────────
 
-function focusProduct(product) {
+function focusProduct(product, { skipTrack = false } = {}) {
   focusedProduct = product;
-  trackView(product.code, product);
+  if (!skipTrack) {
+    trackView(product.code, product);
+    renderRecentlyViewed(els.recentlyViewed, (code) => runSearch(code));
+  }
   rerenderFocused();
 }
 
@@ -458,7 +461,10 @@ async function runSearch(query) {
     if (/^\d{8,13}$/.test(query)) {
       const single = await getProductByBarcode(query);
       results = single ? [single] : [];
-      if (single) trackView(single.code, single);
+      if (single) {
+        trackView(single.code, single);
+        renderRecentlyViewed(els.recentlyViewed, (code) => runSearch(code));
+      }
     } else if (query) {
       results = await searchProducts(query);
     } else {
@@ -527,7 +533,12 @@ async function bootstrap() {
   initOnboarding();
   renderRecentlyViewed(els.recentlyViewed, (code) => runSearch(code));
   // Show all sample products on first load so the UI is never empty.
+  // Auto-focus top-ranked product but DON'T track it as "recently viewed"
+  // (it's a bootstrap sample display, not a real user navigation).
   await runSearch('');
+  if (lastResults.length > 0) {
+    focusProduct(lastResults[0], { skipTrack: true });
+  }
 }
 
 if (document.readyState === 'loading') {

@@ -218,7 +218,10 @@ export function renderRecentlyViewed(container, onOpenProduct) {
 
   // No items → hide section
   if (items.length === 0) {
+    container.innerHTML = '';
     container.hidden = true;
+    container.classList.remove('is-expanded');
+    container.removeAttribute('class');
     return;
   }
 
