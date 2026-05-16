@@ -1,0 +1,23 @@
+name: f25_history_tracking
+description: |
+  Verify that clicking a product from search results adds it to
+  the Recently Viewed section, and revisiting it moves it to the top.
+
+setup:
+  - Clear browser localStorage (foodlens.recentlyViewed, foodlens.profile).
+  - Set completed profile in localStorage to skip onboarding.
+
+steps:
+  - Open http://localhost:8080 and wait for products to load.
+  - Tap the first product card in the search results.
+  - Wait for the product detail panel to open.
+  - Close the product detail panel.
+  - Verify the Recently Viewed section now shows at least 1 entry.
+  - Tap a different product from the results.
+  - Wait for the product detail panel to open.
+  - Close the product detail panel.
+  - Verify the recently-viewed list has been reordered with the latest product first.
+
+expected_state:
+  - The Recently Viewed section shows the visited products.
+  - The most recently visited product appears at the top of the list.

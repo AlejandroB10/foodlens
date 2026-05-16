@@ -10,10 +10,12 @@
   background: rgba(26, 26, 24, 0.6);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
-  display: grid;
-  place-items: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
   padding: var(--space-5);
   z-index: 100;
+  pointer-events: none; /* backdrop is visual only, let clicks pass through */
 }
 
 /* ─── modal shell ────────────────────────────────────────────────────────── */
@@ -26,6 +28,9 @@
   overflow-y: auto;
   display: grid;
   grid-template-rows: auto 1fr auto;
+  pointer-events: auto; /* modal captures clicks, overriding backdrop */
+  position: relative; /* ensure it sits above backdrop */
+  z-index: 101;
 }
 
 /* ─── header ─────────────────────────────────────────────────────────────── */

@@ -74,9 +74,10 @@ export function trackView(code, productData) {
   if (!code || !productData) return;
   if (_bootstrapping) return;
 
+  const items = loadRecentlyViewed();
+
   // Remove if already present (will be re-added at top)
   const existing = items.findIndex((i) => i.code === code);
-  if (existing !== -1) items.splice(existing, 1);
 
   // Prepend new entry
   items.unshift({

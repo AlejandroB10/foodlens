@@ -1,0 +1,17 @@
+name: f11_onboarding_modal
+description: |
+  Verify that on a first-time visit (no prior acceptance) the
+  onboarding modal appears, can be accepted, and does not re-appear.
+
+setup:
+  - Clear browser localStorage (foodlens.profile, foodlens.hasSeenOnboarding).
+
+steps:
+  - Open http://localhost:8080.
+  - Verify the onboarding modal is visible.
+  - Tap the "Get Started" button (or close/accept button).
+  - Wait for the modal to disappear.
+
+expected_state:
+  - The onboarding modal is no longer visible.
+  - localStorage contains a flag indicating the onboarding was completed.

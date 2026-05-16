@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- Background circle (lens) -->
+  <circle cx="16" cy="16" r="15" fill="#f0f4f0" stroke="#2d6a4f" stroke-width="2"/>
+
+  <!-- Inner lens ring -->
+  <circle cx="16" cy="16" r="11" fill="none" stroke="#52b788" stroke-width="1.5" opacity="0.7"/>
+
+  <!-- Leaf (eco score) -->
+  <path d="M16 22 C16 22, 10 18, 11 13 C12 9, 16 8, 16 8 C16 8, 20 9, 21 13 C22 18, 16 22, 16 22Z"
+        fill="#52b788" opacity="0.9"/>
+
+  <!-- Leaf vein -->
+  <path d="M16 22 L16 10" stroke="#f0f4f0" stroke-width="0.8" fill="none" opacity="0.6"/>
+
+  <!-- Small heart (health) top right -->
+  <path d="M20 10 C20 8.5, 18.5 7.5, 17.5 7.5 C16.5 7.5, 16 8.5, 16 9 C16 8.5, 15.5 7.5, 14.5 7.5 C13.5 7.5, 12 8.5, 12 10 C12 11.5, 16 13.5, 16 13.5 C16 13.5, 20 11.5, 20 10Z"
+        fill="#e63946" opacity="0.85"/>
+
+  <!-- Camera lens crosshairs (subtle) -->
+  <line x1="16" y1="5" x2="16" y2="8" stroke="#2d6a4f" stroke-width="1" opacity="0.4"/>
+  <line x1="16" y1="24" x2="16" y2="27" stroke="#2d6a4f" stroke-width="1" opacity="0.4"/>
+  <line x1="5" y1="16" x2="8" y2="16" stroke="#2d6a4f" stroke-width="1" opacity="0.4"/>
+  <line x1="24" y1="16" x2="27" y2="16" stroke="#2d6a4f" stroke-width="1" opacity="0.4"/>
+</svg>

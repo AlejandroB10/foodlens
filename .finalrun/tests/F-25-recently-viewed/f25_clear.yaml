@@ -1,0 +1,20 @@
+name: f25_history_clear
+description: |
+  Verify that the Clear History button removes all entries from
+  Recently Viewed and hides the section.
+
+setup:
+  - Clear browser localStorage.
+  - Set completed profile to skip onboarding.
+  - Pre-populate localStorage with 3 fake recently-viewed entries
+    (code, name, healthGrade, ecoGrade, viewedAt fields).
+
+steps:
+  - Open http://localhost:8080 and wait for the page to load.
+  - Verify the Recently Viewed section is visible and shows entries.
+  - Scroll to find and tap the Clear History button.
+  - Wait for the UI to update.
+
+expected_state:
+  - The Recently Viewed section is hidden (hidden attribute set).
+  - localStorage.getItem('foodlens.recentlyViewed') returns null.
