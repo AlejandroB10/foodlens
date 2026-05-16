@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FoodLens — Recently Viewed (F-25 Design Prototype)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600&family=JetBrains+Mono:wght@400;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&display=swap" rel="stylesheet">
+  <style>
+    /* ─── tokens (mirrors frontend/css/style.css) ─────────────────────── */
+    :root {
+      --color-paper: #FAF6EF;
+      --color-paper-2: #F2ECDE;
+      --color-paper-3: #E8E0CB;
+      --color-ink: #1A1A18;
+      --color-ink-soft: #5A574F;
+      --color-ink-mute: #8C8779;
+      --color-rule: #1A1A18;
+      --color-accent: #7B3F00;
+      --color-accent-2: #B05A1A;
+
+      --color-nutri-a: #1F8A3F;
+      --color-nutri-b: #7AB52E;
+      --color-nutri-c: #E8A823;
+      --color-nutri-d: #E27210;
+      --color-nutri-e: #CB342B;
+
+      --color-eco-a: #1B5E20;
+      --color-eco-b: #4D7C2F;
+      --color-eco-c: #8C7B2B;
+      --color-eco-d: #A85C1B;
+      --color-eco-e: #5D3A1A;
+      --color-grade-na: #8C8779;
+
+      --space-1: 0.25rem;
+      --space-2: 0.5rem;
+      --space-3: 0.75rem;
+      --space-4: 1rem;
+      --space-5: 1.25rem;
+      --space-6: 1.5rem;
+      --space-8: 2rem;
+      --space-10: 2.5rem;
+      --space-12: 3rem;
+
+      --font-display: 'Newsreader', Georgia, serif;
+      --font-body: 'Bricolage Grotesque', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+
+      --leading-tight: 1.1;
+      --leading-snug: 1.25;
+      --leading-normal: 1.5;
+
+      --rule-w: 1px;
+      --rule-w-bold: 2px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; }
+    body {
+      font-family: var(--font-body);
+      font-optical-sizing: auto;
+      font-weight: 400;
+      line-height: var(--leading-normal);
+      color: var(--color-ink);
+      background: var(--color-paper);
+      background-image:
+        radial-gradient(circle at 18% 12%, rgba(123, 63, 0, 0.04) 0, transparent 40%),
+        radial-gradient(circle at 82% 88%, rgba(27, 94, 32, 0.05) 0, transparent 45%);
+      background-attachment: fixed;
+      min-height: 100vh;
+      padding: var(--space-6);
+    }
+
+    /* ─── page layout ─────────────────────────────────────────────────── */
+    .page {
+      display: grid;
+      grid-template-columns: 280px 1fr;
+      gap: var(--space-6);
+      max-width: 900px;
+      margin: 0 auto;
+      align-items: start;
+    }
+
+    @media (max-width: 640px) {
+      .page { grid-template-columns: 1fr; }
+    }
+
+    /* ─── main content placeholder ─────────────────────────────────────── */
+    .main-content {
+      background: var(--color-paper);
+      border: var(--rule-w-bold) solid var(--color-rule);
+      padding: var(--space-8);
+      min-height: 600px;
+    }
+
+    .main-content__title {
+      font-family: var(--font-display);
+      font-style: italic;
+      font-weight: 500;
+      font-size: 1.75rem;
+      margin-bottom: var(--space-4);
+    }
+
+    .main-content__body {
+      font-family: var(--font-body);
+      color: var(--color-ink-soft);
+      font-size: 0.9rem;
+    }
+
+    /* ─── sidebar ──────────────────────────────────────────────────────── */
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+      border: var(--rule-w-bold) solid var(--color-rule);
+      background: var(--color-paper);
+    }
+
+    /* ─── sidebar header ─────────────────────────────────────────────── */
+    .sidebar__header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: var(--space-4) var(--space-4);
+      border-bottom: var(--rule-w) solid var(--color-rule);
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 120ms ease;
+    }
+
+    .sidebar__header:hover {
+      background: var(--color-paper-2);
+    }
+
+    .sidebar__header:focus-visible {
+      outline: 2px solid var(--color-accent);
+      outline-offset: -2px;
+    }
+
+    .sidebar__heading {
+      font-family: var(--font-display);
+      font-style: italic;
+      font-weight: 500;
+      font-size: 1rem;
+      line-height: var(--leading-tight);
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    .sidebar__heading svg {
+      width: 16px;
+      height: 16px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+      flex-shrink: 0;
+      transition: transform 200ms ease;
+    }
+
+    .sidebar__count {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--color-ink-mute);
+      background: var(--color-paper-3);
+      padding: 1px 6px;
+      border: var(--rule-w) solid var(--color-rule);
+    }
+
+    .sidebar__toggle {
+      background: none;
+      border: none;
+      width: 28px;
+      height: 28px;
+      display: grid;
+      place-items: center;
+      color: var(--color-ink);
+      transition: background-color 120ms ease;
+    }
+
+    .sidebar__toggle:hover {
+      background: var(--color-paper-3);
+    }
+
+    .sidebar__toggle svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+      transition: transform 200ms ease;
+    }
+
+    /* ─── collapsed state ─────────────────────────────────────────────── */
+    .sidebar.is-collapsed .sidebar__body {
+      display: none;
+    }
+
+    .sidebar.is-collapsed .sidebar__toggle svg {
+      transform: rotate(-90deg);
+    }
+
+    .sidebar.is-collapsed .sidebar__header {
+      border-bottom: none;
+    }
+
+    /* ─── sidebar body ───────────────────────────────────────────────── */
+    .sidebar__body {
+      overflow-y: auto;
+      max-height: 520px;
+    }
+
+    /* ─── history list ─────────────────────────────────────────────────── */
+    .history {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+
+    .history__item {
+      display: grid;
+      grid-template-columns: 48px 1fr;
+      gap: var(--space-3);
+      padding: var(--space-3) var(--space-4);
+      border-bottom: var(--rule-w) solid var(--color-paper-3);
+      cursor: pointer;
+      transition: background-color 120ms ease;
+      position: relative;
+    }
+
+    .history__item:last-child {
+      border-bottom: none;
+    }
+
+    .history__item:hover {
+      background: var(--color-paper-2);
+    }
+
+    .history__item:active {
+      background: var(--color-paper-3);
+    }
+
+    .history__item:focus-visible {
+      outline: 2px solid var(--color-accent);
+      outline-offset: -2px;
+    }
+
+    /* ─── thumbnail ──────────────────────────────────────────────────── */
+    .history__thumb {
+      width: 48px;
+      height: 48px;
+      object-fit: contain;
+      border: var(--rule-w) solid var(--color-paper-3);
+      background: var(--color-paper-2);
+      flex-shrink: 0;
+    }
+
+    .history__thumb-placeholder {
+      width: 48px;
+      height: 48px;
+      border: var(--rule-w) solid var(--color-paper-3);
+      background: var(--color-paper-2);
+      display: grid;
+      place-items: center;
+      flex-shrink: 0;
+    }
+
+    .history__thumb-placeholder svg {
+      width: 22px;
+      height: 22px;
+      stroke: var(--color-ink-mute);
+      stroke-width: 1.5;
+      fill: none;
+    }
+
+    /* ─── info ─────────────────────────────────────────────────────────── */
+    .history__info {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+      min-width: 0;
+    }
+
+    .history__name {
+      font-family: var(--font-body);
+      font-size: 0.8rem;
+      font-weight: 500;
+      line-height: var(--leading-snug);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--color-ink);
+    }
+
+    .history__badges {
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+
+    /* ─── score badges ────────────────────────────────────────────────── */
+    .badge {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      padding: 2px 5px;
+      border: var(--rule-w) solid currentColor;
+      line-height: 1;
+      text-transform: uppercase;
+    }
+
+    .badge--nutri {
+      color: var(--color-nutri-a);
+      background: rgba(31, 138, 63, 0.08);
+    }
+    .badge--nutri.b { color: var(--color-nutri-b); background: rgba(122, 181, 46, 0.1); }
+    .badge--nutri.c { color: var(--color-nutri-c); background: rgba(232, 168, 35, 0.1); }
+    .badge--nutri.d { color: var(--color-nutri-d); background: rgba(226, 114, 16, 0.1); }
+    .badge--nutri.e { color: var(--color-nutri-e); background: rgba(203, 52, 43, 0.1); }
+    .badge--nutri.unknown { color: var(--color-grade-na); background: rgba(140, 135, 121, 0.1); }
+
+    .badge--eco {
+      color: var(--color-eco-a);
+      background: rgba(27, 94, 32, 0.08);
+    }
+    .badge--eco.b { color: var(--color-eco-b); background: rgba(77, 124, 47, 0.1); }
+    .badge--eco.c { color: var(--color-eco-c); background: rgba(140, 123, 43, 0.1); }
+    .badge--eco.d { color: var(--color-eco-d); background: rgba(168, 92, 27, 0.1); }
+    .badge--eco.e { color: var(--color-eco-e); background: rgba(93, 58, 26, 0.1); }
+    .badge--eco.unknown { color: var(--color-grade-na); background: rgba(140, 135, 121, 0.1); }
+
+    .badge-label {
+      font-family: var(--font-mono);
+      font-size: 0.6rem;
+      color: var(--color-ink-mute);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    /* ─── sidebar footer ─────────────────────────────────────────────── */
+    .sidebar__footer {
+      padding: var(--space-3) var(--space-4);
+      border-top: var(--rule-w-bold) solid var(--color-rule);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-3);
+    }
+
+    .sidebar__footer-label {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      color: var(--color-ink-mute);
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .btn-clear {
+      font-family: var(--font-body);
+      font-size: 0.75rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      padding: var(--space-2) var(--space-3);
+      background: transparent;
+      border: var(--rule-w) solid var(--color-ink-mute);
+      color: var(--color-ink-mute);
+      cursor: pointer;
+      transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+    }
+
+    .btn-clear:hover {
+      background: var(--color-paper-3);
+      border-color: var(--color-ink);
+      color: var(--color-ink);
+    }
+
+    .btn-clear:active {
+      background: var(--color-ink);
+      color: var(--color-paper);
+    }
+
+    /* ─── empty state ─────────────────────────────────────────────────── */
+    .empty-state {
+      padding: var(--space-8) var(--space-6);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-4);
+      text-align: center;
+    }
+
+    .empty-state__icon {
+      width: 48px;
+      height: 48px;
+      stroke: var(--color-ink-mute);
+      stroke-width: 1.5;
+      fill: none;
+      opacity: 0.5;
+    }
+
+    .empty-state__title {
+      font-family: var(--font-display);
+      font-style: italic;
+      font-weight: 500;
+      font-size: 1.1rem;
+      color: var(--color-ink);
+    }
+
+    .empty-state__body {
+      font-family: var(--font-body);
+      font-size: 0.8rem;
+      color: var(--color-ink-mute);
+      line-height: var(--leading-normal);
+      max-width: 200px;
+    }
+
+    /* ─── tweaks panel ────────────────────────────────────────────────── */
+    .tweaks {
+      position: fixed;
+      bottom: var(--space-5);
+      right: var(--space-5);
+      background: var(--color-paper);
+      border: var(--rule-w-bold) solid var(--color-rule);
+      padding: var(--space-4);
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-3);
+      z-index: 200;
+      min-width: 220px;
+    }
+
+    .tweaks__title {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--color-ink-mute);
+    }
+
+    .tweaks__group {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+    }
+
+    .tweaks__label {
+      font-family: var(--font-mono);
+      font-size: 0.65rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--color-ink-soft);
+      margin-bottom: var(--space-1);
+    }
+
+    .tweaks button {
+      font-family: var(--font-body);
+      font-size: 0.8rem;
+      padding: var(--space-2) var(--space-3);
+      background: var(--color-paper-2);
+      border: var(--rule-w) solid var(--color-rule);
+      cursor: pointer;
+      text-align: left;
+      transition: background-color 120ms ease;
+    }
+
+    .tweaks button:hover { background: var(--color-paper-3); }
+    .tweaks button.is-active {
+      background: var(--color-ink);
+      color: var(--color-paper);
+    }
+
+    /* ─── state helpers ───────────────────────────────────────────────── */
+    .hidden { display: none !important; }
+
+    /* ─── hover highlight overlay (prototype only) ────────────────────── */
+    .history__item.is-hovered::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border: 2px solid var(--color-accent);
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+
+<div class="page">
+
+  <!-- ── Sidebar ─────────────────────────────────────────────────────── -->
+  <aside class="sidebar" id="sidebar" role="complementary" aria-label="Recently viewed">
+
+    <header
+      class="sidebar__header"
+      id="sidebar-header"
+      role="button"
+      aria-expanded="true"
+      aria-controls="sidebar-body"
+      tabindex="0"
+    >
+      <h2 class="sidebar__heading">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6"/><polyline points="8,4 8,8 11,10"/></svg>
+        Recently viewed
+        <span class="sidebar__count" id="sidebar-count">10</span>
+      </h2>
+      <button class="sidebar__toggle" id="sidebar-toggle" aria-label="Toggle recently viewed">
+        <svg viewBox="0 0 16 16" aria-hidden="true"><polyline points="4,6 8,10 12,6"/></svg>
+      </button>
+    </header>
+
+    <div class="sidebar__body" id="sidebar-body">
+      <!-- populated by JS -->
+    </div>
+
+    <footer class="sidebar__footer" id="sidebar-footer">
+      <span class="sidebar__footer-label">History</span>
+      <button class="btn-clear" id="btn-clear" aria-label="Clear viewing history">Clear history</button>
+    </footer>
+
+  </aside>
+
+  <!-- ── Main content (placeholder) ─────────────────────────────────── -->
+  <main class="main-content" role="main">
+    <h1 class="main-content__title">Product detail</h1>
+    <p class="main-content__body">
+      Select a product from the Recently Viewed sidebar to preview it here.
+      The sidebar collapses to save space. It holds up to 10 of your most recently viewed products.
+    </p>
+  </main>
+
+</div>
+
+<!-- ── Tweaks Panel ──────────────────────────────────────────────────── -->
+<nav class="tweaks" aria-label="Prototype state controls">
+  <span class="tweaks__title">F-25 — States</span>
+
+  <div class="tweaks__group">
+    <span class="tweaks__label">Section</span>
+    <button id="tweak-expanded" class="is-active">Expanded (10 items)</button>
+    <button id="tweak-collapsed">Collapsed</button>
+    <button id="tweak-empty">Empty state</button>
+  </div>
+
+  <div class="tweaks__group">
+    <span class="tweaks__label">Item</span>
+    <button id="tweak-hover">Item — hover state</button>
+  </div>
+</nav>
+
+<script>
+  /* ── Sample product data ─────────────────────────────────────────── */
+  const products = [
+    { name: 'Actimel Bifidus Danone',       nutri: 'b', eco: 'c', img: 'https://static.openfoodfacts.org/images/products/326/010/700/4361/front_fr.6.400.jpg' },
+    { name: 'Bio Organic Oat Milk',          nutri: 'a', eco: 'a', img: 'https://static.openfoodfacts.org/images/products/800/150/000/1008/front_en.6.400.jpg', missing: true },
+    { name: 'Haribo Happy Cola',             nutri: 'e', eco: 'd', img: 'https://static.openfoodfacts.org/images/products/500/016/102/6228/front_en.6.400.jpg' },
+    { name: 'Whole Wheat Crackers',          nutri: 'a', eco: 'b', img: null },
+    { name: 'Organic Honey Granola',         nutri: 'c', eco: 'a', img: 'https://static.openfoodfacts.org/images/products/762/221/089/5123/front_en.6.400.jpg' },
+    { name: 'Greek Fage Total Yogurt',       nutri: 'b', eco: 'b', img: 'https://static.openfoodfacts.org/images/products/618/420/450/5012/front_en.6.400.jpg' },
+    { name: 'Costa Rican Single-Origin Coffee', nutri: 'unknown', eco: 'a', img: 'https://static.openfoodfacts.org/images/products/800/050/500/0161/front_en.6.400.jpg' },
+    { name: 'Sourdough Country Loaf',        nutri: 'a', eco: 'c', img: null },
+    { name: 'Biofresh Lemon Juice',          nutri: 'b', eco: 'b', img: 'https://static.openfoodfacts.org/images/products/800/021/400/1013/front_en.6.400.jpg', brokenImg: true },
+    { name: 'Aged Comté Cheese 12 months',  nutri: 'd', eco: 'e', img: 'https://static.openfoodfacts.org/images/products/318/347/000/1542/front_en.6.400.jpg' },
+  ];
+
+  /* ── DOM refs ──────────────────────────────────────────────────────── */
+  const sidebar          = document.getElementById('sidebar');
+  const sidebarHeader    = document.getElementById('sidebar-header');
+  const sidebarToggle    = document.getElementById('sidebar-toggle');
+  const sidebarBody      = document.getElementById('sidebar-body');
+  const sidebarCount     = document.getElementById('sidebar-count');
+  const sidebarFooter    = document.getElementById('sidebar-footer');
+  const btnClear         = document.getElementById('btn-clear');
+
+  /* ── Render helpers ────────────────────────────────────────────────── */
+  function badge(type, grade) {
+    const cls = grade === 'unknown' || !grade ? 'unknown' : grade;
+    const label = grade === 'unknown' || !grade ? '—' : grade.toUpperCase();
+    return `<span class="badge badge--${type} ${cls}" title="${type === 'nutri' ? 'Nutri-Score' : 'Eco-Score'}: ${label}">${label}</span>`;
+  }
+
+  function thumb(img, name, broken) {
+    if (!img || broken) {
+      return `<div class="history__thumb-placeholder">
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <circle cx="8.5" cy="8.5" r="1.5"/>
+          <polyline points="21,15 16,10 5,21"/>
+        </svg>
+      </div>`;
+    }
+    return `<img class="history__thumb" src="${img}" alt="${name}" loading="lazy" onerror="this.outerHTML=this.parentElement.querySelector('.history__thumb-placeholder')?.outerHTML||''">`;
+  }
+
+  function renderHistory(items) {
+    if (!items.length) {
+      sidebarBody.innerHTML = `
+        <div class="empty-state" role="status">
+          <svg class="empty-state__icon" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <p class="empty-state__title">No history yet</p>
+          <p class="empty-state__body">Products you view will appear here for quick reference.</p>
+        </div>`;
+      sidebarCount.textContent = '0';
+      return;
+    }
+
+    sidebarBody.innerHTML = `<ul class="history" role="list">${items.map((p, i) => `
+      <li class="history__item" role="button" tabindex="0"
+          data-index="${i}"
+          aria-label="${p.name} — Nutri-Score ${p.nutri}, Eco-Score ${p.eco}">
+        ${thumb(p.img, p.name, p.brokenImg)}
+        <div class="history__info">
+          <span class="history__name">${p.name}</span>
+          <div class="history__badges">
+            <span class="badge-label">N</span>${badge('nutri', p.nutri)}
+            <span class="badge-label">E</span>${badge('eco', p.eco)}
+          </div>
+        </div>
+      </li>`).join('')}</ul>`;
+    sidebarCount.textContent = items.length;
+  }
+
+  /* ── Event: toggle collapse ────────────────────────────────────────── */
+  function setCollapsed(collapsed) {
+    sidebar.classList.toggle('is-collapsed', collapsed);
+    sidebarHeader.setAttribute('aria-expanded', String(!collapsed));
+  }
+
+  sidebarHeader.addEventListener('click', () => setCollapsed(!sidebar.classList.contains('is-collapsed')));
+  sidebarHeader.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      setCollapsed(!sidebar.classList.contains('is-collapsed'));
+    }
+  });
+  sidebarToggle.addEventListener('click', e => { e.stopPropagation(); setCollapsed(!sidebar.classList.contains('is-collapsed')); });
+
+  /* ── Event: history item click ─────────────────────────────────────── */
+  sidebarBody.addEventListener('click', e => {
+    const item = e.target.closest('.history__item');
+    if (!item) return;
+    console.log('Product selected:', products[parseInt(item.dataset.index)]?.name || item.querySelector('.history__name').textContent);
+    document.querySelectorAll('.history__item').forEach(el => el.classList.remove('is-hovered'));
+    item.classList.add('is-hovered');
+    setTimeout(() => item.classList.remove('is-hovered'), 1200);
+  });
+
+  /* ── Event: clear history ─────────────────────────────────────────── */
+  btnClear.addEventListener('click', () => {
+    renderHistory([]);
+    console.log('History cleared');
+  });
+
+  /* ── Tweaks ─────────────────────────────────────────────────────────── */
+  let currentItems = [...products];
+
+  function resetTweaks() {
+    document.querySelectorAll('.tweaks button').forEach(b => b.classList.remove('is-active'));
+  }
+
+  document.getElementById('tweak-expanded').addEventListener('click', () => {
+    resetTweaks();
+    document.getElementById('tweak-expanded').classList.add('is-active');
+    currentItems = [...products];
+    renderHistory(currentItems);
+    sidebarFooter.classList.remove('hidden');
+    setCollapsed(false);
+  });
+
+  document.getElementById('tweak-collapsed').addEventListener('click', () => {
+    resetTweaks();
+    document.getElementById('tweak-collapsed').classList.add('is-active');
+    currentItems = [...products];
+    renderHistory(currentItems);
+    sidebarFooter.classList.remove('hidden');
+    setCollapsed(true);
+  });
+
+  document.getElementById('tweak-empty').addEventListener('click', () => {
+    resetTweaks();
+    document.getElementById('tweak-empty').classList.add('is-active');
+    currentItems = [];
+    renderHistory(currentItems);
+    sidebarFooter.classList.add('hidden');
+    setCollapsed(false);
+  });
+
+  document.getElementById('tweak-hover').addEventListener('click', () => {
+    resetTweaks();
+    document.getElementById('tweak-hover').classList.add('is-active');
+    renderHistory(currentItems.length ? currentItems : products);
+    sidebarFooter.classList.remove('hidden');
+    setCollapsed(false);
+    const first = sidebarBody.querySelector('.history__item');
+    if (first) {
+      first.classList.add('is-hovered');
+      setTimeout(() => first.classList.remove('is-hovered'), 2000);
+    }
+  });
+
+  /* ── Init ───────────────────────────────────────────────────────────── */
+  renderHistory(products);
+</script>
+
+</body>
+</html>
