@@ -14,6 +14,7 @@ import {
   formatAlternativeDelta,
 } from './xai.js';
 import { init as initOnboarding } from './views/onboarding.js';
+import { trackView, renderRecentlyViewed } from './views/history.js';
 
 const STORAGE_KEY = 'foodlens.state';
 const DEFAULT_STATE = {
@@ -71,6 +72,7 @@ const els = {
   focusedView: document.querySelector('#focused'),
   emptyState: document.querySelector('#empty-state'),
   loading: document.querySelector('#loading'),
+  recentlyViewed: document.querySelector('#recently-viewed'),
 };
 
 // ─── state persistence ──────────────────────────────────────────────────
@@ -344,6 +346,7 @@ function renderAlternativeCard(product, alternative) {
 
 function focusProduct(product) {
   focusedProduct = product;
+  trackView(product.code, product);
   rerenderFocused();
 }
 
@@ -455,6 +458,7 @@ async function runSearch(query) {
     if (/^\d{8,13}$/.test(query)) {
       const single = await getProductByBarcode(query);
       results = single ? [single] : [];
+      if (single) trackView(single.code, single);
     } else if (query) {
       results = await searchProducts(query);
     } else {
@@ -521,6 +525,7 @@ async function bootstrap() {
   applyWeightToUI();
   wireEvents();
   initOnboarding();
+  renderRecentlyViewed(els.recentlyViewed, (code) => runSearch(code));
   // Show all sample products on first load so the UI is never empty.
   await runSearch('');
 }
