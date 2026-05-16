@@ -15,6 +15,7 @@ import {
 } from './xai.js';
 import { init as initOnboarding } from './views/onboarding.js';
 import { trackView, renderRecentlyViewed, startBootstrap, endBootstrap, RECENTLY_VIEWED_KEY } from './views/history.js';
+import { loadSettings as _loadSettings, show as showSettings } from './views/settings.js';
 
 const STORAGE_KEY = 'foodlens.state';
 const DEFAULT_STATE = {
@@ -73,6 +74,7 @@ const els = {
   emptyState: document.querySelector('#empty-state'),
   loading: document.querySelector('#loading'),
   recentlyViewed: document.querySelector('#recently-viewed'),
+  settingsBtn: document.querySelector('[data-action="settings"]'),
 };
 
 // ─── state persistence ──────────────────────────────────────────────────
@@ -523,11 +525,14 @@ function wireEvents() {
       setWeight(value, preset);
     });
   }
+
+  els.settingsBtn?.addEventListener('click', showSettings);
 }
 
 // ─── bootstrap ─────────────────────────────────────────────────────────
 
 async function bootstrap() {
+  _loadSettings();
   applyWeightToUI();
   wireEvents();
   initOnboarding();

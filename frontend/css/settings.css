@@ -1,0 +1,366 @@
+/* FoodLens F-27 — Settings Panel Styles
+   Uses design tokens from style.css via CSS custom properties.
+   Mobile-first. Panel slides in from the right side.
+*/
+
+/* ─── backdrop / overlay ─────────────────────────────────────────────────── */
+#settings-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 26, 24, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  z-index: 90;
+  pointer-events: none;
+}
+
+#settings-backdrop.is-open {
+  pointer-events: auto;
+}
+
+/* ─── panel shell ─────────────────────────────────────────────────────────── */
+#settings-panel {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 320px;
+  background: var(--color-paper);
+  border-left: var(--rule-w-bold) solid var(--color-rule);
+  z-index: 91;
+  overflow-y: auto;
+  transform: translateX(100%);
+  transition: transform 250ms ease;
+}
+
+#settings-panel.is-open {
+  transform: translateX(0);
+}
+
+@media (min-width: 480px) {
+  #settings-panel {
+    width: 380px;
+  }
+}
+
+/* ─── header ─────────────────────────────────────────────────────────────── */
+.settings__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-6);
+  border-bottom: var(--rule-w) solid var(--color-rule);
+}
+
+.settings__title {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(1.25rem, 4vw, 1.6rem);
+  line-height: var(--leading-tight);
+}
+
+.settings__close-btn {
+  background: none;
+  border: var(--rule-w) solid var(--color-rule);
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  color: var(--color-ink);
+  transition: background-color 120ms ease;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.settings__close-btn:hover,
+.settings__close-btn:focus-visible {
+  background: var(--color-paper-3);
+  outline: 0;
+}
+
+.settings__close-btn:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.settings__close-btn svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+}
+
+/* ─── body ─────────────────────────────────────────────────────────────── */
+.settings__body {
+  padding: var(--space-6);
+  display: grid;
+  gap: var(--space-7);
+}
+
+/* ─── sections ─────────────────────────────────────────────────────────── */
+.settings__section {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.settings__section-title {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink-soft);
+}
+
+/* ─── radio group ─────────────────────────────────────────────────────────── */
+.settings__radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.settings__radio-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  border: var(--rule-w) solid transparent;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.settings__radio-item:hover {
+  background: var(--color-paper-2);
+  border-color: var(--color-rule);
+}
+
+.settings__radio-item:focus-within {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.settings__radio-item input[type="radio"] {
+  accent-color: var(--color-accent);
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.settings__radio-item__label {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--color-ink);
+}
+
+/* ─── select ─────────────────────────────────────────────────────────────── */
+.settings__select {
+  width: 100%;
+  border: var(--rule-w-bold) solid var(--color-rule);
+  background: var(--color-paper);
+  padding: var(--space-3) var(--space-4);
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--color-ink);
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='none' stroke='%231a1a18' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M3 4.5l3 3 3-3'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right var(--space-4) center;
+  padding-right: var(--space-8);
+  cursor: pointer;
+  transition: border-color 120ms ease;
+}
+
+.settings__select:focus {
+  outline: 0;
+  border-color: var(--color-accent);
+}
+
+.settings__select:hover {
+  border-color: var(--color-ink-mute);
+}
+
+/* ─── slider ─────────────────────────────────────────────────────────────── */
+.settings__slider-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.settings__range {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.settings__range::-webkit-slider-runnable-track {
+  height: 4px;
+  background: var(--color-paper-3);
+  border: var(--rule-w) solid var(--color-rule);
+  border-radius: 0;
+}
+
+.settings__range::-moz-range-track {
+  height: 4px;
+  background: var(--color-paper-3);
+  border: var(--rule-w) solid var(--color-rule);
+  border-radius: 0;
+}
+
+.settings__range::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  background: var(--color-accent);
+  border: var(--rule-w-bold) solid var(--color-ink);
+  margin-top: -8px;
+  cursor: pointer;
+}
+
+.settings__range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  background: var(--color-accent);
+  border: var(--rule-w-bold) solid var(--color-ink);
+  border-radius: 0;
+  cursor: pointer;
+}
+
+.settings__range:focus {
+  outline: 0;
+}
+
+.settings__range:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.settings__slider-value {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--color-ink);
+  text-align: right;
+}
+
+/* ─── danger button ───────────────────────────────────────────────────────── */
+.settings__danger-btn {
+  width: 100%;
+  padding: var(--space-4);
+  background: transparent;
+  border: var(--rule-w-bold) solid var(--color-accent2);
+  color: var(--color-accent2);
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.settings__danger-btn:hover,
+.settings__danger-btn:focus-visible {
+  background: var(--color-accent2);
+  color: var(--color-paper);
+  outline: 0;
+}
+
+.settings__danger-btn:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* ─── confirm dialog ─────────────────────────────────────────────────────── */
+.settings__confirm-dialog {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--color-paper);
+  border: var(--rule-w-bold) solid var(--color-rule);
+  padding: var(--space-7);
+  width: calc(100% - var(--space-10));
+  max-width: 380px;
+  z-index: 92;
+  box-shadow: 0 8px 32px rgba(26, 26, 24, 0.25);
+}
+
+.settings__confirm-dialog.is-open {
+  display: block;
+}
+
+.settings__confirm-title {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1.25rem;
+  line-height: var(--leading-tight);
+  margin-bottom: var(--space-4);
+}
+
+.settings__confirm-body {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--color-ink-soft);
+  line-height: var(--leading-normal);
+  margin-bottom: var(--space-6);
+}
+
+.settings__confirm-actions {
+  display: flex;
+  gap: var(--space-3);
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.settings__confirm-cancel {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: var(--space-3) var(--space-5);
+  background: transparent;
+  border: var(--rule-w-bold) solid var(--color-rule);
+  color: var(--color-ink);
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.settings__confirm-cancel:hover,
+.settings__confirm-cancel:focus-visible {
+  background: var(--color-paper-3);
+  outline: 0;
+}
+
+.settings__confirm-cancel:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.settings__confirm-yes {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: var(--space-3) var(--space-5);
+  background: var(--color-accent2);
+  border: var(--rule-w-bold) solid var(--color-accent2);
+  color: var(--color-paper);
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.settings__confirm-yes:hover,
+.settings__confirm-yes:focus-visible {
+  background: var(--color-ink);
+  border-color: var(--color-ink);
+  outline: 0;
+}
+
+.settings__confirm-yes:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}

@@ -24,6 +24,7 @@
   <link rel="stylesheet" href="./css/style.css" />
   <link rel="stylesheet" href="./css/onboarding.css" />
   <link rel="stylesheet" href="./css/history.css" />
+  <link rel="stylesheet" href="./css/settings.css" />
 </head>
 <body>
   <div class="shell">
@@ -42,6 +43,12 @@
           <span class="small-caps">UIB · HCI 11755 · WA4</span>
           <span class="small-caps">Issue Nº 001 · 2026</span>
           <span class="small-caps">Open Food Facts</span>
+          <button type="button" class="settings-trigger" data-action="settings" aria-label="Open settings">
+            <svg viewBox="0 0 16 16" aria-hidden="true" width="16" height="16">
+              <circle cx="8" cy="8" r="2.5"/>
+              <path d="M8 1v2M8 13v2M1 8h2M13 8h2M2.93 2.93l1.41 1.41M11.66 11.66l1.41 1.41M2.93 13.07l1.41-1.41M11.66 4.34l1.41-1.41"/>
+            </svg>
+          </button>
         </div>
       </div>
     </header>
@@ -164,5 +171,9 @@
   </style>
 
   <script type="module" src="./js/app.js"></script>
+
+  <!-- Settings panel container (content built by settings.js) -->
+  <div id="settings-backdrop" aria-hidden="true"></div>
+  <div id="settings-panel" role="dialog" aria-modal="true" aria-label="Settings" hidden></div>
 </body>
 </html>
