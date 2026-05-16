@@ -1,8 +1,36 @@
 // FoodLens F-25 — Recently Viewed History
 // Vanilla JS, no build step. ES modules.
 
-const RECENTLY_VIEWED_KEY = 'foodlens.recentlyViewed';
+export const RECENTLY_VIEWED_KEY = 'foodlens.recentlyViewed';
 const MAX_ITEMS = 10;
+
+// ─── bootstrap guard ─────────────────────────────────────────────────────────
+// Flag set to true during bootstrap so trackView() can detect we're still in
+// the initial sample-product load and skip recording those products.
+let _bootstrapping = false;
+
+/**
+ * Return true if we're still bootstrapping (initial sample products loading).
+ * trackView() calls this to decide whether to skip the call.
+ */
+export function isBootstrapping() {
+  return _bootstrapping;
+}
+
+/**
+ * Mark the start of bootstrap.  trackView() will skip all calls while this
+ * flag is true.  Call endBootstrap() once bootstrap finishes.
+ */
+export function startBootstrap() {
+  _bootstrapping = true;
+}
+
+/**
+ * Mark the end of bootstrap.  trackView() will resume normal operation.
+ */
+export function endBootstrap() {
+  _bootstrapping = false;
+}
 
 // ─── storage ─────────────────────────────────────────────────────────────────
 
@@ -41,10 +69,10 @@ function saveRecentlyViewed(items) {
  * @param {string} code        — product barcode
  * @param {object} productData — { code, name, image, nutriScore, ecoScore }
  */
+// Guard: skip tracking during bootstrap's sample-product load.
 export function trackView(code, productData) {
   if (!code || !productData) return;
-
-  const items = loadRecentlyViewed();
+  if (_bootstrapping) return;
 
   // Remove if already present (will be re-added at top)
   const existing = items.findIndex((i) => i.code === code);
@@ -70,6 +98,7 @@ export function trackView(code, productData) {
  * Clear all recently viewed history.
  */
 export function clearHistory() {
+  console.log('[F-25] clearHistory called');
   try {
     localStorage.removeItem(RECENTLY_VIEWED_KEY);
   } catch {

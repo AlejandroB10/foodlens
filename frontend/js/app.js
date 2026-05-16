@@ -14,7 +14,7 @@ import {
   formatAlternativeDelta,
 } from './xai.js';
 import { init as initOnboarding } from './views/onboarding.js';
-import { trackView, renderRecentlyViewed, clearHistory } from './views/history.js';
+import { trackView, renderRecentlyViewed, startBootstrap, endBootstrap, RECENTLY_VIEWED_KEY } from './views/history.js';
 
 const STORAGE_KEY = 'foodlens.state';
 const DEFAULT_STATE = {
@@ -531,18 +531,19 @@ async function bootstrap() {
   applyWeightToUI();
   wireEvents();
   initOnboarding();
-  renderRecentlyViewed(els.recentlyViewed, (code) => runSearch(code));
-  // Show all sample products on first load so the UI is never empty.
-  // runSearch('') auto-focuses top-ranked product — we DON'T track sample
-  // products as "recently viewed" since they're bootstrap samples, not a
-  // real user navigation.  Clear any items tracked by the auto-focus.
+
+  // Suppress all trackView calls during bootstrap so no sample product
+  // (loaded via runSearch('')) gets recorded as "recently viewed".
+  startBootstrap();
   await runSearch('');
-  clearHistory();
-  // Re-render (now with clean localStorage) and focus without tracking.
+
   renderRecentlyViewed(els.recentlyViewed, (code) => runSearch(code));
   if (lastResults.length > 0) {
     focusProduct(lastResults[0], { skipTrack: true });
   }
+
+  // NOW end bootstrap so real user navigation (product clicks) tracks.
+  endBootstrap();
 }
 
 if (document.readyState === 'loading') {
