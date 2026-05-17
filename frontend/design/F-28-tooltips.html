@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>F-28 Tooltip Design Prototype</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --color-paper: #F7F4EE;
+      --color-ink: #1A1814;
+      --color-ink-soft: #6B6560;
+      --color-ink-mute: #A09C96;
+      --color-rule: #D9D4CA;
+      --color-nutri-a: #159C75;
+      --color-nutri-b: #7BA71A;
+      --color-nutri-c: #E7C545;
+      --color-nutri-d: #E08C30;
+      --color-nutri-e: #D03C3C;
+      --color-eco-a: #159C75;
+      --color-eco-b: #6BA41A;
+      --color-eco-c: #A3A610;
+      --color-eco-d: #D08C30;
+      --color-eco-e: #D03C3C;
+      --color-grade-na: #A09C96;
+      --space-1: 0.25rem;
+      --space-2: 0.5rem;
+      --space-3: 0.75rem;
+      --space-4: 1rem;
+      --space-5: 1.5rem;
+      --text-xs: 0.75rem;
+      --text-sm: 0.875rem;
+      --font-display: 'Georgia', serif;
+      --font-body: system-ui, sans-serif;
+    }
+
+    body {
+      font-family: var(--font-body);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-5);
+      padding: var(--space-5);
+    }
+
+    h1 { font-family: var(--font-display); font-size: 1.5rem; margin-bottom: var(--space-3); }
+    h2 { font-size: var(--text-sm); font-weight: 600; margin-bottom: var(--space-2); color: var(--color-ink-soft); text-transform: uppercase; letter-spacing: 0.1em; }
+    p { margin-bottom: var(--space-4); }
+
+    /* ─── badge ─────────────────────────────── */
+
+    .card__scores {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-3);
+      border-top: 2px solid var(--color-rule);
+      border-bottom: 2px solid var(--color-rule);
+      padding: var(--space-3) 0;
+      width: 220px;
+    }
+
+    .badge {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-3);
+      background: color-mix(in srgb, var(--badge-color) 8%, var(--color-paper) 92%);
+      border-left: 4px solid var(--badge-color);
+      min-height: 4.5rem;
+    }
+
+    .badge--nutri { --badge-color: var(--color-nutri-c); }
+    .badge--eco  { --badge-color: var(--color-eco-b); }
+
+    .badge__axis {
+      font-family: var(--font-body);
+      font-size: 0.7rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      color: var(--color-ink-soft);
+    }
+
+    .badge__letter {
+      font-family: var(--font-display);
+      font-style: italic;
+      font-weight: 600;
+      font-size: 2.5rem;
+      line-height: 1;
+      color: var(--badge-color);
+    }
+
+    .badge__caption {
+      font-family: var(--font-body);
+      font-size: 0.72rem;
+      color: var(--color-ink-soft);
+    }
+
+    /* ─── tooltip (inline prototype) ─────────── */
+
+    .tooltip-host {
+      position: relative;
+      display: inline-block;
+    }
+
+    [role="tooltip"] {
+      position: absolute;
+      z-index: 999;
+      width: 260px;
+      background: var(--color-paper);
+      border: 2px solid var(--color-ink);
+      border-radius: 4px;
+      padding: var(--space-4);
+      box-shadow: 4px 4px 0 rgba(26,24,20,0.15);
+      /* Arrow */
+      border-radius: 4px;
+    }
+
+    /* Arrow pointing down (default - below trigger) */
+    [role="tooltip"]::before {
+      content: '';
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 8px solid transparent;
+      border-bottom-color: var(--color-ink);
+    }
+    [role="tooltip"]::after {
+      content: '';
+      position: absolute;
+      bottom: 100%;
+      left: 50%;
+      transform: translateX(-50%);
+      border: 6px solid transparent;
+      border-bottom-color: var(--color-paper);
+    }
+
+    /* Arrow pointing up (flip) */
+    [role="tooltip"].flip::before {
+      bottom: auto;
+      top: 100%;
+      border-bottom-color: transparent;
+      border-top-color: var(--color-ink);
+    }
+    [role="tooltip"].flip::after {
+      bottom: auto;
+      top: 100%;
+      border-bottom-color: transparent;
+      border-top-color: var(--color-paper);
+    }
+
+    .tooltip__close {
+      position: absolute;
+      top: var(--space-2);
+      right: var(--space-2);
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-size: 1.25rem;
+      line-height: 1;
+      color: var(--color-ink-soft);
+      padding: var(--space-1);
+    }
+
+    .tooltip__title {
+      font-family: var(--font-display);
+      font-style: italic;
+      font-size: var(--text-sm);
+      font-weight: 600;
+      margin-bottom: var(--space-2);
+      margin-right: var(--space-5);
+      color: var(--color-ink);
+    }
+
+    .tooltip__body {
+      font-family: var(--font-body);
+      font-size: var(--text-xs);
+      line-height: 1.5;
+      color: var(--color-ink-soft);
+      margin-bottom: var(--space-3);
+    }
+
+    .tooltip__link {
+      font-family: var(--font-body);
+      font-size: var(--text-xs);
+      color: var(--color-nutri-b);
+      font-weight: 500;
+    }
+
+    /* ─── states ──────────────────────────── */
+
+    .tooltip-host[data-tooltip] { cursor: help; }
+
+    [role="tooltip"][aria-hidden="true"] { display: none; }
+    [role="tooltip"][aria-hidden="false"] { display: block; }
+
+    /* ─── demo layout ─────────────────────── */
+
+    .demo-row { display: flex; gap: var(--space-5); flex-wrap: wrap; }
+    .demo-col { display: flex; flex-direction: column; gap: var(--space-4); }
+    .demo-note { font-size: var(--text-xs); color: var(--color-ink-mute); margin-top: var(--space-2); }
+
+    .mobile-viewport {
+      border: 2px solid var(--color-rule);
+      padding: var(--space-4);
+      width: 320px;
+    }
+
+    .mobile-viewport .card__scores { width: 100%; }
+  </style>
+</head>
+<body>
+
+  <h1>F-28 Educational Tooltip — Design Prototype</h1>
+
+  <div class="demo-row">
+
+    <!-- Desktop column -->
+    <div class="demo-col">
+      <h2>Desktop (hover / click)</h2>
+
+      <!-- Nutri badge -->
+      <div class="tooltip-host" data-tooltip="nutri">
+        <div class="badge badge--nutri badge--grade-c" style="--badge-color: var(--color-nutri-c)">
+          <span class="badge__axis">Nutri-Score</span>
+          <span class="badge__letter">C</span>
+        </div>
+        <div role="tooltip" aria-hidden="false" id="tip-nutri" aria-labelledby="tip-nutri-title">
+          <button class="tooltip__close" aria-label="Close tooltip">&#215;</button>
+          <h3 class="tooltip__title" id="tip-nutri-title">About Nutri-Score</h3>
+          <p class="tooltip__body">
+            Nutri-Score is a front-of-pack nutrition label devised by Sant&#233; Publique France,
+            based on a modified Atwater index. It grades products A&#8211;E using energy,
+            saturated fat, sodium, sugar, fibre, and protein per 100&#160;g or 100&#160;kcal.
+            The algorithm includes category-specific adjustments (e.g. cheese vs. beverages).
+          </p>
+          <a class="tooltip__link" href="https://www.santepubliquefrance.fr/nos-avis/reponse-a-la-commission-d-enquete-sur-les-conditions-de-mise-sur-le-marche-et-les-conditionnements-des-pesticides-et-leur-utilisation/#articles" target="_blank" rel="noopener noreferrer">
+            Official Nutri-Score documentation &#8599;
+          </a>
+        </div>
+      </div>
+
+      <!-- Eco badge -->
+      <div class="tooltip-host" data-tooltip="eco">
+        <div class="badge badge--eco badge--grade-b" style="--badge-color: var(--color-eco-b)">
+          <span class="badge__axis">Eco</span>
+          <span class="badge__letter">B</span>
+        </div>
+        <div role="tooltip" aria-hidden="true" id="tip-eco" aria-labelledby="tip-eco-title">
+          <button class="tooltip__close" aria-label="Close tooltip">&#215;</button>
+          <h3 class="tooltip__title" id="tip-eco-title">About Eco-Score</h3>
+          <p class="tooltip__body">
+            Eco-Score is an environmental label designed by ADEME and adapted from the
+            Agribalyse LCA database. It grades products A&#8211;E across five impact categories:
+            climate change, biodiversity, water stress, ozone depletion, and acidification.
+            The score is computed from per-category base scores and production-transport adjustments.
+          </p>
+          <a class="tooltip__link" href="https://www.ecoscore.fr" target="_blank" rel="noopener noreferrer">
+            Official Eco-Score page &#8599;
+          </a>
+        </div>
+      </div>
+
+      <p class="demo-note">Hover badge to see tooltip. Click outside to dismiss.</p>
+    </div>
+
+    <!-- Mobile column -->
+    <div class="demo-col">
+      <h2>Mobile (tap toggle)</h2>
+      <div class="mobile-viewport">
+        <div class="card__scores">
+          <div class="tooltip-host" data-tooltip="nutri">
+            <div class="badge badge--nutri badge--grade-a" style="--badge-color: var(--color-nutri-a)">
+              <span class="badge__axis">Nutri-Score</span>
+              <span class="badge__letter">A</span>
+            </div>
+            <div role="tooltip" aria-hidden="true" id="tip-nutri-m" aria-labelledby="tip-nutri-m-title">
+              <button class="tooltip__close" aria-label="Close tooltip">&#215;</button>
+              <h3 class="tooltip__title" id="tip-nutri-m-title">About Nutri-Score</h3>
+              <p class="tooltip__body">
+                Nutri-Score is a front-of-pack nutrition label devised by Sant&#233; Publique France,
+                based on a modified Atwater index. It grades products A&#8211;E using energy,
+                saturated fat, sodium, sugar, fibre, and protein per 100&#160;g or 100&#160;kcal.
+                The algorithm includes category-specific adjustments (e.g. cheese vs. beverages).
+              </p>
+              <a class="tooltip__link" href="https://www.santepubliquefrance.fr/nos-avis/reponse-a-la-commission-d-enquete-sur-les-conditions-de-mise-sur-le-marche-et-les-conditionnements-des-pesticides-et-leur-utilisation/#articles" target="_blank" rel="noopener noreferrer">
+                Official Nutri-Score documentation &#8599;
+              </a>
+            </div>
+          </div>
+          <div class="tooltip-host" data-tooltip="eco">
+            <div class="badge badge--eco badge--grade-d" style="--badge-color: var(--color-eco-d)">
+              <span class="badge__axis">Eco</span>
+              <span class="badge__letter">D</span>
+            </div>
+          </div>
+        </div>
+        <p class="demo-note" style="margin-top:var(--space-2)">Tap a badge to show tooltip. Tap outside to close.</p>
+      </div>
+    </div>
+
+    <!-- Flipped (above) column -->
+    <div class="demo-col">
+      <h2>Position: above (viewport edge)</h2>
+      <div class="tooltip-host" data-tooltip="nutri" style="margin-top:120px;">
+        <div class="badge badge--nutri badge--grade-e" style="--badge-color: var(--color-nutri-e)">
+          <span class="badge__axis">Nutri-Score</span>
+          <span class="badge__letter">E</span>
+        </div>
+        <div role="tooltip" aria-hidden="false" class="flip" id="tip-above" aria-labelledby="tip-above-title">
+          <button class="tooltip__close" aria-label="Close tooltip">&#215;</button>
+          <h3 class="tooltip__title" id="tip-above-title">About Nutri-Score</h3>
+          <p class="tooltip__body">
+            Nutri-Score is a front-of-pack nutrition label devised by Sant&#233; Publique France,
+            based on a modified Atwater index. It grades products A&#8211;E using energy,
+            saturated fat, sodium, sugar, fibre, and protein per 100&#160;g or 100&#160;kcal.
+          </p>
+          <a class="tooltip__link" href="https://www.santepubliquefrance.fr/nos-avis/reponse-a-la-commission-d-enquete-sur-les-conditions-de-mise-sur-le-marche-et-les-conditionnements-des-pesticides-et-leur-utilisation/#articles" target="_blank" rel="noopener noreferrer">
+            Official Nutri-Score documentation &#8599;
+          </a>
+        </div>
+      </div>
+      <p class="demo-note">Tooltip flips to above when insufficient space below.</p>
+    </div>
+
+  </div>
+
+</body>
+</html>
