@@ -1,0 +1,165 @@
+/* F-28 Educational Tooltips */
+
+.tooltip-host {
+  position: relative;
+  display: inline-block;
+}
+
+/* Make badges with tooltip attribute cursor */
+.badge[data-tooltip] {
+  cursor: help;
+}
+
+/* ─── popover ─────────────────────────────────────────────────────── */
+
+.tooltip-popover {
+  position: absolute;
+  z-index: var(--z-tooltip, 900);
+  width: max-content;
+  min-width: 200px;
+  max-width: 280px;
+  background: var(--color-paper);
+  border: 2px solid var(--color-ink);
+  border-radius: 4px;
+  padding: var(--space-4);
+  box-shadow: 4px 4px 0 rgba(26, 24, 20, 0.12);
+  pointer-events: auto;
+  /* animation */
+  opacity: 0;
+  transform: translateX(-50%) translateY(6px);
+  transition:
+    opacity 120ms ease-out,
+    transform 120ms ease-out;
+}
+
+/* shown state */
+.tooltip-popover.is-visible {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* Arrow: down (default - below trigger) */
+.tooltip-popover::before {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 7px solid transparent;
+  border-bottom-color: var(--color-ink);
+  margin-bottom: 2px;
+}
+
+.tooltip-popover::after {
+  content: '';
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 5px solid transparent;
+  border-bottom-color: var(--color-paper);
+  margin-bottom: 2px;
+}
+
+/* Flip: above trigger */
+.tooltip-popover.flip::before {
+  bottom: auto;
+  top: 100%;
+  border-bottom-color: transparent;
+  border-top-color: var(--color-ink);
+  margin-top: 2px;
+  margin-bottom: 0;
+}
+
+.tooltip-popover.flip::after {
+  bottom: auto;
+  top: 100%;
+  border-bottom-color: transparent;
+  border-top-color: var(--color-paper);
+  margin-top: 2px;
+  margin-bottom: 0;
+}
+
+/* ─── close button ───────────────────────────────────────────────── */
+
+.tooltip-close {
+  position: absolute;
+  top: var(--space-2);
+  right: var(--space-2);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1.25rem;
+  line-height: 1;
+  color: var(--color-ink-soft);
+  padding: var(--space-1);
+  border-radius: 2px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tooltip-close:hover,
+.tooltip-close:focus {
+  color: var(--color-ink);
+  background: var(--color-rule);
+  outline: none;
+}
+
+.tooltip-close:focus-visible {
+  outline: 2px solid var(--color-ink);
+  outline-offset: 2px;
+}
+
+/* ─── content ───────────────────────────────────────────────────── */
+
+.tooltip-title {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 600;
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-2);
+  margin-right: var(--space-5);
+  color: var(--color-ink);
+}
+
+.tooltip-body {
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  line-height: var(--leading-snug, 1.5);
+  color: var(--color-ink-soft);
+  margin-bottom: var(--space-3);
+}
+
+.tooltip-link {
+  font-family: var(--font-body);
+  font-size: var(--text-xs);
+  color: var(--color-nutri-b, #7BA71A);
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.tooltip-link:hover {
+  color: var(--color-ink);
+}
+
+/* ─── hidden state ──────────────────────────────────────────────── */
+
+[role="tooltip"][aria-hidden="true"] {
+  display: none;
+}
+
+[role="tooltip"][aria-hidden="false"] {
+  display: block;
+}
+
+/* ─── responsive ────────────────────────────────────────────────── */
+
+@media (max-width: 320px) {
+  .tooltip-popover {
+    max-width: calc(100vw - var(--space-6) * 2);
+  }
+}

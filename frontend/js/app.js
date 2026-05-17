@@ -16,6 +16,7 @@ import {
 import { init as initOnboarding } from './views/onboarding.js';
 import { trackView, renderRecentlyViewed, startBootstrap, endBootstrap, RECENTLY_VIEWED_KEY } from './views/history.js';
 import { loadSettings as _loadSettings, show as showSettings } from './views/settings.js';
+import { init as initTooltips } from './views/tooltips.js';
 
 const STORAGE_KEY = 'foodlens.state';
 const DEFAULT_STATE = {
@@ -183,7 +184,7 @@ function renderBadge(scope, score) {
 
   return el(
     'div',
-    { class: `badge badge--${scope} badge--grade-${grade}`, style: { '--badge-color': color } },
+    { class: `badge badge--${scope} badge--grade-${grade}`, style: { '--badge-color': color }, dataset: { tooltip: scope } },
     el('span', { class: 'badge__axis' }, axisName),
     el('span', { class: 'badge__letter' }, label),
     caption ? el('span', { class: 'badge__caption' }, caption) : null,
@@ -232,6 +233,18 @@ function renderNutrientTable(nutrients) {
       }),
     ),
   );
+}
+
+// ─── share product ─────────────────────────────────────────────────────
+
+async function shareProduct(product) {
+  const url = `https://world.openfoodfacts.org/product/${product.code}`;
+  try {
+    await navigator.clipboard.writeText(url);
+    toast('Link copied to clipboard');
+  } catch {
+    toast('Could not copy link — try again or copy manually from the product page');
+  }
 }
 
 // ─── product card ──────────────────────────────────────────────────────
@@ -292,6 +305,11 @@ function renderProductCard(product, reference, isAlternative = false) {
       ? el(
           'div',
           { class: 'card__actions' },
+          el(
+            'button',
+            { type: 'button', class: 'btn btn--share', onClick: () => shareProduct(product) },
+            'Share product',
+          ),
           el(
             'button',
             { type: 'button', class: 'btn btn--ghost', onClick: () => toast('Recipe view coming soon (F-17).') },
@@ -533,6 +551,7 @@ function wireEvents() {
 
 async function bootstrap() {
   _loadSettings();
+  initTooltips();
   applyWeightToUI();
   wireEvents();
   initOnboarding();
