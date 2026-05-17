@@ -1,0 +1,463 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FoodLens — Share Product (F-29 Prototype)</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500;1,6..72,600&family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  />
+  <style>
+    /* ─── Design tokens (mirrors style.css) ────────────────────────────── */
+    :root {
+      --color-paper: #FAF6EF;
+      --color-paper-2: #F2ECDE;
+      --color-paper-3: #E8E0CB;
+      --color-ink: #1A1A18;
+      --color-ink-soft: #5A574F;
+      --color-ink-mute: #8C8779;
+      --color-rule: #1A1A18;
+      --color-accent: #7B3F00;
+      --color-accent-2: #B05A1A;
+      --color-nutri-a: #1F8A3F;
+      --color-nutri-b: #7AB52E;
+      --color-nutri-c: #E8A823;
+      --color-nutri-e: #CB342B;
+      --color-eco-a: #1B5E20;
+      --color-eco-c: #8C7B2B;
+      --space-1: 0.25rem;
+      --space-2: 0.5rem;
+      --space-3: 0.75rem;
+      --space-4: 1rem;
+      --space-5: 1.25rem;
+      --space-6: 1.5rem;
+      --space-8: 2rem;
+      --space-10: 2.5rem;
+      --font-display: 'Newsreader', Georgia, 'Times New Roman', serif;
+      --font-body: 'Bricolage Grotesque', system-ui, -apple-system, sans-serif;
+      --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+      --leading-tight: 1.1;
+      --leading-snug: 1.25;
+      --leading-normal: 1.5;
+      --rule-w: 1px;
+      --rule-w-bold: 2px;
+    }
+
+    /* ─── reset ────────────────────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body, h1, h2, h3, h4, p, ul, ol, figure, blockquote { margin: 0; }
+    ul, ol { padding: 0; list-style: none; }
+    img { max-width: 100%; display: block; }
+    button { font: inherit; cursor: pointer; }
+    a { color: inherit; }
+
+    /* ─── base ─────────────────────────────────────────────────────────── */
+    html { font-size: 16px; }
+    body {
+      font-family: var(--font-body);
+      font-optical-sizing: auto;
+      font-weight: 400;
+      line-height: var(--leading-normal);
+      color: var(--color-ink);
+      background: var(--color-paper);
+      background-image:
+        radial-gradient(circle at 18% 12%, rgba(123, 63, 0, 0.04) 0, transparent 40%),
+        radial-gradient(circle at 82% 88%, rgba(27, 94, 32, 0.05) 0, transparent 45%);
+      background-attachment: fixed;
+      -webkit-font-smoothing: antialiased;
+      min-height: 100vh;
+      padding: var(--space-8);
+    }
+
+    /* ─── header ────────────────────────────────────────────────────────── */
+    .site-header {
+      border-bottom: var(--rule-w-bold) solid var(--color-rule);
+      padding-bottom: var(--space-6);
+      margin-bottom: var(--space-8);
+    }
+    .site-header__masthead {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: var(--space-4);
+      flex-wrap: wrap;
+    }
+    .site-header__title {
+      font-family: var(--font-display);
+      font-style: italic;
+      font-weight: 400;
+      font-size: clamp(2rem, 5vw, 3.5rem);
+    }
+    .site-header__title em {
+      font-style: normal;
+      color: var(--color-accent);
+      font-weight: 500;
+    }
+    .site-header__tagline {
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      color: var(--color-ink-soft);
+      max-width: 36ch;
+      line-height: var(--leading-snug);
+    }
+
+    /* ─── badge ────────────────────────────────────────────────────────── */
+    .badge {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-width: 48px;
+      border: var(--rule-w-bold) solid var(--badge-color, var(--color-ink));
+      padding: var(--space-1) var(--space-2);
+      gap: 2px;
+    }
+    .badge__axis {
+      font-family: var(--font-body);
+      font-size: 0.6rem;
+      font-weight: 600;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: var(--badge-color, var(--color-ink));
+    }
+    .badge__letter {
+      font-family: var(--font-display);
+      font-size: 1.4rem;
+      font-weight: 600;
+      line-height: 1;
+      color: var(--badge-color, var(--color-ink));
+    }
+    .badge__caption {
+      font-family: var(--font-body);
+      font-size: 0.55rem;
+      color: var(--ink-mute);
+      text-align: center;
+      max-width: 60px;
+    }
+
+    /* ─── product card ─────────────────────────────────────────────────── */
+    .card {
+      border: var(--rule-w-bold) solid var(--color-rule);
+      background: var(--color-paper);
+      max-width: 420px;
+      display: grid;
+      gap: 0;
+    }
+    .card__header {
+      display: grid;
+      grid-template-columns: 80px 1fr;
+      gap: var(--space-4);
+      padding: var(--space-5);
+      border-bottom: var(--rule-w) solid var(--color-rule);
+    }
+    .card__image {
+      width: 80px;
+      height: 80px;
+      object-fit: cover;
+      border: var(--rule-w) solid var(--color-rule);
+    }
+    .card__image--placeholder {
+      display: grid;
+      place-items: center;
+      background: var(--color-paper-2);
+      font-family: var(--font-display);
+      font-size: 2rem;
+      font-weight: 500;
+    }
+    .card__title-block {
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-1);
+      justify-content: center;
+    }
+    .card__title {
+      font-family: var(--font-display);
+      font-style: italic;
+      font-weight: 500;
+      font-size: 1.1rem;
+      line-height: var(--leading-tight);
+    }
+    .card__brand {
+      font-family: var(--font-body);
+      font-size: 0.8rem;
+      color: var(--color-ink-soft);
+    }
+    .card__scores {
+      display: flex;
+      gap: var(--space-3);
+      padding: var(--space-4) var(--space-5);
+      border-bottom: var(--rule-w) solid var(--color-paper-3);
+    }
+    .card__sentence {
+      padding: var(--space-4) var(--space-5);
+      font-family: var(--font-body);
+      font-size: 0.9rem;
+      color: var(--color-ink-soft);
+      line-height: var(--leading-normal);
+      border-bottom: var(--rule-w) solid var(--color-paper-3);
+    }
+    .card__drilldown {
+      padding: var(--space-4) var(--space-5);
+    }
+    .card__drilldown summary {
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      color: var(--color-ink-soft);
+      cursor: pointer;
+      list-style: none;
+      display: flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+    .card__drilldown summary::before {
+      content: '';
+      display: inline-block;
+      width: 0;
+      height: 0;
+      border-left: 5px solid var(--color-ink-soft);
+      border-top: 3px solid transparent;
+      border-bottom: 3px solid transparent;
+      transition: transform 150ms ease;
+    }
+    .card__drilldown[open] summary::before {
+      transform: rotate(90deg);
+    }
+    .card__drilldown summary:hover { color: var(--color-ink); }
+
+    /* ─── action bar ────────────────────────────────────────────────────── */
+    .card__actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      padding: var(--space-4) var(--space-5);
+      border-top: var(--rule-w-bold) solid var(--color-rule);
+    }
+    .btn {
+      font-family: var(--font-body);
+      font-size: 0.8rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      padding: var(--space-2) var(--space-4);
+      background: transparent;
+      border: var(--rule-w-bold) solid var(--color-rule);
+      color: var(--color-ink);
+      cursor: pointer;
+      transition: background-color 120ms ease, color 120ms ease;
+      display: inline-flex;
+      align-items: center;
+      gap: var(--space-2);
+    }
+    .btn:hover,
+    .btn:focus-visible {
+      background: var(--color-paper-3);
+      outline: 0;
+    }
+    .btn:focus-visible {
+      outline: 2px solid var(--color-accent);
+      outline-offset: 2px;
+    }
+    .btn--primary {
+      background: var(--color-ink);
+      color: var(--color-paper);
+      border-color: var(--color-ink);
+    }
+    .btn--primary:hover,
+    .btn--primary:focus-visible {
+      background: var(--color-accent);
+      border-color: var(--color-accent);
+      color: var(--color-paper);
+    }
+    .btn svg {
+      width: 14px;
+      height: 14px;
+      stroke: currentColor;
+      stroke-width: 2;
+      fill: none;
+      flex-shrink: 0;
+    }
+
+    /* ─── Share button (highlighted for F-29) ───────────────────────────── */
+    .btn--share {
+      background: var(--color-accent);
+      color: var(--color-paper);
+      border-color: var(--color-accent);
+    }
+    .btn--share:hover,
+    .btn--share:focus-visible {
+      background: var(--color-accent-2);
+      border-color: var(--color-accent-2);
+      color: var(--color-paper);
+    }
+
+    /* ─── toast ─────────────────────────────────────────────────────────── */
+    .toast-host {
+      position: fixed;
+      bottom: var(--space-6);
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 300;
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-2);
+      align-items: center;
+      pointer-events: none;
+    }
+    .toast {
+      background: var(--color-ink);
+      color: var(--color-paper);
+      font-family: var(--font-body);
+      font-size: 0.85rem;
+      padding: var(--space-3) var(--space-5);
+      border: var(--rule-w) solid var(--color-ink);
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 200ms ease, transform 200ms ease;
+      max-width: 90vw;
+      text-align: center;
+    }
+    .toast.is-visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ─── label for prototype ───────────────────────────────────────────── */
+    .proto-label {
+      font-family: var(--font-mono);
+      font-size: 0.7rem;
+      color: var(--color-accent);
+      border: 1px dashed var(--color-accent);
+      padding: 2px 6px;
+      display: inline-block;
+      margin-bottom: var(--space-4);
+    }
+  </style>
+</head>
+<body>
+
+<header class="site-header">
+  <div class="site-header__masthead">
+    <h1 class="site-header__title">Food<em>Lens</em></h1>
+    <p class="site-header__tagline">Open Food Facts at a glance</p>
+  </div>
+  <span class="proto-label">F-29 · Share Product prototype</span>
+</header>
+
+<main>
+  <!-- ── Focused product card with Share button ── -->
+  <article class="card">
+    <header class="card__header">
+      <div class="card__image--placeholder">O</div>
+      <div class="card__title-block">
+        <h3 class="card__title">Oat Drink Barista Edition</h3>
+        <p class="card__brand">Oatly</p>
+      </div>
+    </header>
+
+    <div class="card__scores">
+      <div class="badge" style="--badge-color: var(--color-nutri-b)">
+        <span class="badge__axis">Nutri-Score</span>
+        <span class="badge__letter">B</span>
+      </div>
+      <div class="badge" style="--badge-color: var(--color-eco-c)">
+        <span class="badge__axis">Eco</span>
+        <span class="badge__letter">C</span>
+      </div>
+    </div>
+
+    <p class="card__sentence">
+      This product has 35% less saturated fat than the average in its category.
+    </p>
+
+    <details class="card__drilldown">
+      <summary>See numbers</summary>
+      <!-- nutrient table placeholder -->
+    </details>
+
+    <div class="card__actions">
+      <!-- F-29 Share button: primary action, always visible -->
+      <button
+        type="button"
+        class="btn btn--share"
+        id="share-btn"
+        aria-label="Copy Open Food Facts link to clipboard"
+        onclick="handleShare()"
+      >
+        <!-- External link icon -->
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+          <polyline points="15,3 21,3 21,9"/>
+          <line x1="10" y1="14" x2="21" y2="3"/>
+        </svg>
+        Share product
+      </button>
+
+      <button type="button" class="btn" disabled>See recipe</button>
+      <button type="button" class="btn" disabled>Add to list</button>
+      <button type="button" class="btn btn--primary" disabled>Compare with usual</button>
+    </div>
+  </article>
+</main>
+
+<div class="toast-host" id="toast-host" aria-live="polite"></div>
+
+<script>
+  // Simulates navigator.clipboard.writeText for demo purposes
+  async function mockClipboardWriteText(text) {
+    // In a real implementation this would use the Clipboard API.
+    // For the prototype, we simulate success.
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        console.log('[F-29 prototype] Would copy to clipboard:', text);
+        resolve();
+      }, 200);
+    });
+  }
+
+  async function handleShare() {
+    const barcode = '7394376205222'; // Oatly Oat Drink Barista Edition
+    const url = `https://world.openfoodfacts.org/product/${barcode}`;
+    const btn = document.getElementById('share-btn');
+
+    // Disable button during async operation
+    btn.disabled = true;
+    btn.textContent = 'Copying…';
+
+    try {
+      // In production: await navigator.clipboard.writeText(url);
+      await mockClipboardWriteText(url);
+      showToast('Link copied to clipboard');
+    } catch (err) {
+      showToast('Could not copy link — try again or copy manually from the product page');
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = `
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+          <polyline points="15,3 21,3 21,9"/>
+          <line x1="10" y1="14" x2="21" y2="3"/>
+        </svg>
+        Share product`;
+    }
+  }
+
+  function showToast(message) {
+    const host = document.getElementById('toast-host');
+    const t = document.createElement('div');
+    t.className = 'toast';
+    t.textContent = message;
+    host.appendChild(t);
+    requestAnimationFrame(() => t.classList.add('is-visible'));
+    setTimeout(() => {
+      t.classList.remove('is-visible');
+      t.addEventListener('transitionend', () => t.remove(), { once: true });
+    }, 2400);
+  }
+</script>
+
+</body>
+</html>
