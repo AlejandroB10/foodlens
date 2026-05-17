@@ -78,6 +78,7 @@ export function trackView(code, productData) {
 
   // Remove if already present (will be re-added at top)
   const existing = items.findIndex((i) => i.code === code);
+  if (existing !== -1) items.splice(existing, 1);
 
   // Prepend new entry
   items.unshift({
@@ -99,7 +100,6 @@ export function trackView(code, productData) {
  * Clear all recently viewed history.
  */
 export function clearHistory() {
-  console.log('[F-25] clearHistory called');
   try {
     localStorage.removeItem(RECENTLY_VIEWED_KEY);
   } catch {
@@ -251,7 +251,6 @@ export function renderRecentlyViewed(container, onOpenProduct) {
     container.innerHTML = '';
     container.hidden = true;
     container.classList.remove('is-expanded');
-    container.removeAttribute('class');
     return;
   }
 

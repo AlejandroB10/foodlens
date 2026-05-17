@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>F-31 Personas showcase — Design prototype</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500;1,6..72,600&family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../frontend/css/style.css" />
+  <link rel="stylesheet" href="../frontend/css/personas.css" />
+  <style>
+    /* Minimal shell to centre the showcase block in the prototype */
+    body { margin: 0; background: #f5f0e8; }
+    .prototype-shell { max-width: 900px; margin: 0 auto; padding: 2rem 1rem 4rem; }
+    .prototype-shell::after { content: '— footer would go below'; display: block; text-align: center; color: #888; font-family: monospace; margin-top: 2rem; }
+  </style>
+</head>
+<body>
+  <div class="prototype-shell">
+
+    <!-- ─── Personas showcase (F-31) ────────────────────────────────── -->
+    <section class="personas-showcase" aria-labelledby="personas-title">
+      <header class="personas-showcase__header">
+        <p class="personas-showcase__eyebrow">Meet the team</p>
+        <h2 id="personas-title" class="personas-showcase__title">
+          Three ways FoodLens <em>thinks</em> about food
+        </h2>
+        <p class="personas-showcase__subtitle">
+          Every feature is tested against three real people — not abstractions. See who we built this for.
+        </p>
+      </header>
+
+      <div class="personas-showcase__grid">
+
+        <!-- Marc Vidal -->
+        <article class="persona-card">
+          <div class="persona-card__meta">
+            <h3 class="persona-card__name">Marc Vidal</h3>
+            <span class="persona-card__badge">P01</span>
+          </div>
+          <p class="persona-card__role">27 · software engineer · Palma</p>
+          <blockquote class="persona-card__quote">
+            "I can live with a score I disagree with if I can see why it was given and decide for myself."
+          </blockquote>
+          <p class="persona-card__description">
+            Time-poor. Cooks weeknights. Trusts algorithms only when the reasoning is visible. Configures once if it saves repeated decision effort. FoodLens shows him the contrastive sentence upfront — top card in under 15 seconds.
+          </p>
+        </article>
+
+        <!-- Pau Estarellas -->
+        <article class="persona-card">
+          <div class="persona-card__meta">
+            <h3 class="persona-card__name">Pau Estarellas</h3>
+            <span class="persona-card__badge">P02</span>
+          </div>
+          <p class="persona-card__role">22 · maths undergrad · Barcelona</p>
+          <blockquote class="persona-card__quote">
+            "Tell me: compared to what you usually buy, this one has thirty percent less sugar and almost the same saturated fat."
+          </blockquote>
+          <p class="persona-card__description">
+            Tight budget, minimal cooking routine. Sceptical of marketing. Demands a number he can verify. Every claim in the contrastive sentence is one tap away from the drill-down nutrient table.
+          </p>
+        </article>
+
+        <!-- Lluís Tomàs -->
+        <article class="persona-card">
+          <div class="persona-card__meta">
+            <h3 class="persona-card__name">Lluís Tomàs</h3>
+            <span class="persona-card__badge">P03</span>
+          </div>
+          <p class="persona-card__role">26 · marketing professional · Madrid</p>
+          <blockquote class="persona-card__quote">
+            "What convinces me is a sharp sentence with a data point in it."
+          </blockquote>
+          <p class="persona-card__description">
+            Knows greenwashing from the inside. Wants a sharp contrastive sentence with a datum. Resists moralising. The system never claims authority — every comparison is grounded in data, never in "our recommendation."
+          </p>
+        </article>
+
+      </div>
+    </section>
+
+  </div>
+</body>
+</html>

@@ -1,6 +1,5 @@
 // FoodLens — F-28 Educational Tooltips
 // Vanilla JS, no build step. Mobile-first.
-// Pattern: each .badge[data-tooltip] directly triggers its own popover.
 
 const TOOLTIP_CONTENT = {
   nutri: {
@@ -59,7 +58,6 @@ function createPopover(badge) {
   link.rel = 'noopener noreferrer';
   link.textContent = info.linkText;
 
-  // Wire aria-describedby on badge
   badge.setAttribute('aria-describedby', popover.id);
 
   popover.appendChild(closeBtn);
@@ -87,7 +85,6 @@ function applyPosition(popover, badge) {
   const pw = popover.offsetWidth || 260;
   const hostCenterX = rect.left + rect.width / 2;
 
-  // Clamp within viewport with 8px margin
   let left = hostCenterX;
   const halfPw = pw / 2;
   if (left - halfPw < 8) left = halfPw + 8;
@@ -96,7 +93,6 @@ function applyPosition(popover, badge) {
   popover.style.left = `${left}px`;
   popover.style.top = rect.bottom + 8 + 'px';
 
-  // If flipped, position above badge instead
   if (popover.classList.contains('flip')) {
     popover.style.top = `${rect.top - (popover.offsetHeight || 160) - 8}px`;
   }
@@ -107,25 +103,21 @@ function applyPosition(popover, badge) {
 function showTooltip(badge) {
   if (active && active.badge === badge) return;
 
-  // Close any open tooltip first
   hideTooltip(true);
 
   const popover = createPopover(badge);
   if (!popover) return;
   document.body.appendChild(popover);
 
-  // Position it
   requestAnimationFrame(() => {
     applyPosition(popover, badge);
     popover.classList.add('is-visible');
   });
 
-  // Close button handler
   const closeBtn = popover.querySelector('.tooltip-close');
   const onClose = () => hideTooltip();
   closeBtn.addEventListener('click', onClose);
 
-  // Focus trap
   lastFocusedBeforeTrap = document.activeElement;
   trapFocus(popover);
 
@@ -139,7 +131,7 @@ function hideTooltip(immediate = false) {
   clearTimeout(active.showTimer);
   clearTimeout(active.hideTimer);
 
-  if (immediate || !popover.classList.contains('is-visible')) {
+  if (immediate || !popover || !popover.classList.contains('is-visible')) {
     finishHide(badge, popover, closeBtn, onClose);
     active = null;
     return;
@@ -148,15 +140,15 @@ function hideTooltip(immediate = false) {
   popover.classList.remove('is-visible');
   popover.addEventListener('transitionend', () => {
     finishHide(badge, popover, closeBtn, onClose);
-    if (active) active = null;
+    active = null;
   }, { once: true });
 }
 
 function finishHide(badge, popover, closeBtn, onClose) {
-  badge.removeAttribute('aria-describedby');
-  closeBtn.removeEventListener('click', onClose);
+  if (badge) badge.removeAttribute('aria-describedby');
+  if (closeBtn && onClose) closeBtn.removeEventListener('click', onClose);
   releaseFocus();
-  popover.remove();
+  if (popover && popover.parentNode) popover.remove();
 }
 
 // ─── focus trap ────────────────────────────────────────────────────────────
@@ -185,18 +177,17 @@ function releaseFocus() {
   }
 }
 
-// ─── event wiring (delegated on document) ──────────────────────────────────
+// ─── event wiring ─────────────────────────────────────────────────────────
 
 function wireBadgeEvents() {
-  // Outside click: any click whose target is outside all badges and the popover closes tooltip
   document.addEventListener('click', (e) => {
     if (!active) return;
+    if (!active.popover) return;
     if (active.popover.contains(e.target)) return;
     if (e.target.closest('.badge[data-tooltip]')) return;
     hideTooltip();
   });
 
-  // Keyboard: Escape closes
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && active) {
       e.stopPropagation();
@@ -204,47 +195,92 @@ function wireBadgeEvents() {
     }
   });
 
-  // Delegate mouseover / mouseout / focusin / focusout / click / touchend to badges
-  document.addEventListener('mouseover', handleDelegate, true);
-  document.addEventListener('mouseout', handleDelegate, true);
-  document.addEventListener('focusin', handleDelegate, true);
-  document.addEventListener('focusout', handleDelegate, true);
-  document.addEventListener('click', handleDelegate, true);
-  document.addEventListener('touchend', handleDelegate, { passive: false });
+  document.addEventListener('click', handleClick, true);
+  document.addEventListener('touchend', handleTouchEnd, { passive: false });
+  document.addEventListener('mouseover', handleMouseOver, true);
+  document.addEventListener('mouseout', handleMouseOut, true);
+  document.addEventListener('focusin', handleFocusIn, true);
+  document.addEventListener('focusout', handleFocusOut, true);
 }
 
-function handleDelegate(e) {
+function handleClick(e) {
   const badge = e.target.closest('.badge[data-tooltip]');
-  const type = badge?.dataset.tooltip;
+  if (!badge) return;
+  const type = badge.dataset.tooltip;
+  if (!type || !TOOLTIP_CONTENT[type]) return;
 
-  if (!badge || !type || !TOOLTIP_CONTENT[type]) {
-    // Not a tooltip badge — ignore
-    return;
+  if (active && active.badge === badge) {
+    hideTooltip();
+  } else {
+    hideTooltip(true);
+    showTooltip(badge);
   }
+}
 
-  if (e.type === 'mouseover' || e.type === 'focusin') {
-    clearTimeout(active?.hideTimer);
-    if (active && active.badge !== badge) hideTooltip(true);
-    const showTimer = setTimeout(() => showTooltip(badge), SHOW_DELAY_MS);
-    if (active) active.showTimer = showTimer;
-    else active = { badge, showTimer, hideTimer: null, popover: null, closeBtn: null, onClose: null };
-    if (active && active.showTimer) active.showTimer = showTimer;
-  } else if (e.type === 'mouseout' || e.type === 'focusout') {
-    const hideTimer = setTimeout(() => {
-      if (!active?.popover?.contains(document.activeElement)) hideTooltip();
-    }, HIDE_DELAY_MS);
-    if (active) {
-      clearTimeout(active.hideTimer);
-      active.hideTimer = hideTimer;
-    }
-  } else if (e.type === 'click' || e.type === 'touchend') {
-    if (e.type === 'touchend') e.preventDefault();
-    if (active && active.badge === badge) {
+function handleTouchEnd(e) {
+  const badge = e.target.closest('.badge[data-tooltip]');
+  if (!badge) return;
+  e.preventDefault();
+  handleClick(e);
+}
+
+function handleMouseOver(e) {
+  const badge = e.target.closest('.badge[data-tooltip]');
+  if (!badge) return;
+  const type = badge.dataset.tooltip;
+  if (!type || !TOOLTIP_CONTENT[type]) return;
+
+  clearTimeout(active?.hideTimer);
+  if (active && active.badge !== badge) hideTooltip(true);
+  const showTimer = setTimeout(() => showTooltip(badge), SHOW_DELAY_MS);
+  if (active) active.showTimer = showTimer;
+  else active = { badge, showTimer, hideTimer: null, popover: null, closeBtn: null, onClose: null };
+}
+
+function handleMouseOut(e) {
+  const badge = e.target.closest('.badge[data-tooltip]');
+  if (!badge) return;
+  const type = badge.dataset.tooltip;
+  if (!type || !TOOLTIP_CONTENT[type]) return;
+
+  const hideTimer = setTimeout(() => {
+    if (active && active.badge === badge && !active.popover?.contains(document.activeElement)) {
       hideTooltip();
-    } else {
-      hideTooltip(true);
-      showTooltip(badge);
     }
+  }, HIDE_DELAY_MS);
+  if (active && active.badge === badge) {
+    clearTimeout(active.hideTimer);
+    active.hideTimer = hideTimer;
+  }
+}
+
+function handleFocusIn(e) {
+  const badge = e.target.closest('.badge[data-tooltip]');
+  if (!badge) return;
+  const type = badge.dataset.tooltip;
+  if (!type || !TOOLTIP_CONTENT[type]) return;
+
+  clearTimeout(active?.hideTimer);
+  if (active && active.badge !== badge) hideTooltip(true);
+  const showTimer = setTimeout(() => showTooltip(badge), SHOW_DELAY_MS);
+  if (active) active.showTimer = showTimer;
+  else active = { badge, showTimer, hideTimer: null, popover: null, closeBtn: null, onClose: null };
+}
+
+function handleFocusOut(e) {
+  const badge = e.target.closest('.badge[data-tooltip]');
+  if (!badge) return;
+  const type = badge.dataset.tooltip;
+  if (!type || !TOOLTIP_CONTENT[type]) return;
+
+  const hideTimer = setTimeout(() => {
+    if (active && active.badge === badge && !active.popover?.contains(document.activeElement)) {
+      hideTooltip();
+    }
+  }, HIDE_DELAY_MS);
+  if (active && active.badge === badge) {
+    clearTimeout(active.hideTimer);
+    active.hideTimer = hideTimer;
   }
 }
 

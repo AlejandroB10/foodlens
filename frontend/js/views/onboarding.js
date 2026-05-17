@@ -516,7 +516,7 @@ function show() {
   modalEl = modal;
 
   document.body.appendChild(backdrop);
-  document.body.appendChild(modal);
+  backdrop.appendChild(modal);
 
   // Focus the first focusable element
   const focusable = modal.querySelector('input, button, [tabindex="0"]');

@@ -17,6 +17,7 @@ import { init as initOnboarding } from './views/onboarding.js';
 import { trackView, renderRecentlyViewed, startBootstrap, endBootstrap, RECENTLY_VIEWED_KEY } from './views/history.js';
 import { loadSettings as _loadSettings, show as showSettings } from './views/settings.js';
 import { init as initTooltips } from './views/tooltips.js';
+import { toggleFavourite, isFavourite, getFavourites, renderFavourites, buildHeartButton, clearFavourites } from './views/favourites.js';
 
 const STORAGE_KEY = 'foodlens.state';
 const DEFAULT_STATE = {
@@ -76,6 +77,10 @@ const els = {
   loading: document.querySelector('#loading'),
   recentlyViewed: document.querySelector('#recently-viewed'),
   settingsBtn: document.querySelector('[data-action="settings"]'),
+  favouritesSection: document.querySelector('#favourites'),
+  navSearch: document.querySelector('#nav-search'),
+  navSaved: document.querySelector('#nav-saved'),
+  savedBadge: document.querySelector('#saved-badge'),
 };
 
 // ─── state persistence ──────────────────────────────────────────────────
@@ -305,6 +310,24 @@ function renderProductCard(product, reference, isAlternative = false) {
       ? el(
           'div',
           { class: 'card__actions' },
+          buildHeartButton(product.code, product, () => {
+            // re-render all heart buttons on page to reflect new favourite state
+            document.querySelectorAll('.heart-btn').forEach((btn) => {
+              const card = btn.closest('[data-code]');
+              if (card && card.dataset.code) {
+                const saved = isFavourite(card.dataset.code);
+                btn.classList.toggle('is-saved', saved);
+                btn.setAttribute('aria-pressed', saved ? 'true' : 'false');
+                btn.setAttribute('aria-label', saved ? 'Remove from saved' : 'Save product');
+              }
+            });
+            updateSavedBadge();
+          }),
+          el(
+            'button',
+            { type: 'button', class: 'btn btn--print', onClick: () => window.print() },
+            'Print card',
+          ),
           el(
             'button',
             { type: 'button', class: 'btn btn--share', onClick: () => shareProduct(product) },
@@ -521,12 +544,71 @@ function toast(message) {
   }, 2400);
 }
 
+// ─── saved badge update ───────────────────────────────────────────
+
+function updateSavedBadge() {
+  if (!els.savedBadge) return;
+  const count = getFavourites().length;
+  if (count > 0) {
+    els.savedBadge.textContent = count;
+    els.savedBadge.hidden = false;
+    els.savedBadge.setAttribute('aria-hidden', 'false');
+  } else {
+    els.savedBadge.hidden = true;
+    els.savedBadge.setAttribute('aria-hidden', 'true');
+  }
+}
+
+// ─── view navigation ─────────────────────────────────────────────
+
+let currentView = 'search'; // 'search' | 'saved'
+
+function showView(view) {
+  currentView = view;
+
+  // Toggle nav active states
+  if (els.navSearch) {
+    els.navSearch.classList.toggle('is-active', view === 'search');
+    els.navSearch.setAttribute('aria-pressed', view === 'search' ? 'true' : 'false');
+  }
+  if (els.navSaved) {
+    els.navSaved.classList.toggle('is-active', view === 'saved');
+    els.navSaved.setAttribute('aria-pressed', view === 'saved' ? 'true' : 'false');
+  }
+
+  // Show/hide sections
+  if (view === 'saved') {
+    setHidden(els.resultsRegion, true);
+    setHidden(els.focusedView, true);
+    setHidden(els.favouritesSection, false);
+    renderFavourites(els.favouritesSection, (code) => {
+      showView('search');
+      runSearch(code);
+    }, () => {
+      updateSavedBadge();
+      // Re-render saved list if open
+      if (currentView === 'saved') {
+        renderFavourites(els.favouritesSection, (code) => {
+          showView('search');
+          runSearch(code);
+        }, () => updateSavedBadge());
+      }
+    });
+  } else {
+    setHidden(els.favouritesSection, true);
+    setHidden(els.resultsRegion, false);
+    // re-render results to pick up current favourite states
+    rerenderResults();
+  }
+}
+
 // ─── event wiring ───────────────────────────────────────────────────────
 
 function wireEvents() {
   els.searchForm?.addEventListener('submit', (e) => {
     e.preventDefault();
     const q = els.searchInput.value.trim();
+    showView('search');
     runSearch(q);
   });
 
@@ -545,6 +627,8 @@ function wireEvents() {
   }
 
   els.settingsBtn?.addEventListener('click', showSettings);
+  els.navSearch?.addEventListener('click', () => showView('search'));
+  els.navSaved?.addEventListener('click', () => showView('saved'));
 }
 
 // ─── bootstrap ─────────────────────────────────────────────────────────
@@ -568,6 +652,9 @@ async function bootstrap() {
 
   // NOW end bootstrap so real user navigation (product clicks) tracks.
   endBootstrap();
+
+  // Initialize saved badge count
+  updateSavedBadge();
 }
 
 if (document.readyState === 'loading') {
