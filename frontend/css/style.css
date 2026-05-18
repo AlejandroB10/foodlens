@@ -69,7 +69,13 @@
 
 /* ─── reset (minimal) ────────────────────────────────────────────────── */
 *, *::before, *::after { box-sizing: border-box; }
-html { -webkit-text-size-adjust: 100%; }
+html {
+  -webkit-text-size-adjust: 100%;
+  /* Reserve the scrollbar gutter so toggling body.overflow="hidden" (modal
+     show / hide) does not shift page content sideways. Critical for Playwright
+     stability — without it badge positions move when the onboarding opens. */
+  scrollbar-gutter: stable;
+}
 body, h1, h2, h3, h4, p, ul, ol, figure, blockquote, table { margin: 0; }
 ul, ol { padding: 0; list-style: none; }
 img { max-width: 100%; display: block; }
@@ -405,18 +411,37 @@ h4 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; letter-sp
   outline-offset: 2px;
 }
 
+/* Saved-count chip — editorial counter, not a notification bubble.
+   Square frame, JetBrains Mono digits, ink-on-paper with red accent. */
 .saved-badge {
-  display: inline-block;
-  min-width: 1.1rem;
-  height: 1.1rem;
-  padding: 0 4px;
-  background: var(--color-heart, #e63946);
-  color: #fff;
-  border-radius: 99px;
-  font-size: 0.65rem;
-  font-weight: 700;
-  text-align: center;
-  line-height: 1.1;
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.35rem;
+  height: 1.35rem;
+  padding: 0 5px;
+  margin-left: 2px;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  border: var(--rule-w) solid var(--color-ink);
+  border-radius: 0;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+
+.site-nav__link.is-active .saved-badge {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: var(--color-paper);
+}
+
+.site-nav__link:hover .saved-badge {
+  background: var(--color-ink);
+  color: var(--color-paper);
 }
 
 /* ─── section header ────────────────────────────────────────────────── */
@@ -617,38 +642,118 @@ h4 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; letter-sp
   grid-template-rows: auto 1fr auto;
   gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
-  background: color-mix(in srgb, var(--badge-color) 8%, var(--color-paper) 92%);
-  border-left: 4px solid var(--badge-color);
+  background: var(--badge-color);
+  color: var(--color-paper);
+  border: var(--rule-w) solid var(--color-rule);
   min-height: 4.5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle paper-texture overlay so the colour blocks feel printed, not flat. */
+.badge::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at 100% 0%, rgba(255, 255, 255, 0.18) 0, transparent 60%),
+    radial-gradient(circle at 0% 100%, rgba(0, 0, 0, 0.12) 0, transparent 60%);
+  mix-blend-mode: overlay;
 }
 
 .badge__axis {
   font-family: var(--font-body);
   font-size: 0.7rem;
-  letter-spacing: 0.14em;
+  font-weight: 700;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--color-ink-soft);
+  color: var(--color-paper);
+  opacity: 0.92;
+  position: relative;
+  z-index: 1;
 }
 
 .badge__letter {
   font-family: var(--font-display);
   font-style: italic;
-  font-weight: 600;
+  font-weight: 700;
   font-size: clamp(2rem, 5vw, 3.25rem);
   line-height: 1;
-  color: var(--badge-color);
+  color: var(--color-paper);
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.18);
+  position: relative;
+  z-index: 1;
 }
 
 .badge__caption {
   font-family: var(--font-body);
   font-size: 0.72rem;
-  color: var(--color-ink-soft);
+  color: var(--color-paper);
+  opacity: 0.88;
   line-height: var(--leading-snug);
+  position: relative;
+  z-index: 1;
+}
+
+/* Light-grade badges (B light green, C yellow, olive eco-c) need ink text,
+   not paper, because their background is bright enough to wash out white. */
+.badge--grade-b,
+.badge--grade-c,
+.badge--eco.badge--grade-c {
+  color: var(--color-ink);
+}
+
+.badge--grade-b .badge__axis,
+.badge--grade-c .badge__axis,
+.badge--eco.badge--grade-c .badge__axis {
+  color: var(--color-ink);
+  opacity: 0.78;
+}
+
+.badge--grade-b .badge__letter,
+.badge--grade-c .badge__letter,
+.badge--eco.badge--grade-c .badge__letter {
+  color: var(--color-ink);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.badge--grade-b .badge__caption,
+.badge--grade-c .badge__caption,
+.badge--eco.badge--grade-c .badge__caption {
+  color: var(--color-ink);
+  opacity: 0.78;
+}
+
+/* Unknown / not-applicable badges: use a paper background with grey ink so
+   they look distinctly "no data" rather than mid-tone in the colour grid. */
+.badge--grade-unknown,
+.badge--grade-not-applicable {
+  background: var(--color-paper-2);
+  color: var(--color-ink-soft);
+}
+
+.badge--grade-unknown .badge__axis,
+.badge--grade-not-applicable .badge__axis {
+  color: var(--color-ink-soft);
+  opacity: 1;
 }
 
 .badge--grade-unknown .badge__letter,
 .badge--grade-not-applicable .badge__letter {
   color: var(--color-ink-mute);
+  text-shadow: none;
+}
+
+.badge--grade-unknown .badge__caption,
+.badge--grade-not-applicable .badge__caption {
+  color: var(--color-ink-soft);
+  opacity: 1;
+}
+
+.badge--grade-unknown::after,
+.badge--grade-not-applicable::after {
+  display: none;
 }
 
 /* ─── nutrient chips ────────────────────────────────────────────────── */
