@@ -89,3 +89,9 @@ tmp/
 
 # Playwright run artefacts — never commit
 test-results/
+
+# QA harness output and configs (Playwright runner + recorder) — never commit
+.finalrun/
+qa-output/
+playwright.config.js
+qa_video_recorder.js
