@@ -54,10 +54,17 @@ export function toggleFavourite(code, productData) {
     return false;
   }
 
+  // Pick the primary brand from whichever shape the caller passes.
+  let brand = null;
+  if (typeof productData.brand === 'string') brand = productData.brand;
+  else if (Array.isArray(productData.brands) && productData.brands.length) brand = productData.brands[0];
+  else if (typeof productData.brands === 'string' && productData.brands) brand = productData.brands.split(',')[0].trim();
+
   // Not saved — add it (newest first)
   items.unshift({
     code,
     name: productData.name || productData.product_name || 'Unnamed product',
+    brand: brand || null,
     image: productData.image || productData.image_small_url || null,
     healthGrade: productData.healthGrade ?? productData.nutriScore?.grade ?? 'unknown',
     ecoGrade: productData.ecoGrade ?? productData.ecoScore?.grade ?? 'unknown',
@@ -157,10 +164,15 @@ function renderBadge(scope, score) {
   const grade = score?.grade || score || 'unknown';
   const color = scope === 'nutri' ? NUTRI_COLORS[grade] : ECO_COLORS[grade];
   const label = GRADE_LABELS[grade] || '?';
+  const axisName = scope === 'nutri' ? 'Nutri' : 'Eco';
   return el(
-    'span',
-    { class: `badge badge--${scope} badge--grade-${grade}`, style: { '--badge-color': color } },
-    label,
+    'div',
+    {
+      class: `badge badge--${scope} badge--grade-${grade} badge--mini`,
+      style: { '--badge-color': color },
+    },
+    el('span', { class: 'badge__axis' }, axisName),
+    el('span', { class: 'badge__letter' }, label),
   );
 }
 
@@ -245,11 +257,12 @@ function buildFavItem(item, onOpenProduct, onToggleHeart) {
     },
   );
 
-  // header: image + title-block + heart button
+  // header: image + title-block (brand + name) + heart button
   const header = el('div', { class: 'card__header' },
     el('div', { class: 'card__image-wrap' }, buildItemImage(item.image, item.name)),
     el('div', { class: 'card__title-block' },
       el('h3', { class: 'card__title' }, item.name),
+      item.brand ? el('p', { class: 'card__brand' }, item.brand) : null,
     ),
   );
 
@@ -262,9 +275,22 @@ function buildFavItem(item, onOpenProduct, onToggleHeart) {
     renderBadge('eco', item.ecoGrade),
   );
 
+  // saved-on date (mono micro-stamp)
+  const savedAt = item.savedAt ? new Date(item.savedAt) : null;
+  const dateStr = savedAt
+    ? savedAt.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+    : null;
+  const meta = dateStr
+    ? el('div', { class: 'card__meta' },
+        el('span', { class: 'card__meta-label' }, 'Saved'),
+        el('span', { class: 'card__meta-value' }, dateStr),
+      )
+    : null;
+
   article.appendChild(header);
   header.appendChild(heartBtn);
   article.appendChild(scores);
+  if (meta) article.appendChild(meta);
 
   return article;
 }
