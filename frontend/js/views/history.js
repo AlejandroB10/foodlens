@@ -80,10 +80,17 @@ export function trackView(code, productData) {
   const existing = items.findIndex((i) => i.code === code);
   if (existing !== -1) items.splice(existing, 1);
 
+  // Pick the primary brand from whichever shape the caller passes.
+  let brand = null;
+  if (typeof productData.brand === 'string') brand = productData.brand;
+  else if (Array.isArray(productData.brands) && productData.brands.length) brand = productData.brands[0];
+  else if (typeof productData.brands === 'string' && productData.brands) brand = productData.brands.split(',')[0].trim();
+
   // Prepend new entry
   items.unshift({
     code,
     name: productData.name || productData.product_name || 'Unnamed product',
+    brand: brand || null,
     image: productData.image || productData.image_small_url || null,
     healthGrade: productData.nutriScore?.grade ?? 'unknown',
     ecoGrade: productData.ecoScore?.grade ?? 'unknown',
@@ -174,11 +181,33 @@ function renderBadge(scope, score) {
   const grade = score?.grade || score || 'unknown';
   const color = scope === 'nutri' ? NUTRI_COLORS[grade] : ECO_COLORS[grade];
   const label = GRADE_LABELS[grade] || '?';
+  const axisName = scope === 'nutri' ? 'Nutri' : 'Eco';
   return el(
-    'span',
-    { class: `badge badge--${scope} badge--grade-${grade}`, style: { '--badge-color': color } },
-    label,
+    'div',
+    {
+      class: `badge badge--${scope} badge--grade-${grade} badge--mini`,
+      style: { '--badge-color': color },
+    },
+    el('span', { class: 'badge__axis' }, axisName),
+    el('span', { class: 'badge__letter' }, label),
   );
+}
+
+// Lightweight relative-time formatter — no Intl.RelativeTimeFormat dep.
+function formatTimeAgo(ts) {
+  if (!ts) return '';
+  const now = Date.now();
+  const diff = Math.max(0, now - ts);
+  const seconds = Math.floor(diff / 1000);
+  if (seconds < 30) return 'just now';
+  if (seconds < 60) return seconds + 's ago';
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return minutes + 'm ago';
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return hours + 'h ago';
+  const days = Math.floor(hours / 24);
+  if (days < 7) return days + 'd ago';
+  return new Date(ts).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
 }
 
 // ─── rendering ───────────────────────────────────────────────────────────────
@@ -206,7 +235,8 @@ function buildPlaceholder(name) {
   return el('span', { class: 'recent-item__placeholder' }, initial);
 }
 
-function buildHistoryItem(item, onOpen) {
+function buildHistoryItem(item, onOpen, index) {
+  const ordinal = String(index + 1).padStart(2, '0');
   return el(
     'li',
     {
@@ -223,14 +253,19 @@ function buildHistoryItem(item, onOpen) {
       tabindex: '0',
       'aria-label': item.name,
     },
+    el('span', { class: 'recent-item__ordinal', 'aria-hidden': 'true' }, ordinal),
     el('div', { class: 'recent-item__image-wrap' }, buildItemImage(item.image, item.name)),
     el('div', { class: 'recent-item__body' },
       el('span', { class: 'recent-item__name' }, item.name),
-      el('div', { class: 'recent-item__badges' },
-        renderBadge('nutri', item.healthGrade),
-        renderBadge('eco', item.ecoGrade),
-      ),
+      item.brand
+        ? el('span', { class: 'recent-item__brand' }, item.brand)
+        : null,
     ),
+    el('div', { class: 'recent-item__badges' },
+      renderBadge('nutri', item.healthGrade),
+      renderBadge('eco', item.ecoGrade),
+    ),
+    el('span', { class: 'recent-item__time' }, formatTimeAgo(item.viewedAt || item.savedAt)),
   );
 }
 
@@ -262,29 +297,48 @@ export function renderRecentlyViewed(container, onOpenProduct) {
     container.innerHTML = '';
     container.setAttribute('aria-label', 'Recently viewed products');
 
-    // Header (always visible, toggle collapse)
-    const header = el('button', { type: 'button', class: 'recently-viewed__header' },
+    // Header — two independent buttons inside an <header>, never button-in-button.
+    const toggleBtn = el('button', {
+      type: 'button',
+      class: 'recently-viewed__toggle',
+      'aria-expanded': 'true',
+      'aria-controls': 'recently-viewed-list',
+    },
+      el('span', { class: 'recently-viewed__chevron', 'aria-hidden': 'true',
+        html: '<svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="3,6 8,11 13,6"/></svg>',
+      }),
       el('span', { class: 'recently-viewed__title' }, 'Recently viewed'),
       el('span', { class: 'recently-viewed__count' }, `(${items.length})`),
-      el('span', { class: 'recently-viewed__chevron' }, '▶'),
-      el('button', {
-        type: 'button',
-        class: 'recently-viewed__clear',
-        'aria-label': 'Clear history',
-        onClick: (e) => {
-          e.stopPropagation();
-          clearHistory();
-          renderRecentlyViewed(container, onOpenProduct);
-        },
-      }, 'Clear'),
     );
-    header.addEventListener('click', () => {
+    toggleBtn.addEventListener('click', () => {
       isExpanded = !isExpanded;
       container.classList.toggle('is-expanded', isExpanded);
+      toggleBtn.setAttribute('aria-expanded', isExpanded ? 'true' : 'false');
+    });
+
+    const clearBtn = el('button', {
+      type: 'button',
+      class: 'recently-viewed__clear',
+      'aria-label': 'Clear history',
+      onClick: (e) => {
+        e.stopPropagation();
+        clearHistory();
+        renderRecentlyViewed(container, onOpenProduct);
+      },
+    }, 'Clear');
+
+    const header = el('header', { class: 'recently-viewed__header' }, toggleBtn, clearBtn);
+
+    // Clicking anywhere on the header (the toggle area but also the gap
+    // between toggle and clear) collapses/expands — except the Clear button.
+    header.addEventListener('click', (e) => {
+      if (e.target.closest('.recently-viewed__clear')) return;
+      if (e.target.closest('.recently-viewed__toggle')) return; // already handled
+      toggleBtn.click();
     });
 
     // List
-    const list = el('ol', { class: 'recently-viewed__list', role: 'list' });
+    const list = el('ol', { id: 'recently-viewed-list', class: 'recently-viewed__list', role: 'list' });
 
     container.appendChild(header);
     container.appendChild(list);
@@ -300,7 +354,7 @@ export function renderRecentlyViewed(container, onOpenProduct) {
   if (countEl) countEl.textContent = `(${items.length})`;
 
   list.innerHTML = '';
-  for (const item of items) {
-    list.appendChild(buildHistoryItem(item, onOpenProduct));
-  }
+  items.forEach((item, index) => {
+    list.appendChild(buildHistoryItem(item, onOpenProduct, index));
+  });
 }
