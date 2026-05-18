@@ -276,17 +276,40 @@
 
 .field__error {
   font-family: var(--font-body);
-  font-size: 0.8rem;
+  font-size: 0.82rem;
   color: var(--color-nutri-e);
   display: none;
+  margin-top: var(--space-2);
+  line-height: 1.4;
+}
+
+.field__required {
+  color: var(--color-nutri-e);
+  font-weight: 600;
+  margin-left: 2px;
 }
 
 .field__input.has-error {
   border-color: var(--color-nutri-e);
 }
 
-.field__input.has-error + .field__error {
+.field__input.has-error + .field__error,
+.field--invalid > .field__error,
+.field--invalid .field__error {
   display: block;
+}
+
+/* Tint the surrounding label / legend when the field is in error */
+.field--invalid > .field__label,
+.field--invalid > .legend,
+.field--invalid > legend {
+  color: var(--color-nutri-e);
+}
+
+/* Tint goal cards / radio items when their group is invalid */
+.field--invalid .goal-card,
+.field--invalid .radio-item {
+  border-color: var(--color-nutri-e);
 }
 
 /* ─── radio group ─────────────────────────────────────────────────────────── */

@@ -72,10 +72,13 @@ function el(tag, attrs = {}, ...children) {
 // ─── markup builders ────────────────────────────────────────────────────────
 
 function buildBackdrop() {
+  // No aria-hidden here: the modal lives inside the backdrop, so hiding the
+  // ancestor would mark the dialog as inert for assistive technologies AND
+  // Chrome would block focus / clicks on its descendants (the Continue button
+  // would silently stop working — observed during manual testing).
   return el('div', {
     id: 'onboarding-backdrop',
     class: 'onboarding-backdrop',
-    'aria-hidden': 'true',
   });
 }
 
@@ -154,15 +157,15 @@ function buildStep1(profile) {
     },
   ];
 
-  return el('section', { class: 'onboarding', 'aria-label': 'Step 1 — Your goals', dataset: { step: '1' } },
+  return el('section', { id: 'onboarding-modal', class: 'onboarding', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Step 1 — Your goals', tabindex: '-1', dataset: { step: '1' } },
     buildHeader('Let\'s get started'),
     buildProgress(3, 1),
     el('div', { class: 'onboarding__body' },
       el('div', {},
         el('h3', { class: 'step-title' }, 'What brings you here?'),
-        el('p', { class: 'step-subtitle' }, 'Select all that apply. You can skip this entirely.')
+        el('p', { class: 'step-subtitle' }, 'Select at least one — or use "Skip for now" if none fit.')
       ),
-      el('fieldset', { class: 'goals-grid', 'aria-label': 'Select your goals' },
+      el('fieldset', { id: 'fl-goals-field', class: 'field goals-grid', 'aria-label': 'Select your goals', 'aria-describedby': 'fl-goals-error' },
         ...goalCards.map((goal) => {
           const checked = selectedGoals.includes(goal.value);
           return el('label', {
@@ -174,6 +177,7 @@ function buildStep1(profile) {
                 if (cb) {
                   cb.checked = !cb.checked;
                   e.currentTarget.classList.toggle('is-selected', cb.checked);
+                  clearFieldError('fl-goals-field');
                 }
               }
             },
@@ -185,6 +189,7 @@ function buildStep1(profile) {
               checked: checked,
               onChange: (e) => {
                 e.target.closest('.goal-card').classList.toggle('is-selected', e.target.checked);
+                clearFieldError('fl-goals-field');
               },
             }),
             el('span', { class: 'goal-card__check', 'aria-hidden': 'true' },
@@ -194,7 +199,9 @@ function buildStep1(profile) {
             el('span', { class: 'goal-card__label' }, goal.label),
             el('span', { class: 'goal-card__desc' }, goal.desc)
           );
-        })
+        }),
+        el('p', { id: 'fl-goals-error', class: 'field__error', role: 'alert' },
+          'Select at least one goal, or use "Skip for now".')
       )
     ),
     buildFooter(1, 3)
@@ -214,18 +221,21 @@ function buildStep2(profile) {
     { value: 'prefer_not_to_say', label: 'Prefer not to say' },
   ];
 
-  return el('section', { class: 'onboarding', 'aria-label': 'Step 2 — About you', dataset: { step: '2' } },
+  return el('section', { id: 'onboarding-modal', class: 'onboarding', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Step 2 — About you', tabindex: '-1', dataset: { step: '2' } },
     buildHeader('About you'),
     buildProgress(3, 2),
     el('div', { class: 'onboarding__body' },
       el('div', {},
         el('h3', { class: 'step-title' }, 'Help us personalise your view'),
-        el('p', { class: 'step-subtitle' }, 'All fields are optional — skip anytime.')
+        el('p', { class: 'step-subtitle' }, 'Age and gender are required. Use "Skip for now" if you would rather not say.')
       ),
       el('div', { class: 'field-group' },
-        // Age
-        el('div', { class: 'field' },
-          el('label', { class: 'field__label', for: 'fl-age' }, 'Your age'),
+        // Age — required
+        el('div', { id: 'fl-age-field', class: 'field' },
+          el('label', { class: 'field__label', for: 'fl-age' },
+            'Your age ',
+            el('span', { class: 'field__required', 'aria-hidden': 'true' }, '*'),
+          ),
           el('input', {
             type: 'number',
             id: 'fl-age',
@@ -233,18 +243,26 @@ function buildStep2(profile) {
             placeholder: 'e.g. 28',
             min: '13',
             max: '120',
+            required: 'required',
+            'aria-required': 'true',
+            'aria-describedby': 'fl-age-error',
             inputmode: 'numeric',
             autocomplete: 'off',
             value: savedAge,
             onInput: (e) => {
               e.target.classList.remove('has-error');
+              clearFieldError('fl-age-field');
             },
           }),
-          el('span', { class: 'field__error', role: 'alert' }, 'Enter a whole number between 13 and 120')
+          el('span', { id: 'fl-age-error', class: 'field__error', role: 'alert' },
+            'Age is required. Use a whole number between 13 and 120.')
         ),
-        // Gender
-        el('fieldset', { class: 'field' },
-          el('legend', { class: 'field__label' }, 'Gender'),
+        // Gender — required
+        el('fieldset', { id: 'fl-gender-field', class: 'field', 'aria-describedby': 'fl-gender-error' },
+          el('legend', { class: 'field__label' },
+            'Gender ',
+            el('span', { class: 'field__required', 'aria-hidden': 'true' }, '*'),
+          ),
           el('div', { class: 'radio-group' },
             ...genderOptions.map((opt) =>
               el('label', { class: 'radio-item' },
@@ -252,12 +270,17 @@ function buildStep2(profile) {
                   type: 'radio',
                   name: 'gender',
                   value: opt.value,
+                  required: 'required',
+                  'aria-required': 'true',
                   checked: savedGender === opt.value,
+                  onChange: () => clearFieldError('fl-gender-field'),
                 }),
                 el('span', { class: 'radio-item__label' }, opt.label)
               )
             )
-          )
+          ),
+          el('p', { id: 'fl-gender-error', class: 'field__error', role: 'alert' },
+            'Please pick a gender option.')
         )
       )
     ),
@@ -271,7 +294,7 @@ function buildStep3(profile) {
   const savedHeight = profile?.bodyMetrics?.heightCm ?? '';
   const savedWeight = profile?.bodyMetrics?.weightKg ?? '';
 
-  return el('section', { class: 'onboarding', 'aria-label': 'Step 3 — Body metrics (optional)', dataset: { step: '3' } },
+  return el('section', { id: 'onboarding-modal', class: 'onboarding', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'Step 3 — Body metrics (optional)', tabindex: '-1', dataset: { step: '3' } },
     buildHeader('One more thing'),
     buildProgress(3, 3),
     el('div', { class: 'onboarding__body' },
@@ -327,15 +350,56 @@ function buildStep3(profile) {
 
 // ─── validation helpers ──────────────────────────────────────────────────────
 
+// Generic helpers to toggle the `field--invalid` marker on a wrapping field.
+function markFieldError(fieldId) {
+  const field = document.getElementById(fieldId);
+  if (field) field.classList.add('field--invalid');
+}
+
+function clearFieldError(fieldId) {
+  const field = document.getElementById(fieldId);
+  if (field) field.classList.remove('field--invalid');
+}
+
+function validateGoals() {
+  const checked = document.querySelectorAll('#onboarding-modal input[name="goals"]:checked');
+  if (checked.length === 0) {
+    markFieldError('fl-goals-field');
+    return false;
+  }
+  clearFieldError('fl-goals-field');
+  return true;
+}
+
 function validateAge() {
   const input = document.getElementById('fl-age');
   if (!input) return true;
-  const val = parseInt(input.value, 10);
-  if (input.value !== '' && (isNaN(val) || val < 13 || val > 120)) {
+  const raw = (input.value || '').trim();
+  if (raw === '') {
     input.classList.add('has-error');
+    markFieldError('fl-age-field');
     input.focus();
     return false;
   }
+  const val = parseInt(raw, 10);
+  if (isNaN(val) || val < 13 || val > 120) {
+    input.classList.add('has-error');
+    markFieldError('fl-age-field');
+    input.focus();
+    return false;
+  }
+  input.classList.remove('has-error');
+  clearFieldError('fl-age-field');
+  return true;
+}
+
+function validateGender() {
+  const checked = document.querySelector('#onboarding-modal input[name="gender"]:checked');
+  if (!checked) {
+    markFieldError('fl-gender-field');
+    return false;
+  }
+  clearFieldError('fl-gender-field');
   return true;
 }
 
@@ -421,19 +485,28 @@ function handleNext() {
   const profile = loadProfile() || makeProfile();
 
   if (currentStep === 1) {
+    if (!validateGoals()) return;
     profile.goals = collectGoals();
+    profile.status = 'in-progress';
+    profile.updatedAt = new Date().toISOString();
     saveProfile(profile);
     goToStep(2);
   } else if (currentStep === 2) {
-    if (!validateAge()) return;
+    // Validate both before bailing so the user sees every error at once.
+    const ageOk = validateAge();
+    const genderOk = validateGender();
+    if (!ageOk || !genderOk) return;
     profile.age = collectAge();
     profile.gender = collectGender();
+    profile.status = 'in-progress';
+    profile.updatedAt = new Date().toISOString();
     saveProfile(profile);
     goToStep(3);
   } else if (currentStep === 3) {
     if (!validateHeight() || !validateWeight()) return;
     const metrics = collectBodyMetrics();
     profile.bodyMetrics = metrics;
+    profile.status = 'completed';
     profile.updatedAt = new Date().toISOString();
     saveProfile(profile);
     hide();
@@ -477,7 +550,6 @@ function goToStep(step) {
   currentStep = step;
   const profile = loadProfile();
 
-  const backdrop = document.getElementById('onboarding-backdrop');
   const modal = document.getElementById('onboarding-modal');
 
   let newModal;
