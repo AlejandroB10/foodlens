@@ -6,6 +6,9 @@ import {
   searchProducts,
   getAllSampleProducts,
   getAlternativesFromBackend,
+  getExplainFromBackend,
+  getCategoryScatter,
+  postTelemetryEvent,
 } from './api.js';
 import {
   generateContrastiveSentence,
@@ -58,6 +61,29 @@ const GRADE_LABELS = {
 const state = loadState();
 let lastResults = [];
 let focusedProduct = null;
+
+// ─── telemetry (F-45) ──────────────────────────────────────────────────
+
+const TELEMETRY_KEY = 'foodlens.telemetry_opt_in';
+
+const telemetry = {
+  isOptedIn() {
+    return localStorage.getItem(TELEMETRY_KEY) === 'true';
+  },
+  optIn() {
+    localStorage.setItem(TELEMETRY_KEY, 'true');
+  },
+  optOut() {
+    localStorage.setItem(TELEMETRY_KEY, 'false');
+  },
+  send(payload) {
+    if (!this.isOptedIn()) return;
+    postTelemetryEvent(payload);
+  },
+};
+
+// Timestamp set when search completes — used to compute decision_time.
+let _searchCompletedAt = null;
 
 // ─── DOM lookups ──────────────────────────────────────────────────────
 
@@ -301,6 +327,187 @@ async function shareProduct(product) {
   }
 }
 
+// ─── SHAP waterfall chart (F-24) ──────────────────────────────────────
+
+const _shapChartInstances = new WeakMap();
+
+function renderShapChart(canvas, shapData) {
+  // Destroy any previous chart on this canvas to avoid Canvas reuse warning.
+  const existing = _shapChartInstances.get(canvas);
+  if (existing) existing.destroy();
+
+  const features = shapData.features.slice(0, 7); // top-7 most impactful
+  const labels = features.map((f) => `${f.name} (${f.feature_value}g)`);
+  const values = features.map((f) => f.shap_value);
+  const colors = values.map((v) =>
+    v >= 0 ? 'rgba(231, 76, 60, 0.75)' : 'rgba(46, 204, 113, 0.75)',
+  );
+
+  const chart = new Chart(canvas, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'SHAP contribution',
+        data: values,
+        backgroundColor: colors,
+        borderWidth: 0,
+        borderRadius: 3,
+      }],
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const v = ctx.raw;
+              const dir = v >= 0 ? 'pushes toward' : 'opposes';
+              return ` ${dir} grade ${shapData.predicted_class.toUpperCase()} (${v > 0 ? '+' : ''}${v.toFixed(3)})`;
+            },
+          },
+        },
+      },
+      scales: {
+        x: {
+          title: { display: true, text: 'SHAP value (contribution to predicted grade)' },
+          grid: { color: 'rgba(0,0,0,0.06)' },
+        },
+        y: { grid: { display: false } },
+      },
+    },
+  });
+
+  _shapChartInstances.set(canvas, chart);
+}
+
+function renderAdvancedToggle(product) {
+  const details = el('details', { class: 'card__advanced' },
+    el('summary', { class: 'card__advanced-summary' }, 'Advanced explanation (SHAP)'),
+  );
+
+  const body = el('div', { class: 'card__advanced-body' });
+  details.appendChild(body);
+
+  let loaded = false;
+  details.addEventListener('toggle', async () => {
+    if (!details.open || loaded) return;
+    loaded = true;
+
+    const spinner = el('p', { class: 'card__advanced-loading' }, 'Loading SHAP explanation…');
+    body.appendChild(spinner);
+
+    const data = await getExplainFromBackend(product.code);
+
+    body.removeChild(spinner);
+
+    if (!data || !data.shap_waterfall) {
+      body.appendChild(
+        el('p', { class: 'card__advanced-unavailable' },
+          'Advanced explanation requires the FoodLens backend. Start it and set the backend URL in index.html.',
+        ),
+      );
+      return;
+    }
+
+    const wf = data.shap_waterfall;
+    const caption = el('p', { class: 'card__advanced-caption' },
+      `Predicted grade: ${wf.predicted_class.toUpperCase()} (${Math.round(wf.predicted_proba * 100)}% confidence). ` +
+      'Red bars push the model toward this grade; green bars oppose it.',
+    );
+    const canvas = el('canvas', { class: 'card__shap-canvas', 'aria-label': 'SHAP feature contributions' });
+    body.appendChild(caption);
+    body.appendChild(canvas);
+    renderShapChart(canvas, wf);
+  });
+
+  return details;
+}
+
+// ─── Nutri × Eco scatter plot (F-43) ──────────────────────────────────
+
+const _scatterChartInstances = new WeakMap();
+
+function renderScatterPlot(container, scatterData, focusedProduct) {
+  const existing = _scatterChartInstances.get(container);
+  if (existing) existing.destroy();
+
+  const focusedCode = focusedProduct?.code;
+
+  // Add small jitter so overlapping points (same integer scores) are visible.
+  const jitter = () => (Math.random() - 0.5) * 0.25;
+
+  const regular = [];
+  const focused = [];
+
+  for (const p of scatterData.products) {
+    const x = p.eco_numeric != null ? p.eco_numeric + jitter() : null;
+    const y = p.nutri_numeric != null ? p.nutri_numeric + jitter() : null;
+    if (x == null || y == null) continue;
+    const point = { x, y, label: p.name, nutri: p.nutri_grade, eco: p.eco_grade };
+    if (p.code === focusedCode) focused.push(point);
+    else regular.push(point);
+  }
+
+  const canvas = el('canvas', { 'aria-label': `Nutri-Score vs Eco-Score scatter for ${scatterData.category}` });
+  container.appendChild(canvas);
+
+  const chart = new Chart(canvas, {
+    type: 'scatter',
+    data: {
+      datasets: [
+        {
+          label: 'Category products',
+          data: regular,
+          backgroundColor: 'rgba(99, 179, 237, 0.65)',
+          pointRadius: 6,
+          pointHoverRadius: 8,
+        },
+        {
+          label: 'This product',
+          data: focused,
+          backgroundColor: 'rgba(237, 100, 54, 1)',
+          pointRadius: 10,
+          pointHoverRadius: 12,
+          pointStyle: 'star',
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'bottom' },
+        tooltip: {
+          callbacks: {
+            label: (ctx) => {
+              const p = ctx.raw;
+              return ` ${p.label}  |  Nutri: ${(p.nutri || '?').toUpperCase()}  Eco: ${(p.eco || '?').toUpperCase()}`;
+            },
+          },
+        },
+      },
+      scales: {
+        x: {
+          title: { display: true, text: 'Eco-Score (1 = worst · 5 = best)' },
+          min: 0.5, max: 5.5,
+          ticks: { stepSize: 1, callback: (v) => ['', 'E', 'D', 'C', 'B', 'A'][Math.round(v)] || '' },
+          grid: { color: 'rgba(0,0,0,0.06)' },
+        },
+        y: {
+          title: { display: true, text: 'Nutri-Score (1 = worst · 5 = best)' },
+          min: 0.5, max: 5.5,
+          ticks: { stepSize: 1, callback: (v) => ['', 'E', 'D', 'C', 'B', 'A'][Math.round(v)] || '' },
+          grid: { color: 'rgba(0,0,0,0.06)' },
+        },
+      },
+    },
+  });
+
+  _scatterChartInstances.set(container, chart);
+}
+
 // ─── product card ──────────────────────────────────────────────────────
 
 function pickReference(product, products) {
@@ -355,6 +562,7 @@ function renderProductCard(product, reference, isAlternative = false) {
       el('summary', {}, 'See numbers'),
       renderNutrientTable(product.nutrients),
     ),
+    !isAlternative ? renderAdvancedToggle(product) : null,
     !isAlternative
       ? el(
           'div',
@@ -409,7 +617,14 @@ function renderAlternativeCard(product, alternative) {
     {
       class: 'alt-card',
       dataset: { code: alternative.code },
-      onClick: () => focusProduct(alternative),
+      onClick: () => {
+      telemetry.send({
+        event: 'alternative_click',
+        viewed_barcode: product?.code,
+        clicked_barcode: alternative?.code,
+      });
+      focusProduct(alternative);
+    },
       role: 'button',
       tabindex: '0',
       onKeydown: (e) => {
@@ -437,6 +652,14 @@ function renderAlternativeCard(product, alternative) {
 // ─── rendering flows ───────────────────────────────────────────────────
 
 function focusProduct(product, { skipTrack = false } = {}) {
+  // decision_time: ms from search completion to product selection (F-45).
+  if (_searchCompletedAt && product?.code) {
+    telemetry.send({
+      event: 'decision_time',
+      barcode: product.code,
+      ms: Date.now() - _searchCompletedAt,
+    });
+  }
   focusedProduct = product;
   if (!skipTrack) {
     trackView(product.code, product);
@@ -451,7 +674,10 @@ async function rerenderFocused() {
     return;
   }
   const reference = pickReference(focusedProduct, lastResults);
-  const alternatives = await computeAlternatives(focusedProduct, lastResults);
+  const [alternatives, scatterData] = await Promise.all([
+    computeAlternatives(focusedProduct, lastResults),
+    getCategoryScatter(focusedProduct.category),
+  ]);
 
   setHidden(els.focusedView, false);
   clear(els.focusedView);
@@ -474,6 +700,19 @@ async function rerenderFocused() {
     els.focusedView.appendChild(
       el('p', { class: 'alt-grid__empty' }, 'This is already among the best in its category.'),
     );
+  }
+
+  // Scatter plot (F-43) — only when backend has category data.
+  if (scatterData) {
+    els.focusedView.appendChild(
+      el('h3', { class: 'section__subtitle' }, 'Health vs Eco in this category'),
+    );
+    els.focusedView.appendChild(
+      el('p', { class: 'section__hint' }, 'Top-right corner = best on both axes. The orange star is this product.'),
+    );
+    const chartWrap = el('div', { class: 'scatter-wrap' });
+    els.focusedView.appendChild(chartWrap);
+    renderScatterPlot(chartWrap, scatterData, focusedProduct);
   }
 
   els.focusedView.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -563,6 +802,7 @@ async function runSearch(query) {
       results = await getAllSampleProducts();
     }
     lastResults = results || [];
+    _searchCompletedAt = Date.now();
     rerenderResults();
     if (lastResults.length > 0) {
       // Auto-focus the top-ranked product so reasoning is visible (H2).
@@ -713,6 +953,7 @@ function wireEvents() {
   els.weightSlider?.addEventListener('input', (e) => {
     const v = Number(e.target.value);
     setWeight(v, null);
+    telemetry.send({ event: 'slider_change', value: v });
   });
 
   for (const btn of els.presetButtons) {
@@ -735,6 +976,49 @@ function wireEvents() {
   });
 }
 
+// ─── telemetry consent banner (F-45) ───────────────────────────────────
+
+function renderTelemetryBanner() {
+  // Only show if the user hasn't decided yet.
+  if (localStorage.getItem(TELEMETRY_KEY) !== null) return;
+
+  const banner = el(
+    'aside',
+    { class: 'telemetry-banner', role: 'complementary', 'aria-label': 'Usage tracking consent' },
+    el(
+      'p',
+      { class: 'telemetry-banner__text' },
+      'Help improve FoodLens: allow anonymous usage tracking? ',
+      el('span', { class: 'telemetry-banner__detail' },
+        '(decision time, clicked alternatives, slider changes — no personal data)',
+      ),
+    ),
+    el(
+      'div',
+      { class: 'telemetry-banner__actions' },
+      el('button', {
+        type: 'button',
+        class: 'btn btn--primary btn--sm',
+        onClick: () => {
+          telemetry.optIn();
+          banner.remove();
+          toast('Usage tracking enabled. Thank you!');
+        },
+      }, 'Allow'),
+      el('button', {
+        type: 'button',
+        class: 'btn btn--ghost btn--sm',
+        onClick: () => {
+          telemetry.optOut();
+          banner.remove();
+        },
+      }, 'No thanks'),
+    ),
+  );
+
+  document.body.appendChild(banner);
+}
+
 // ─── bootstrap ─────────────────────────────────────────────────────────
 
 async function bootstrap() {
@@ -747,6 +1031,8 @@ async function bootstrap() {
   // Suppress all trackView calls during bootstrap so no sample product
   // (loaded via runSearch('')) gets recorded as "recently viewed".
   startBootstrap();
+  renderTelemetryBanner();
+  // Show all sample products on first load so the UI is never empty.
   await runSearch('');
 
   renderRecentlyViewed(els.recentlyViewed, (code) => runSearch(code));

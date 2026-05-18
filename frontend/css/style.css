@@ -1194,3 +1194,185 @@ summary:focus-visible {
   border-color: var(--color-accent);
   outline: 0;
 }
+
+/* ─── F-43 · Scatter plot wrapper ───────────────────────────────────── */
+.scatter-wrap {
+  background: var(--color-paper);
+  border: var(--rule-w-bold) solid var(--color-rule);
+  padding: var(--space-4) var(--space-5);
+  margin: var(--space-5) 0;
+  max-width: 600px;
+}
+
+.scatter-wrap canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.section__hint {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 0.92rem;
+  color: var(--color-ink-soft);
+  margin: 0 0 var(--space-3);
+}
+
+/* ─── F-24 · SHAP advanced explanation panel ─────────────────────────── */
+.card__advanced {
+  margin-top: var(--space-4);
+  border-top: var(--rule-w) solid var(--color-rule);
+  padding-top: var(--space-3);
+}
+
+.card__advanced > summary {
+  cursor: pointer;
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-ink-soft);
+  user-select: none;
+  padding: var(--space-1) 0;
+  transition: color 140ms ease;
+}
+
+.card__advanced > summary::-webkit-details-marker { display: none; }
+
+.card__advanced > summary::before {
+  content: "+";
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  color: var(--color-accent);
+  width: 14px;
+  text-align: center;
+}
+
+.card__advanced[open] > summary::before { content: "−"; }
+
+.card__advanced > summary:hover {
+  color: var(--color-accent);
+}
+
+.card__advanced-body {
+  margin-top: var(--space-3);
+}
+
+.card__advanced-loading,
+.card__advanced-unavailable {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 0.92rem;
+  color: var(--color-ink-soft);
+  margin: 0;
+}
+
+.card__advanced-caption {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  color: var(--color-ink-soft);
+  margin: 0 0 var(--space-2);
+}
+
+.card__shap-canvas {
+  display: block;
+  width: 100%;
+  max-height: 260px;
+}
+
+/* ─── F-45 · Telemetry consent banner ───────────────────────────────── */
+.telemetry-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 9000;
+  background: var(--color-ink);
+  color: var(--color-paper);
+  padding: var(--space-4) var(--space-6);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-5);
+  border-top: var(--rule-w-bold) solid var(--color-accent);
+  box-shadow: 0 -8px 24px rgba(26, 26, 24, 0.25);
+}
+
+.telemetry-banner__text {
+  flex: 1 1 320px;
+  font-family: var(--font-body);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.telemetry-banner__text strong {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  display: inline-block;
+  margin-right: 4px;
+}
+
+.telemetry-banner__detail {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  color: color-mix(in srgb, var(--color-paper) 65%, var(--color-ink));
+  margin-top: 4px;
+}
+
+.telemetry-banner__actions {
+  display: flex;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.btn--sm {
+  font-family: var(--font-body);
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  padding: var(--space-2) var(--space-4);
+  border: var(--rule-w) solid currentColor;
+  background: transparent;
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.btn--sm:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+.btn--sm.btn--accept {
+  background: var(--color-accent);
+  color: var(--color-paper);
+  border-color: var(--color-accent);
+}
+
+.btn--sm.btn--accept:hover,
+.btn--sm.btn--accept:focus-visible {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  border-color: var(--color-paper);
+}
+
+.btn--sm.btn--decline {
+  background: transparent;
+  color: color-mix(in srgb, var(--color-paper) 75%, var(--color-ink));
+  border-color: color-mix(in srgb, var(--color-paper) 55%, var(--color-ink));
+}
+
+.btn--sm.btn--decline:hover,
+.btn--sm.btn--decline:focus-visible {
+  color: var(--color-paper);
+  border-color: var(--color-paper);
+}

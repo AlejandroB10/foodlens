@@ -6,6 +6,7 @@ Routes: GET /, GET /health, GET /api/search, GET /api/product/<barcode>,
 """
 from __future__ import annotations
 
+import json
 import logging
 import os
 import sys
@@ -26,6 +27,9 @@ from backend.services.off_client import (
 from backend.services.normaliser import normalise_product
 from backend.services import recommender as _recommender
 from backend.services import explainer as _explainer
+from backend.services import nutriscore_model as _nutriscore_model
+from backend.services import shap_explainer as _shap_explainer
+from backend.services import collab_filter as _collab_filter
 
 VERSION = "0.1.0"
 
@@ -117,22 +121,28 @@ def create_app(config: Config | None = None, index_store: IndexStore | None = No
     @app.get("/health")
     def health_route():
         idx: IndexStore = app.extensions["index_store"]
+        client: OpenFoodFactsClient = app.extensions["off_client"]
+        cache_backend = client.cache_backend
+        rf_meta = _nutriscore_model.model_meta()
         if idx.is_loaded():
             body = {
                 "status": "ok",
                 "index_built_at": idx.built_at(),
                 "index_size": idx.size(),
+                "cache_backend": cache_backend,
+                "nutriscore_model": rf_meta,
                 "version": VERSION,
             }
             return jsonify(body), 200
         else:
-            # Degraded — index missing or version mismatch
             reason = getattr(idx, "_degraded_reason", "index_not_loaded")
             body = {
                 "status": "degraded",
                 "reason": reason,
                 "index_built_at": None,
                 "index_size": 0,
+                "cache_backend": cache_backend,
+                "nutriscore_model": rf_meta,
                 "version": VERSION,
             }
             return jsonify(body), 200
@@ -294,8 +304,10 @@ def create_app(config: Config | None = None, index_store: IndexStore | None = No
             if query_product is None:
                 return _make_error("barcode_not_found", f"Could not normalise product {barcode}.", 404)
 
-        # --- Run recommender ---
+        # --- Run recommender + collaborative filter blend (F-42) ---
         result = _recommender.find_alternatives(query_product, idx, k=k, health_weight=health_weight)
+        cfg: Config = app.extensions["app_config"]
+        result = _collab_filter.blend_alternatives(barcode, result, k, cfg.telemetry_path)
 
         body = {
             "barcode": barcode,
@@ -309,6 +321,92 @@ def create_app(config: Config | None = None, index_store: IndexStore | None = No
         if idx.built_at():
             resp.headers["X-Index-Built-At"] = idx.built_at()
         return resp, 200
+
+    # --- /api/telemetry (F-45) ---
+
+    @app.post("/api/telemetry")
+    def telemetry_route():
+        """Append a telemetry event to telemetry.jsonl (F-45).
+
+        Only called when the user has opted in (frontend enforces this).
+        Accepts any JSON object with at minimum an "event" string field.
+        Unknown fields are stored as-is for future analysis.
+
+        Events logged:
+            decision_time       { event, barcode, ms }
+            alternative_click   { event, viewed_barcode, clicked_barcode }
+            slider_change       { event, value }
+        """
+        import datetime
+
+        cfg: Config = app.extensions["app_config"]
+
+        body = request.get_json(silent=True)
+        if not body or not isinstance(body.get("event"), str):
+            return _make_error("bad_request", "Body must be JSON with an 'event' string field.", 400)
+
+        event_type = body["event"]
+        allowed = {"decision_time", "alternative_click", "slider_change"}
+        if event_type not in allowed:
+            return _make_error("bad_request", f"Unknown event type '{event_type}'.", 400)
+
+        record = {
+            "ts": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+            **body,
+        }
+
+        try:
+            cfg.telemetry_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(cfg.telemetry_path, "a", encoding="utf-8") as fh:
+                fh.write(json.dumps(record) + "\n")
+        except OSError as exc:
+            logger.error("Failed to write telemetry event: %s", exc)
+            return _make_error("internal_error", "Could not persist telemetry event.", 500)
+
+        # Invalidate collab filter cache so new clicks are picked up.
+        if event_type == "alternative_click":
+            _collab_filter.reload()
+
+        return jsonify({"ok": True}), 200
+
+    # --- /api/scatter ---
+
+    @app.get("/api/scatter")
+    def scatter_route():
+        """Return all products in a category for the Nutri × Eco scatter plot (F-43).
+
+        Query params:
+            cat  string  OFF category tag (e.g. "en:yogurts")
+
+        Response shape:
+            { category, count, products: [{code, name, nutri_numeric, eco_numeric}] }
+        """
+        idx: IndexStore = app.extensions["index_store"]
+        if not idx.is_loaded():
+            return _make_error("index_not_loaded", "Index not loaded — run build_knn_index.py first.", 503)
+
+        cat = request.args.get("cat", "").strip()
+        if not cat:
+            return _make_error("missing_param", "missing required parameter: cat", 400)
+
+        products = idx.filter_by_category(cat)
+
+        points = []
+        for p in products:
+            nutri_numeric = (p.get("nutriScore") or {}).get("numeric")
+            eco_numeric = (p.get("ecoScore") or {}).get("numeric")
+            if nutri_numeric is None and eco_numeric is None:
+                continue
+            points.append({
+                "code": p.get("code"),
+                "name": p.get("name") or p.get("code"),
+                "nutri_grade": (p.get("nutriScore") or {}).get("grade"),
+                "eco_grade": (p.get("ecoScore") or {}).get("grade"),
+                "nutri_numeric": nutri_numeric,
+                "eco_numeric": eco_numeric,
+            })
+
+        return jsonify({"category": cat, "count": len(points), "products": points}), 200
 
     # --- /api/explain/<barcode> ---
 
@@ -361,6 +459,10 @@ def create_app(config: Config | None = None, index_store: IndexStore | None = No
             if query_product is None:
                 return _make_error("barcode_not_found", f"Could not normalise product {barcode}.", 404)
 
+        # --- SHAP waterfall (F-24) — computed before reference lookup, no dependency on index ---
+        nutrients = query_product.get("nutrients") or {}
+        shap_waterfall = _shap_explainer.compute_shap_waterfall(nutrients)
+
         # --- Determine reference ---
         # Try top-1 alternative first; fall back to category average.
         alt_result = _recommender.find_alternatives(query_product, idx, k=1, health_weight=health_weight)
@@ -383,17 +485,16 @@ def create_app(config: Config | None = None, index_store: IndexStore | None = No
             reference = _explainer.build_category_average_reference(category_products, category or "")
             if reference is None:
                 # Absolute fallback — no reference available at all.
-                result_sentence = {
-                    "sentence": "Insufficient comparable data for this product.",
-                    "hasComparison": False,
-                }
                 body = {
                     "barcode": barcode,
-                    "sentence": result_sentence["sentence"],
-                    "hasComparison": result_sentence["hasComparison"],
+                    "sentence": "Insufficient comparable data for this product.",
+                    "hasComparison": False,
                     "reference": {"name": "category average"},
                     "factors": [],
-                    "meta": {"explainer_version": "contrastive-stub", "for_replacement_by": "F-24-SHAP"},
+                    "shap_waterfall": shap_waterfall,
+                    "meta": {
+                        "explainer_version": "shap-tree-f24" if shap_waterfall else "contrastive-stub",
+                    },
                 }
                 resp = jsonify(body)
                 resp.headers["X-Data-Source"] = source_tag
@@ -412,7 +513,10 @@ def create_app(config: Config | None = None, index_store: IndexStore | None = No
             "hasComparison": result_sentence["hasComparison"],
             "reference": reference_meta,
             "factors": factors,
-            "meta": {"explainer_version": "contrastive-stub", "for_replacement_by": "F-24-SHAP"},
+            "shap_waterfall": shap_waterfall,
+            "meta": {
+                "explainer_version": "shap-tree-f24" if shap_waterfall else "contrastive-stub",
+            },
         }
 
         resp = jsonify(body)
