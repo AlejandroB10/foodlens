@@ -1,23 +1,23 @@
 // FoodLens F-27 — Settings Panel
 // Vanilla JS, no build step. ES modules.
+// Editorial right-side drawer: numbered sections (01/02/03/04),
+// segmented tabs for units, weighting slider, danger button + confirm dialog.
 
 const SETTINGS_KEY = 'foodlens.settings';
 
 const DEFAULT_SETTINGS = {
   unitSystem: 'metric',    // 'metric' | 'imperial'
   language: 'en',
-  defaultSliderWeight: 50, // 0–100
+  defaultSliderWeight: 50, // 0..100
 };
-
-// ─── module state ───────────────────────────────────────────────────────────
 
 let currentSettings = null;
 
-// ─── DOM factory (mirror onboarding.js style) ───────────────────────────────
+// ─── DOM factory ────────────────────────────────────────────────────────────
 
-function el(tag, attrs = {}, ...children) {
+function el(tag, attrs, ...children) {
   const node = document.createElement(tag);
-  for (const [key, value] of Object.entries(attrs)) {
+  for (const [key, value] of Object.entries(attrs || {})) {
     if (value === null || value === undefined || value === false) continue;
     if (key === 'class') {
       node.className = value;
@@ -44,30 +44,8 @@ function el(tag, attrs = {}, ...children) {
   return node;
 }
 
-// ─── unit conversion helpers (internal, not exported) ───────────────────────
+// ─── persistence ────────────────────────────────────────────────────────────
 
-function kgToLb(kg) {
-  return kg * 2.20462;
-}
-
-function lbToKg(lb) {
-  return lb / 2.20462;
-}
-
-function cmToIn(cm) {
-  return cm / 2.54;
-}
-
-function inToCm(inches) {
-  return inches * 2.54;
-}
-
-// ─── public API ─────────────────────────────────────────────────────────────
-
-/**
- * Load settings from localStorage. Creates defaults if absent or malformed.
- * Returns the settings object.
- */
 function loadSettings() {
   try {
     const raw = localStorage.getItem(SETTINGS_KEY);
@@ -88,45 +66,16 @@ function loadSettings() {
   return currentSettings;
 }
 
-/**
- * Update a single setting key and persist to localStorage.
- */
 function saveSettings(key, value) {
   if (!currentSettings) loadSettings();
   currentSettings[key] = value;
   persist();
 }
 
-/**
- * Return the current settings object.
- */
 function getSettings() {
   if (!currentSettings) loadSettings();
   return currentSettings;
 }
-
-/**
- * Clear ALL foodlens localStorage keys AND hasSeenOnboarding.
- * Does NOT reload the page — caller is responsible for navigation if needed.
- */
-function clearProfile() {
-  const keysToRemove = [];
-  for (let i = 0; i < localStorage.length; i++) {
-    const key = localStorage.key(i);
-    if (key && key.startsWith('foodlens.')) {
-      keysToRemove.push(key);
-    }
-  }
-  // Also clear onboarding flag
-  keysToRemove.push('hasSeenOnboarding');
-  for (const key of keysToRemove) {
-    localStorage.removeItem(key);
-  }
-  // Trigger a full re-init: clear the profile so init() re-evaluates
-  window.location.reload();
-}
-
-// ─── persistence ────────────────────────────────────────────────────────────
 
 function persist() {
   try {
@@ -136,13 +85,27 @@ function persist() {
   }
 }
 
-// ─── markup builders ────────────────────────────────────────────────────────
+function clearProfile() {
+  const keysToRemove = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i);
+    if (key && key.startsWith('foodlens.')) {
+      keysToRemove.push(key);
+    }
+  }
+  keysToRemove.push('hasSeenOnboarding');
+  for (const key of keysToRemove) {
+    localStorage.removeItem(key);
+  }
+  window.location.reload();
+}
+
+// ─── markup ────────────────────────────────────────────────────────────────
 
 function buildBackdrop() {
   return el('div', {
     id: 'settings-backdrop',
     class: 'settings-backdrop',
-    'aria-hidden': 'true',
     onClick: handleClose,
   });
 }
@@ -160,7 +123,10 @@ function buildPanel() {
 
 function buildHeader() {
   return el('header', { class: 'settings__header' },
-    el('h2', { class: 'settings__title' }, 'Settings'),
+    el('div', { class: 'settings__masthead' },
+      el('span', { class: 'settings__masthead-tag' }, 'FoodLens · 2026'),
+      el('h2', { class: 'settings__title' }, 'Settings'),
+    ),
     el('button', {
       type: 'button',
       class: 'settings__close-btn',
@@ -171,104 +137,142 @@ function buildHeader() {
         viewBox: '0 0 16 16',
         'aria-hidden': 'true',
         html: '<line x1="2" y1="2" x2="14" y2="14"/><line x1="14" y1="2" x2="2" y2="14"/>',
-      })
-    )
+      }),
+    ),
   );
 }
 
+function buildFooter() {
+  return el('footer', { class: 'settings__footer' },
+    el('span', null, 'Stored locally on this device'),
+    el('span', null, 'v0.1'),
+  );
+}
+
+// ─── sections ──────────────────────────────────────────────────────────────
+
+function buildSection(num, title, control, hint) {
+  const children = [
+    el('span', { class: 'settings__section-num', 'aria-hidden': 'true' }, num),
+    el('h3', { class: 'settings__section-title' }, title),
+    el('hr', { class: 'settings__section-rule' }),
+  ];
+  if (control) children.push(control);
+  if (hint) children.push(el('p', { class: 'settings__section-hint' }, hint));
+  return el('section', { class: 'settings__section' }, ...children);
+}
+
 function buildUnitSection(settings) {
-  return el('section', { class: 'settings__section' },
-    el('h3', { class: 'settings__section-title' }, 'Unit System'),
-    el('div', { class: 'radio-group' },
-      el('label', { class: 'radio-item' },
-        el('input', {
-          type: 'radio',
-          name: 'unitSystem',
-          value: 'metric',
-          checked: settings.unitSystem === 'metric',
-          onChange: () => saveSettings('unitSystem', 'metric'),
-        }),
-        el('span', { class: 'radio-item__label' }, 'Metric'),
-        el('span', { class: 'radio-item__hint' }, 'kg / cm')
-      ),
-      el('label', { class: 'radio-item' },
-        el('input', {
-          type: 'radio',
-          name: 'unitSystem',
-          value: 'imperial',
-          checked: settings.unitSystem === 'imperial',
-          onChange: () => saveSettings('unitSystem', 'imperial'),
-        }),
-        el('span', { class: 'radio-item__label' }, 'Imperial'),
-        el('span', { class: 'radio-item__hint' }, 'lb / in')
-      )
-    )
+  const tabs = el('div', {
+    class: 'settings__tabs settings__section-control',
+    role: 'radiogroup',
+    'aria-label': 'Unit system',
+  },
+    buildTab('metric', 'Metric', 'kg · cm', settings.unitSystem === 'metric'),
+    buildTab('imperial', 'Imperial', 'lb · in', settings.unitSystem === 'imperial'),
+  );
+  return buildSection('01', 'Units of measure', tabs);
+}
+
+function buildTab(value, name, hint, checked) {
+  return el('label', { class: 'settings__tab' },
+    el('input', {
+      type: 'radio',
+      name: 'unitSystem',
+      value: value,
+      checked: checked,
+      onChange: () => saveSettings('unitSystem', value),
+    }),
+    el('span', { class: 'settings__tab-label' },
+      el('span', { class: 'settings__tab-name' }, name),
+      el('span', { class: 'settings__tab-hint' }, hint),
+    ),
   );
 }
 
 function buildLanguageSection(settings) {
-  return el('section', { class: 'settings__section' },
-    el('h3', { class: 'settings__section-title' }, 'Language'),
-    el('div', { class: 'field' },
-      el('select', {
-        class: 'settings__select',
-        'aria-label': 'Language',
-        disabled: true,
-        onChange: (e) => saveSettings('language', e.target.value),
-      },
-        el('option', { value: 'en', selected: settings.language === 'en' }, 'English')
-      ),
-      el('span', { class: 'settings__select-note' }, 'More languages coming soon')
-    )
+  const select = el('select', {
+    class: 'settings__select settings__section-control',
+    'aria-label': 'Language',
+    disabled: true,
+    onChange: (e) => saveSettings('language', e.target.value),
+  },
+    el('option', { value: 'en', selected: settings.language === 'en' }, 'English'),
   );
+  const section = buildSection('02', 'Language', select, 'More languages coming soon.');
+  // Legacy alias on the hint paragraph for tests.
+  const hint = section.querySelector('.settings__section-hint');
+  if (hint) hint.classList.add('settings__select-note');
+  return section;
 }
 
 function buildSliderSection(settings) {
   const weight = settings.defaultSliderWeight ?? 50;
-  const ecoWeight = 100 - weight;
 
-  return el('section', { class: 'settings__section' },
-    el('h3', { class: 'settings__section-title' }, 'Default Eco / Health Weight'),
-    el('div', { class: 'settings__slider-wrap' },
-      el('span', { class: 'settings__slider-label' }, 'Health ', weight, '%'),
-      el('input', {
-        type: 'range',
-        class: 'settings__range',
-        min: '0',
-        max: '100',
-        step: '5',
-        value: String(weight),
-        'aria-label': 'Default health weight',
-        onInput: (e) => {
-          const v = parseInt(e.target.value, 10);
-          saveSettings('defaultSliderWeight', v);
-          updateSliderDisplay(e.target, v);
-        },
-      }),
-      el('span', { class: 'settings__slider-label' }, 'Eco ', ecoWeight, '%')
-    )
+  const range = el('input', {
+    type: 'range',
+    class: 'settings__range',
+    min: '0',
+    max: '100',
+    step: '5',
+    value: String(weight),
+    'aria-label': 'Default health weight (0% = full eco, 100% = full health)',
+    style: { '--track-pct': weight + '%' },
+    onInput: (e) => {
+      const v = parseInt(e.target.value, 10);
+      saveSettings('defaultSliderWeight', v);
+      e.target.style.setProperty('--track-pct', v + '%');
+      updateSliderReadout(e.target.closest('.settings__slider-wrap'), v);
+    },
+  });
+
+  const wrap = el('div', { class: 'settings__slider-wrap settings__section-control' },
+    range,
+    el('div', { class: 'settings__slider-readout' },
+      el('span', null,
+        el('span', { class: 'label' }, 'Eco '),
+        el('span', { class: 'value', 'data-eco': true }, (100 - weight) + '%'),
+      ),
+      el('span', null,
+        el('span', { class: 'label' }, 'Health '),
+        el('span', { class: 'value', 'data-health': true }, weight + '%'),
+      ),
+    ),
+  );
+  return buildSection(
+    '03',
+    'Default Eco / Health weighting',
+    wrap,
+    'Sets the home slider on first load. You can still override per session.',
   );
 }
 
-function updateSliderDisplay(input, weight) {
-  const wrap = input.closest('.settings__slider-wrap');
+function updateSliderReadout(wrap, weight) {
   if (!wrap) return;
-  const labels = wrap.querySelectorAll('.settings__slider-label');
-  if (labels.length === 2) {
-    labels[0].textContent = `Health ${weight}%`;
-    labels[1].textContent = `Eco ${100 - weight}%`;
-  }
+  const eco = wrap.querySelector('[data-eco]');
+  const health = wrap.querySelector('[data-health]');
+  if (eco) eco.textContent = (100 - weight) + '%';
+  if (health) health.textContent = weight + '%';
 }
 
 function buildClearSection() {
-  return el('section', { class: 'settings__section settings__section--destructive' },
-    el('button', {
-      type: 'button',
-      class: 'settings__clear-btn',
-      onClick: showConfirmation,
-    }, 'Clear my profile')
+  const button = el('button', {
+    type: 'button',
+    // settings__clear-btn kept as legacy alias for tests.
+    class: 'settings__danger-btn settings__clear-btn settings__section-control',
+    onClick: showConfirmation,
+  }, 'Clear my profile');
+  const section = buildSection(
+    '04',
+    'Reset profile',
+    button,
+    'Wipes onboarding answers, saved products, history and weighting preferences.',
   );
+  section.classList.add('settings__section--destructive');
+  return section;
 }
+
+// ─── confirmation dialog ───────────────────────────────────────────────────
 
 function buildConfirmationDialog() {
   return el('div', {
@@ -276,51 +280,55 @@ function buildConfirmationDialog() {
     class: 'settings-confirm',
     role: 'alertdialog',
     'aria-modal': 'true',
-    'aria-label': 'Confirm profile reset',
+    'aria-labelledby': 'settings-confirm-heading',
   },
+    el('h3', { id: 'settings-confirm-heading', class: 'settings-confirm__heading' },
+      'Reset ', el('em', null, 'everything?'),
+    ),
     el('p', { class: 'settings-confirm__message' },
-      'This will reset your profile, history, and saved products. Are you sure?'
+      'This will reset your profile and every locally stored FoodLens selection.',
+    ),
+    el('p', { class: 'settings-confirm__detail' },
+      'Profile · favourites · history · settings · onboarding flag.',
     ),
     el('div', { class: 'settings-confirm__actions' },
       el('button', {
         type: 'button',
-        class: 'btn btn--ghost',
+        // btn btn--ghost preserved as legacy alias for tests.
+        class: 'settings-confirm__btn settings-confirm__btn--cancel btn btn--ghost',
         onClick: hideConfirmation,
       }, 'Cancel'),
       el('button', {
         type: 'button',
-        class: 'btn btn--danger',
+        // btn btn--danger preserved as legacy alias for tests.
+        class: 'settings-confirm__btn settings-confirm__btn--danger btn btn--danger',
         onClick: clearProfile,
-      }, 'Confirm')
-    )
+      }, 'Confirm reset'),
+    ),
   );
 }
-
-// ─── show / hide ─────────────────────────────────────────────────────────────
 
 function showConfirmation() {
   const panel = document.getElementById('settings-panel');
   if (!panel) return;
-  // Remove existing dialog if any
   const existing = document.getElementById('settings-confirm-dialog');
   if (existing) existing.remove();
 
   const dialog = buildConfirmationDialog();
   panel.appendChild(dialog);
 
-  // Focus Cancel button
   requestAnimationFrame(() => {
-    const confirmBtn = dialog.querySelector('.btn--danger');
-    if (confirmBtn) confirmBtn.focus();
+    const cancelBtn = dialog.querySelector('.settings-confirm__btn--cancel');
+    if (cancelBtn) cancelBtn.focus();
   });
 }
 
 function hideConfirmation() {
   const dialog = document.getElementById('settings-confirm-dialog');
-  if (dialog) {
-    dialog.remove();
-  }
+  if (dialog) dialog.remove();
 }
+
+// ─── show / hide ───────────────────────────────────────────────────────────
 
 function handleClose() {
   hide();
@@ -332,11 +340,11 @@ function hide() {
   const panel = document.getElementById('settings-panel');
   if (backdrop) backdrop.remove();
   if (panel) panel.remove();
+  document.removeEventListener('keydown', handleKeydown);
 }
 
 function show() {
-  // Clean up any existing instances
-  hide();
+  hide(); // dedupe any previous instance
 
   const settings = loadSettings();
 
@@ -344,15 +352,19 @@ function show() {
   const panel = buildPanel();
 
   panel.appendChild(buildHeader());
-  panel.appendChild(buildUnitSection(settings));
-  panel.appendChild(buildLanguageSection(settings));
-  panel.appendChild(buildSliderSection(settings));
-  panel.appendChild(buildClearSection());
+
+  const body = el('div', { class: 'settings__body' },
+    buildUnitSection(settings),
+    buildLanguageSection(settings),
+    buildSliderSection(settings),
+    buildClearSection(),
+  );
+  panel.appendChild(body);
+  panel.appendChild(buildFooter());
 
   document.body.appendChild(backdrop);
   document.body.appendChild(panel);
 
-  // Animate in
   requestAnimationFrame(() => {
     backdrop.classList.add('is-visible');
     panel.classList.add('is-open');
@@ -360,23 +372,20 @@ function show() {
     if (firstFocusable) firstFocusable.focus();
   });
 
-  // Keyboard: Escape closes panel
   document.addEventListener('keydown', handleKeydown);
 }
 
 function handleKeydown(e) {
-  if (e.key === 'Escape') {
-    const dialog = document.getElementById('settings-confirm-dialog');
-    if (dialog) {
-      hideConfirmation();
-    } else {
-      hide();
-    }
-    document.removeEventListener('keydown', handleKeydown);
+  if (e.key !== 'Escape') return;
+  const dialog = document.getElementById('settings-confirm-dialog');
+  if (dialog) {
+    hideConfirmation();
+  } else {
+    hide();
   }
 }
 
-// ─── exports ─────────────────────────────────────────────────────────────────
+// ─── exports ────────────────────────────────────────────────────────────────
 
 export {
   loadSettings,

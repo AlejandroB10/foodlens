@@ -1,92 +1,153 @@
-/* FoodLens F-27 — Settings Panel Styles
-   Uses design tokens from style.css via CSS custom properties.
-   Mobile-first. Panel slides in from the right side.
+/* FoodLens F-27 — Settings Panel
+   Editorial right-side drawer. Numbered sections (01/02/03/04) like a magazine
+   table-of-contents. Strict typographic hierarchy: Newsreader display italic
+   for section titles, Bricolage Grotesque for body, JetBrains Mono for data.
 */
 
-/* ─── backdrop / overlay ─────────────────────────────────────────────────── */
-#settings-backdrop {
+/* ─── header trigger button ──────────────────────────────────────────────── */
+.settings-trigger {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: var(--rule-w) solid var(--color-rule);
+  color: var(--color-ink);
+  cursor: pointer;
+  margin-left: auto;
+  transition: background-color 140ms ease, color 140ms ease, transform 240ms ease;
+}
+
+.settings-trigger:hover,
+.settings-trigger:focus-visible {
+  background: var(--color-ink);
+  color: var(--color-paper);
+  outline: 0;
+}
+
+.settings-trigger:hover svg {
+  transform: rotate(45deg);
+}
+
+.settings-trigger svg {
+  transition: transform 320ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.settings-trigger:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+/* ─── backdrop ─────────────────────────────────────────────────────────────── */
+#settings-backdrop,
+.settings-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(26, 26, 24, 0.6);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  background: color-mix(in srgb, var(--color-ink) 55%, transparent);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
   z-index: 90;
+  opacity: 0;
+  transition: opacity 240ms ease;
   pointer-events: none;
 }
 
-#settings-backdrop.is-open {
+#settings-backdrop.is-visible,
+.settings-backdrop.is-visible {
+  opacity: 1;
   pointer-events: auto;
 }
 
 /* ─── panel shell ─────────────────────────────────────────────────────────── */
-#settings-panel {
+#settings-panel,
+.settings-panel {
   position: fixed;
   top: 0;
   right: 0;
   bottom: 0;
-  width: 320px;
+  width: min(420px, 92vw);
   background: var(--color-paper);
   border-left: var(--rule-w-bold) solid var(--color-rule);
+  /* faint paper grain via radial gradient, like the home background */
+  background-image:
+    radial-gradient(circle at 90% 8%, rgba(123, 63, 0, 0.05) 0, transparent 38%),
+    radial-gradient(circle at 10% 92%, rgba(27, 94, 32, 0.04) 0, transparent 42%);
   z-index: 91;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
   transform: translateX(100%);
-  transition: transform 250ms ease;
+  transition: transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  /* Panel itself scrolls vertically so Playwright's scroll-into-view works
+     and short viewports never hide the danger button. */
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
-#settings-panel.is-open {
+#settings-panel.is-open,
+.settings-panel.is-open {
   transform: translateX(0);
-}
-
-@media (min-width: 480px) {
-  #settings-panel {
-    width: 380px;
-  }
 }
 
 /* ─── header ─────────────────────────────────────────────────────────────── */
 .settings__header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: var(--space-6);
-  border-bottom: var(--rule-w) solid var(--color-rule);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+  gap: var(--space-3);
+  padding: var(--space-6) var(--space-6) var(--space-4);
+  border-bottom: var(--rule-w-bold) solid var(--color-rule);
+}
+
+.settings__masthead {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.settings__masthead-tag {
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-ink-soft);
 }
 
 .settings__title {
   font-family: var(--font-display);
   font-style: italic;
   font-weight: 500;
-  font-size: clamp(1.25rem, 4vw, 1.6rem);
-  line-height: var(--leading-tight);
+  font-size: clamp(1.75rem, 6vw, 2.4rem);
+  line-height: 1;
+  color: var(--color-ink);
+  margin: 0;
 }
 
 .settings__close-btn {
-  background: none;
-  border: var(--rule-w) solid var(--color-rule);
   width: 36px;
   height: 36px;
   display: grid;
   place-items: center;
+  background: transparent;
+  border: var(--rule-w-bold) solid var(--color-rule);
   color: var(--color-ink);
-  transition: background-color 120ms ease;
   cursor: pointer;
-  flex-shrink: 0;
+  transition: background-color 120ms ease, color 120ms ease;
 }
 
 .settings__close-btn:hover,
 .settings__close-btn:focus-visible {
-  background: var(--color-paper-3);
+  background: var(--color-ink);
+  color: var(--color-paper);
   outline: 0;
 }
 
 .settings__close-btn:focus-visible {
   outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
+  outline-offset: 3px;
 }
 
 .settings__close-btn svg {
-  width: 16px;
-  height: 16px;
+  width: 14px;
+  height: 14px;
   stroke: currentColor;
   stroke-width: 2;
   fill: none;
@@ -94,72 +155,134 @@
 
 /* ─── body ─────────────────────────────────────────────────────────────── */
 .settings__body {
-  padding: var(--space-6);
+  padding: var(--space-5) var(--space-6);
   display: grid;
-  gap: var(--space-7);
+  gap: var(--space-6);
+  align-content: start;
+  flex: 1 0 auto;
 }
 
-/* ─── sections ─────────────────────────────────────────────────────────── */
+/* ─── section ─────────────────────────────────────────────────────────────── */
 .settings__section {
   display: grid;
-  gap: var(--space-4);
+  grid-template-columns: auto 1fr;
+  column-gap: var(--space-5);
+  row-gap: var(--space-3);
+}
+
+.settings__section-num {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(1.5rem, 5vw, 2rem);
+  line-height: 1;
+  color: var(--color-accent);
+  grid-row: 1 / span 3;
+  padding-top: 0.05em;
 }
 
 .settings__section-title {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1.15rem;
+  color: var(--color-ink);
+  line-height: var(--leading-snug);
+  margin: 0;
+  align-self: end;
+}
+
+.settings__section-rule {
+  border: 0;
+  border-top: var(--rule-w) solid var(--color-rule);
+  margin: 0;
+  align-self: start;
+}
+
+.settings__section-control {
+  grid-column: 2;
+}
+
+.settings__section-hint {
+  grid-column: 2;
   font-family: var(--font-body);
   font-size: 0.75rem;
+  color: var(--color-ink-soft);
+  margin: 0;
+}
+
+/* ─── unit tabs (radio group rendered as segmented tabs) ─────────────────── */
+.settings__tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border: var(--rule-w-bold) solid var(--color-rule);
+}
+
+.settings__tab {
+  position: relative;
+  margin: 0;
+  cursor: pointer;
+}
+
+.settings__tab + .settings__tab {
+  border-left: var(--rule-w) solid var(--color-rule);
+}
+
+.settings__tab input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  cursor: pointer;
+}
+
+.settings__tab-label {
+  display: grid;
+  gap: 2px;
+  padding: var(--space-3) var(--space-4);
+  text-align: center;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+
+.settings__tab-name {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
   font-weight: 600;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.04em;
+  color: var(--color-ink);
   text-transform: uppercase;
+}
+
+.settings__tab-hint {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
   color: var(--color-ink-soft);
 }
 
-/* ─── radio group ─────────────────────────────────────────────────────────── */
-.settings__radio-group {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-}
-
-.settings__radio-item {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-2) var(--space-3);
-  border: var(--rule-w) solid transparent;
-  cursor: pointer;
-  transition: background-color 120ms ease, border-color 120ms ease;
-}
-
-.settings__radio-item:hover {
+.settings__tab:hover .settings__tab-label {
   background: var(--color-paper-2);
-  border-color: var(--color-rule);
 }
 
-.settings__radio-item:focus-within {
+.settings__tab input:checked ~ .settings__tab-label {
+  background: var(--color-ink);
+  color: var(--color-paper);
+}
+
+.settings__tab input:checked ~ .settings__tab-label .settings__tab-name,
+.settings__tab input:checked ~ .settings__tab-label .settings__tab-hint {
+  color: var(--color-paper);
+}
+
+.settings__tab input:focus-visible ~ .settings__tab-label {
   outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
+  outline-offset: -4px;
 }
 
-.settings__radio-item input[type="radio"] {
-  accent-color: var(--color-accent);
-  width: 18px;
-  height: 18px;
-  flex-shrink: 0;
-}
-
-.settings__radio-item__label {
-  font-family: var(--font-body);
-  font-size: 0.95rem;
-  color: var(--color-ink);
-}
-
-/* ─── select ─────────────────────────────────────────────────────────────── */
+/* ─── select (language) ─────────────────────────────────────────────────── */
 .settings__select {
   width: 100%;
   border: var(--rule-w-bold) solid var(--color-rule);
   background: var(--color-paper);
-  padding: var(--space-3) var(--space-4);
+  padding: var(--space-3) var(--space-8) var(--space-3) var(--space-4);
   font-family: var(--font-body);
   font-size: 0.95rem;
   color: var(--color-ink);
@@ -168,199 +291,248 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='none' stroke='%231a1a18' stroke-width='2' stroke-linecap='round' stroke-linejoin='round' d='M3 4.5l3 3 3-3'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right var(--space-4) center;
-  padding-right: var(--space-8);
   cursor: pointer;
   transition: border-color 120ms ease;
 }
 
-.settings__select:focus {
-  outline: 0;
-  border-color: var(--color-accent);
+.settings__select:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background-color: var(--color-paper-2);
 }
 
-.settings__select:hover {
-  border-color: var(--color-ink-mute);
+.settings__select:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
 }
 
-/* ─── slider ─────────────────────────────────────────────────────────────── */
+/* ─── weighting slider ─────────────────────────────────────────────────── */
 .settings__slider-wrap {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.settings__slider-readout {
   display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
+  justify-content: space-between;
+  align-items: baseline;
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+}
+
+.settings__slider-readout .label {
+  text-transform: uppercase;
+  color: var(--color-ink-soft);
+}
+
+.settings__slider-readout .value {
+  font-weight: 600;
+  color: var(--color-ink);
 }
 
 .settings__range {
   width: 100%;
+  height: 14px;
   appearance: none;
   -webkit-appearance: none;
-  background: transparent;
+  background:
+    linear-gradient(to right,
+      var(--color-eco-a) 0%,
+      var(--color-eco-c) var(--track-pct, 50%),
+      var(--color-nutri-c) var(--track-pct, 50%),
+      var(--color-nutri-a) 100%);
+  border: var(--rule-w-bold) solid var(--color-rule);
   cursor: pointer;
-}
-
-.settings__range::-webkit-slider-runnable-track {
-  height: 4px;
-  background: var(--color-paper-3);
-  border: var(--rule-w) solid var(--color-rule);
-  border-radius: 0;
-}
-
-.settings__range::-moz-range-track {
-  height: 4px;
-  background: var(--color-paper-3);
-  border: var(--rule-w) solid var(--color-rule);
-  border-radius: 0;
+  outline: 0;
 }
 
 .settings__range::-webkit-slider-thumb {
   appearance: none;
   -webkit-appearance: none;
-  width: 20px;
-  height: 20px;
-  background: var(--color-accent);
-  border: var(--rule-w-bold) solid var(--color-ink);
-  margin-top: -8px;
-  cursor: pointer;
+  width: 24px;
+  height: 24px;
+  background: var(--color-ink);
+  border: 3px solid var(--color-paper);
+  box-shadow: 0 0 0 1px var(--color-ink);
+  cursor: grab;
 }
 
 .settings__range::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
-  background: var(--color-accent);
-  border: var(--rule-w-bold) solid var(--color-ink);
+  width: 24px;
+  height: 24px;
+  background: var(--color-ink);
+  border: 3px solid var(--color-paper);
+  box-shadow: 0 0 0 1px var(--color-ink);
+  cursor: grab;
   border-radius: 0;
-  cursor: pointer;
 }
 
-.settings__range:focus {
-  outline: 0;
+.settings__range:active::-webkit-slider-thumb { cursor: grabbing; }
+
+.settings__range:focus-visible {
+  box-shadow: 0 0 0 2px var(--color-accent);
 }
 
-.settings__range:focus-visible::-webkit-slider-thumb {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
-}
-
-.settings__slider-value {
-  font-family: var(--font-mono);
-  font-size: 0.85rem;
+/* ─── danger / reset section ─────────────────────────────────────────────── */
+/* The base button stays neutral (ink on paper) so it does not visually scream
+   on first sight. The Nutri-E red is reserved for the confirm dialog — the
+   real moment of destruction. Hover/focus reveals the red as a warning. */
+.settings__section--destructive .settings__section-num {
   color: var(--color-ink);
-  text-align: right;
+  -webkit-text-stroke: 0;
 }
 
-/* ─── danger button ───────────────────────────────────────────────────────── */
 .settings__danger-btn {
   width: 100%;
-  padding: var(--space-4);
+  padding: var(--space-3) var(--space-4);
   background: transparent;
-  border: var(--rule-w-bold) solid var(--color-accent2);
-  color: var(--color-accent2);
+  border: var(--rule-w) solid var(--color-rule);
+  color: var(--color-ink);
   font-family: var(--font-body);
-  font-size: 0.9rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
   cursor: pointer;
-  transition: background-color 120ms ease, color 120ms ease;
+  transition: background-color 160ms ease, color 160ms ease, border-color 160ms ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.settings__danger-btn::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  background: var(--color-nutri-e);
+  border-radius: 50%;
+  transition: transform 160ms ease, background-color 160ms ease;
 }
 
 .settings__danger-btn:hover,
 .settings__danger-btn:focus-visible {
-  background: var(--color-accent2);
+  background: var(--color-nutri-e);
+  border-color: var(--color-nutri-e);
   color: var(--color-paper);
   outline: 0;
 }
 
+.settings__danger-btn:hover::before,
+.settings__danger-btn:focus-visible::before {
+  background: var(--color-paper);
+  transform: scale(1.4);
+}
+
 .settings__danger-btn:focus-visible {
   outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
+  outline-offset: 3px;
 }
 
-/* ─── confirm dialog ─────────────────────────────────────────────────────── */
-.settings__confirm-dialog {
-  display: none;
-  position: fixed;
+/* ─── footer ─────────────────────────────────────────────────────────────── */
+.settings__footer {
+  padding: var(--space-4) var(--space-6);
+  border-top: var(--rule-w) solid var(--color-rule);
+  background: var(--color-paper-2);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  color: var(--color-ink-soft);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+/* ─── confirmation dialog (centered overlay inside the panel) ────────────── */
+/* Anchored to the panel via position: absolute, with a 10px inset so it never
+   bleeds outside the drawer. Padding kept generous for legibility. */
+.settings-confirm {
+  position: absolute;
   top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  left: 10px;
+  right: 10px;
+  transform: translateY(-50%);
+  margin: 0 auto;
   background: var(--color-paper);
   border: var(--rule-w-bold) solid var(--color-rule);
-  padding: var(--space-7);
-  width: calc(100% - var(--space-10));
+  padding: var(--space-6);
   max-width: 380px;
-  z-index: 92;
-  box-shadow: 0 8px 32px rgba(26, 26, 24, 0.25);
+  z-index: 95;
+  box-shadow: 0 24px 48px rgba(26, 26, 24, 0.22);
 }
 
-.settings__confirm-dialog.is-open {
-  display: block;
-}
-
-.settings__confirm-title {
+.settings-confirm__heading {
   font-family: var(--font-display);
   font-style: italic;
   font-weight: 500;
-  font-size: 1.25rem;
+  font-size: clamp(1.4rem, 4vw, 1.8rem);
   line-height: var(--leading-tight);
-  margin-bottom: var(--space-4);
+  color: var(--color-ink);
+  margin: 0 0 var(--space-3);
 }
 
-.settings__confirm-body {
+.settings-confirm__heading em {
+  font-style: normal;
+  color: var(--color-nutri-e);
+}
+
+.settings-confirm__message {
   font-family: var(--font-body);
-  font-size: 0.9rem;
-  color: var(--color-ink-soft);
+  font-size: 0.95rem;
   line-height: var(--leading-normal);
-  margin-bottom: var(--space-6);
+  color: var(--color-ink);
+  margin: 0 0 var(--space-3);
 }
 
-.settings__confirm-actions {
+.settings-confirm__detail {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--color-ink-soft);
+  border-left: 3px solid var(--color-nutri-e);
+  padding-left: var(--space-3);
+  margin: 0 0 var(--space-6);
+}
+
+.settings-confirm__actions {
   display: flex;
   gap: var(--space-3);
   justify-content: flex-end;
   flex-wrap: wrap;
 }
 
-.settings__confirm-cancel {
+.settings-confirm__btn {
   font-family: var(--font-body);
   font-size: 0.85rem;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   padding: var(--space-3) var(--space-5);
-  background: transparent;
   border: var(--rule-w-bold) solid var(--color-rule);
+  background: transparent;
   color: var(--color-ink);
   cursor: pointer;
-  transition: background-color 120ms ease, color 120ms ease;
+  transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
 }
 
-.settings__confirm-cancel:hover,
-.settings__confirm-cancel:focus-visible {
-  background: var(--color-paper-3);
-  outline: 0;
-}
-
-.settings__confirm-cancel:focus-visible {
+.settings-confirm__btn:focus-visible {
   outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
+  outline-offset: 3px;
 }
 
-.settings__confirm-yes {
-  font-family: var(--font-body);
-  font-size: 0.85rem;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  padding: var(--space-3) var(--space-5);
-  background: var(--color-accent2);
-  border: var(--rule-w-bold) solid var(--color-accent2);
+.settings-confirm__btn--cancel:hover,
+.settings-confirm__btn--cancel:focus-visible {
+  background: var(--color-paper-3);
+}
+
+.settings-confirm__btn--danger {
+  background: var(--color-nutri-e);
+  border-color: var(--color-nutri-e);
   color: var(--color-paper);
-  cursor: pointer;
-  transition: background-color 120ms ease, border-color 120ms ease;
 }
 
-.settings__confirm-yes:hover,
-.settings__confirm-yes:focus-visible {
+.settings-confirm__btn--danger:hover,
+.settings-confirm__btn--danger:focus-visible {
   background: var(--color-ink);
   border-color: var(--color-ink);
-  outline: 0;
-}
-
-.settings__confirm-yes:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
 }
