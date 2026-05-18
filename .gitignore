@@ -86,3 +86,6 @@ tmp/
 # These hold each contributor's local agent setup; never commit.
 .atl/
 .pi/
+
+# Playwright run artefacts — never commit
+test-results/

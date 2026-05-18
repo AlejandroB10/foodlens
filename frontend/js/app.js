@@ -16,6 +16,11 @@ import {
   weightedNutrientDistance,
   formatAlternativeDelta,
 } from './xai.js';
+import { init as initOnboarding } from './views/onboarding.js';
+import { trackView, renderRecentlyViewed, startBootstrap, endBootstrap, RECENTLY_VIEWED_KEY } from './views/history.js';
+import { loadSettings as _loadSettings, show as showSettings } from './views/settings.js';
+import { init as initTooltips } from './views/tooltips.js';
+import { toggleFavourite, isFavourite, getFavourites, renderFavourites, buildHeartButton, clearFavourites } from './views/favourites.js';
 
 const STORAGE_KEY = 'foodlens.state';
 const DEFAULT_STATE = {
@@ -96,6 +101,12 @@ const els = {
   focusedView: document.querySelector('#focused'),
   emptyState: document.querySelector('#empty-state'),
   loading: document.querySelector('#loading'),
+  recentlyViewed: document.querySelector('#recently-viewed'),
+  settingsBtn: document.querySelector('[data-action="settings"]'),
+  favouritesSection: document.querySelector('#favourites'),
+  navSearch: document.querySelector('#nav-search'),
+  navSaved: document.querySelector('#nav-saved'),
+  savedBadge: document.querySelector('#saved-badge'),
 };
 
 // ─── state persistence ──────────────────────────────────────────────────
@@ -202,9 +213,18 @@ function renderBadge(scope, score) {
       ? 'Insufficient data'
       : null;
 
+  // F-28 AC10: only attach tooltips to scored badges (a-e). Unknown / not-applicable
+  // grades have no methodology to explain.
+  const isScored = ['a', 'b', 'c', 'd', 'e'].includes(grade);
+  const attrs = {
+    class: `badge badge--${scope} badge--grade-${grade}`,
+    style: { '--badge-color': color },
+  };
+  if (isScored) attrs.dataset = { tooltip: scope };
+
   return el(
     'div',
-    { class: `badge badge--${scope} badge--grade-${grade}`, style: { '--badge-color': color } },
+    attrs,
     el('span', { class: 'badge__axis' }, axisName),
     el('span', { class: 'badge__letter' }, label),
     caption ? el('span', { class: 'badge__caption' }, caption) : null,
@@ -253,6 +273,58 @@ function renderNutrientTable(nutrients) {
       }),
     ),
   );
+}
+
+// ─── print product card ──────────────────────────────────────────────
+// `<details>` elements ignore CSS-driven open/close in print; we have to
+// programmatically expand them, take the snapshot, then restore the state
+// the user actually had. Without this the nutrient table is missing from
+// every printout — which is what the F-30 user complained about.
+function printFocusedCard() {
+  const focused = document.getElementById('focused');
+  if (!focused) {
+    window.print();
+    return;
+  }
+  const detailsList = focused.querySelectorAll('details');
+  const wasOpen = new Map();
+  detailsList.forEach((d) => {
+    wasOpen.set(d, d.hasAttribute('open'));
+    d.setAttribute('open', '');
+  });
+
+  // Mark the focused product with a stamp the print stylesheet can use
+  // for an "as of YYYY-MM-DD" footnote.
+  const stamp = new Date().toLocaleDateString(undefined, {
+    year: 'numeric', month: 'short', day: 'numeric',
+  });
+  focused.dataset.printedAt = stamp;
+
+  // Restore state once the print dialog is dismissed.
+  const restore = () => {
+    detailsList.forEach((d) => {
+      if (!wasOpen.get(d)) d.removeAttribute('open');
+    });
+    delete focused.dataset.printedAt;
+    window.removeEventListener('afterprint', restore);
+  };
+  window.addEventListener('afterprint', restore);
+
+  // Give the browser one frame to flush the open state into layout
+  // before opening the print dialog.
+  requestAnimationFrame(() => window.print());
+}
+
+// ─── share product ─────────────────────────────────────────────────────
+
+async function shareProduct(product) {
+  const url = `https://world.openfoodfacts.org/product/${product.code}`;
+  try {
+    await navigator.clipboard.writeText(url);
+    toast('Link copied to clipboard');
+  } catch {
+    toast('Could not copy link — try again or copy manually from the product page');
+  }
 }
 
 // ─── SHAP waterfall chart (F-24) ──────────────────────────────────────
@@ -495,6 +567,29 @@ function renderProductCard(product, reference, isAlternative = false) {
       ? el(
           'div',
           { class: 'card__actions' },
+          buildHeartButton(product.code, product, () => {
+            // re-render all heart buttons on page to reflect new favourite state
+            document.querySelectorAll('.heart-btn').forEach((btn) => {
+              const card = btn.closest('[data-code]');
+              if (card && card.dataset.code) {
+                const saved = isFavourite(card.dataset.code);
+                btn.classList.toggle('is-saved', saved);
+                btn.setAttribute('aria-pressed', saved ? 'true' : 'false');
+                btn.setAttribute('aria-label', saved ? 'Remove from saved' : 'Save product');
+              }
+            });
+            updateSavedBadge();
+          }),
+          el(
+            'button',
+            { type: 'button', class: 'btn btn--print', onClick: () => printFocusedCard() },
+            'Print card',
+          ),
+          el(
+            'button',
+            { type: 'button', class: 'btn btn--share', onClick: () => shareProduct(product) },
+            'Share product',
+          ),
           el(
             'button',
             { type: 'button', class: 'btn btn--ghost', onClick: () => toast('Recipe view coming soon (F-17).') },
@@ -556,7 +651,7 @@ function renderAlternativeCard(product, alternative) {
 
 // ─── rendering flows ───────────────────────────────────────────────────
 
-function focusProduct(product) {
+function focusProduct(product, { skipTrack = false } = {}) {
   // decision_time: ms from search completion to product selection (F-45).
   if (_searchCompletedAt && product?.code) {
     telemetry.send({
@@ -566,6 +661,10 @@ function focusProduct(product) {
     });
   }
   focusedProduct = product;
+  if (!skipTrack) {
+    trackView(product.code, product);
+    renderRecentlyViewed(els.recentlyViewed, (code) => runSearch(code));
+  }
   rerenderFocused();
 }
 
@@ -693,6 +792,10 @@ async function runSearch(query) {
     if (/^\d{8,13}$/.test(query)) {
       const single = await getProductByBarcode(query);
       results = single ? [single] : [];
+      if (single) {
+        trackView(single.code, single);
+        renderRecentlyViewed(els.recentlyViewed, (code) => runSearch(code));
+      }
     } else if (query) {
       results = await searchProducts(query);
     } else {
@@ -730,12 +833,120 @@ function toast(message) {
   }, 2400);
 }
 
+// ─── saved badge update ───────────────────────────────────────────
+
+function updateSavedBadge() {
+  if (!els.savedBadge) return;
+  const count = getFavourites().length;
+  if (count > 0) {
+    els.savedBadge.textContent = count;
+    els.savedBadge.hidden = false;
+    els.savedBadge.setAttribute('aria-hidden', 'false');
+  } else {
+    els.savedBadge.hidden = true;
+    els.savedBadge.setAttribute('aria-hidden', 'true');
+  }
+}
+
+// ─── view navigation ─────────────────────────────────────────────
+
+let currentView = 'search'; // 'search' | 'saved'
+
+// ─── routing ───────────────────────────────────────────────────────────────
+// Map view name ↔ URL path. The app keeps a single HTML file (index.html)
+// but uses History API so URLs reflect the current view and back/forward work.
+const VIEW_PATHS = {
+  search: '/',
+  saved: '/saved',
+};
+
+function viewFromPath(path) {
+  if (!path) return 'search';
+  // Tolerate trailing slash and case differences.
+  const clean = path.toLowerCase().replace(/\/+$/, '') || '/';
+  if (clean === '/saved') return 'saved';
+  return 'search';
+}
+
+function pushViewHistory(view, replace = false) {
+  const path = VIEW_PATHS[view] || '/';
+  // Preserve the directory prefix if the app is served from a sub-path
+  // (e.g. http://localhost:8090/foodlens/). We only override the final segment.
+  const base = window.location.pathname.replace(/\/(saved\/?)?$/i, '') || '';
+  const newPath = (base + path).replace(/\/{2,}/g, '/');
+  const url = newPath + window.location.search + window.location.hash;
+  // No-op if we already are on this URL — avoids polluting the history stack.
+  if (window.location.pathname.replace(/\/$/, '') === newPath.replace(/\/$/, '')) return;
+  const method = replace ? 'replaceState' : 'pushState';
+  window.history[method]({ view }, '', url);
+}
+
+function showView(view, opts = {}) {
+  const { updateHistory = true, replace = false } = opts;
+  currentView = view;
+
+  if (updateHistory) pushViewHistory(view, replace);
+
+  // Toggle nav active states
+  if (els.navSearch) {
+    els.navSearch.classList.toggle('is-active', view === 'search');
+    els.navSearch.setAttribute('aria-pressed', view === 'search' ? 'true' : 'false');
+  }
+  if (els.navSaved) {
+    els.navSaved.classList.toggle('is-active', view === 'saved');
+    els.navSaved.setAttribute('aria-pressed', view === 'saved' ? 'true' : 'false');
+  }
+
+  // Show/hide sections
+  if (view === 'saved') {
+    setHidden(els.resultsRegion, true);
+    setHidden(els.focusedView, true);
+    setHidden(els.favouritesSection, false);
+    renderFavourites(els.favouritesSection, openSavedProductInSearch, () => {
+      updateSavedBadge();
+      if (currentView === 'saved') {
+        renderFavourites(els.favouritesSection, openSavedProductInSearch, () => updateSavedBadge());
+      }
+    });
+  } else {
+    setHidden(els.favouritesSection, true);
+    setHidden(els.resultsRegion, false);
+    rerenderResults();
+  }
+}
+
+// Click on a saved product card: go back to the search view, KEEP the existing
+// results list (so the user can still see everything), and focus the picked
+// product on top. If the product is not in the current list, fetch it and
+// prepend it so the focused card has data to render.
+async function openSavedProductInSearch(code) {
+  showView('search');
+
+  // If the results list is empty (first visit / fresh reload while on /saved),
+  // restore the sample-products view so the user is not dumped on a blank page.
+  if (!lastResults || lastResults.length === 0) {
+    lastResults = await getAllSampleProducts();
+  }
+
+  let product = lastResults.find((p) => p.code === code);
+  if (!product) {
+    product = await getProductByBarcode(code);
+    if (product) lastResults = [product, ...lastResults];
+  }
+
+  rerenderResults();
+  if (product) {
+    focusProduct(product);
+  }
+}
+
 // ─── event wiring ───────────────────────────────────────────────────────
 
 function wireEvents() {
   els.searchForm?.addEventListener('submit', (e) => {
     e.preventDefault();
     const q = els.searchInput.value.trim();
+    showView('search');
     runSearch(q);
   });
 
@@ -753,6 +964,16 @@ function wireEvents() {
       setWeight(value, preset);
     });
   }
+
+  els.settingsBtn?.addEventListener('click', showSettings);
+  els.navSearch?.addEventListener('click', () => showView('search'));
+  els.navSaved?.addEventListener('click', () => showView('saved'));
+
+  // Back/forward buttons: read the URL and switch view without pushing again.
+  window.addEventListener('popstate', () => {
+    const target = viewFromPath(window.location.pathname);
+    showView(target, { updateHistory: false });
+  });
 }
 
 // ─── telemetry consent banner (F-45) ───────────────────────────────────
@@ -801,11 +1022,39 @@ function renderTelemetryBanner() {
 // ─── bootstrap ─────────────────────────────────────────────────────────
 
 async function bootstrap() {
+  _loadSettings();
+  initTooltips();
   applyWeightToUI();
   wireEvents();
+  initOnboarding();
+
+  // Suppress all trackView calls during bootstrap so no sample product
+  // (loaded via runSearch('')) gets recorded as "recently viewed".
+  startBootstrap();
   renderTelemetryBanner();
   // Show all sample products on first load so the UI is never empty.
   await runSearch('');
+
+  renderRecentlyViewed(els.recentlyViewed, (code) => runSearch(code));
+  if (lastResults.length > 0) {
+    focusProduct(lastResults[0], { skipTrack: true });
+  }
+
+  // NOW end bootstrap so real user navigation (product clicks) tracks.
+  endBootstrap();
+
+  // Route to the view the URL indicates (e.g. someone opens /saved directly).
+  // replace:true so we don't add a junk entry at the start of the history.
+  const initialView = viewFromPath(window.location.pathname);
+  if (initialView !== 'search') {
+    showView(initialView, { replace: true });
+  } else {
+    // Make sure the initial state has { view: 'search' } so popstate works.
+    pushViewHistory('search', true);
+  }
+
+  // Initialize saved badge count
+  updateSavedBadge();
 }
 
 if (document.readyState === 'loading') {

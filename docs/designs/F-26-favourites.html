@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>F-26 Favourites — FoodLens Design Prototype</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500;1,6..72,600&family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --color-paper: #FAF6EF;
+      --color-paper-2: #F2ECDE;
+      --color-paper-3: #E8E0CB;
+      --color-ink: #1A1A18;
+      --color-ink-soft: #5A574F;
+      --color-ink-mute: #8C8779;
+      --color-rule: #1A1A18;
+      --color-accent: #7B3F00;
+      --color-heart: #e63946;
+      --color-nutri-a: #1F8A3F;
+      --color-nutri-b: #7AB52E;
+      --color-nutri-c: #E8A823;
+      --color-nutri-d: #E27210;
+      --color-nutri-e: #CB342B;
+      --color-eco-a: #1B5E20;
+      --color-eco-b: #4D7C2F;
+      --color-eco-c: #8C7B2B;
+      --color-eco-d: #A85C1B;
+      --color-eco-e: #5D3A1A;
+      --color-grade-na: #8C8779;
+      --space-1: 0.25rem;
+      --space-2: 0.5rem;
+      --space-3: 0.75rem;
+      --space-4: 1rem;
+      --space-6: 1.5rem;
+      --font-display: 'Newsreader', Georgia, serif;
+      --font-body: 'Bricolage Grotesque', system-ui, sans-serif;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--font-body);
+      background: var(--color-paper);
+      color: var(--color-ink);
+      min-height: 100vh;
+    }
+
+    /* ── Nav bar ─────────────────────────────── */
+    .nav {
+      display: flex;
+      align-items: center;
+      gap: var(--space-4);
+      padding: var(--space-3) var(--space-4);
+      border-bottom: 1px solid var(--color-rule);
+      background: var(--color-paper-2);
+    }
+    .nav__brand {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+    .nav__brand em { font-style: italic; }
+    .nav__links {
+      display: flex;
+      gap: var(--space-4);
+      margin-left: auto;
+      list-style: none;
+      padding: 0;
+    }
+    .nav__link {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 3px;
+      text-decoration: none;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--color-ink-soft);
+      cursor: pointer;
+      border: 1px solid transparent;
+      transition: all 150ms;
+    }
+    .nav__link:hover { background: var(--color-paper-3); }
+    .nav__link.is-active {
+      color: var(--color-accent);
+      border-color: var(--color-accent);
+      background: var(--color-paper);
+    }
+    .nav__link svg { width: 16px; height: 16px; }
+
+    /* ── Saved section ───────────────────────── */
+    #saved {
+      max-width: 78rem;
+      margin: 0 auto;
+      padding: var(--space-4);
+    }
+    #saved[hidden] { display: none; }
+
+    .saved__header {
+      display: flex;
+      align-items: center;
+      gap: var(--space-3);
+      margin-bottom: var(--space-4);
+    }
+    .saved__title {
+      font-family: var(--font-display);
+      font-size: 1.4rem;
+      font-weight: 500;
+      margin: 0;
+    }
+    .saved__count {
+      font-size: 0.875rem;
+      color: var(--color-ink-mute);
+    }
+    .saved__clear {
+      margin-left: auto;
+      padding: 6px 14px;
+      background: transparent;
+      border: 1px solid var(--color-ink-mute);
+      border-radius: 3px;
+      font-size: 0.75rem;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+      color: var(--color-ink-soft);
+      cursor: pointer;
+      transition: all 150ms;
+    }
+    .saved__clear:hover {
+      background: var(--color-ink);
+      color: var(--color-paper);
+      border-color: var(--color-ink);
+    }
+    .saved__clear[hidden] { display: none; }
+
+    /* ── Empty state ────────────────────────── */
+    .saved-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-3);
+      padding: var(--space-16) var(--space-4);
+      text-align: center;
+    }
+    .saved-empty svg { width: 48px; height: 48px; color: var(--color-ink-mute); }
+    .saved-empty p {
+      font-family: var(--font-display);
+      font-size: 1.1rem;
+      font-style: italic;
+      color: var(--color-ink-soft);
+      max-width: 24rem;
+    }
+    .saved-empty[hidden] { display: none; }
+
+    /* ── Saved grid ─────────────────────────── */
+    .saved-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: var(--space-4);
+    }
+    .saved-grid[hidden] { display: none; }
+
+    /* ── Product card ───────────────────────── */
+    .card {
+      border: 1px solid var(--color-rule);
+      border-radius: 2px;
+      overflow: hidden;
+      background: var(--color-paper);
+      display: flex;
+      flex-direction: column;
+      transition: box-shadow 150ms;
+    }
+    .card:hover { box-shadow: 3px 3px 0 var(--color-rule); }
+
+    .card__header {
+      display: flex;
+      gap: var(--space-2);
+      padding: var(--space-3);
+      border-bottom: 1px solid var(--color-paper-3);
+    }
+    .card__image {
+      width: 3.5rem;
+      height: 3.5rem;
+      object-fit: cover;
+      flex-shrink: 0;
+      background: var(--color-paper-3);
+      border: 1px solid var(--color-paper-3);
+    }
+    .card__image--placeholder {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      color: var(--color-ink-mute);
+    }
+    .card__title-block { flex: 1; min-width: 0; }
+    .card__title {
+      font-family: var(--font-body);
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin: 0 0 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .card__brand {
+      font-size: 0.75rem;
+      color: var(--color-ink-mute);
+      margin: 0;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    /* ── Heart button ───────────────────────── */
+    .heart-btn {
+      background: none;
+      border: none;
+      padding: var(--space-1);
+      cursor: pointer;
+      border-radius: 3px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: transform 150ms, color 150ms;
+      color: var(--color-ink-mute);
+      outline: none;
+    }
+    .heart-btn:hover { transform: scale(1.1); }
+    .heart-btn:active { transform: scale(0.9); }
+    .heart-btn:focus-visible { box-shadow: 0 0 0 2px var(--color-accent); }
+    .heart-btn svg { width: 22px; height: 22px; }
+    .heart-btn.is-saved { color: var(--color-heart); }
+    .heart-btn.is-saved svg { fill: var(--color-heart); }
+
+    /* ── Card body ──────────────────────────── */
+    .card__scores {
+      display: flex;
+      gap: var(--space-2);
+      padding: var(--space-2) var(--space-3);
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 1.4rem;
+      height: 1.1rem;
+      padding: 0 4px;
+      border-radius: 2px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.6rem;
+      font-weight: 700;
+      color: #fff;
+    }
+    .badge--nutri { background: var(--color-nutri-b); border: 1px solid #5a9e1a; }
+    .badge--eco { background: var(--color-eco-b); border: 1px solid #3d6326; }
+    .badge--grade-a { background: var(--color-nutri-a); border-color: #155c2b; }
+    .badge--grade-b { background: var(--color-nutri-b); border-color: #5a9e1a; }
+    .badge--grade-c { background: var(--color-nutri-c); border-color: #b88517; }
+    .badge--grade-d { background: var(--color-nutri-d); border-color: #b35d0a; }
+    .badge--grade-e { background: var(--color-nutri-e); border-color: #9e2820; }
+    .badge--grade-unknown,
+    .badge--grade-na { background: var(--color-grade-na); border-color: #6e6a61; }
+
+    .card__sentence {
+      font-size: 0.8125rem;
+      line-height: 1.45;
+      color: var(--color-ink-soft);
+      padding: var(--space-2) var(--space-3);
+      border-top: 1px solid var(--color-paper-3);
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Nav bar -->
+  <nav class="nav" role="navigation" aria-label="Main navigation">
+    <span class="nav__brand"><em>Food</em>Lens</span>
+    <ul class="nav__links">
+      <li>
+        <a class="nav__link" href="#" id="nav-search">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+          </svg>
+          Search
+        </a>
+      </li>
+      <li>
+        <a class="nav__link is-active" href="#" id="nav-saved">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+          </svg>
+          Saved
+          <span id="saved-badge" style="background:var(--color-heart);color:#fff;border-radius:99px;font-size:0.65rem;padding:1px 6px;display:none;">0</span>
+        </a>
+      </li>
+    </ul>
+  </nav>
+
+  <!-- Saved section -->
+  <section id="saved" aria-label="Saved products">
+    <div class="saved__header">
+      <h1 class="saved__title">Saved</h1>
+      <span class="saved__count" id="saved-count"></span>
+      <button class="saved__clear" id="clear-all" aria-label="Clear all saved products" hidden>Clear all</button>
+    </div>
+
+    <!-- Empty state -->
+    <div class="saved-empty" id="empty-state">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+      </svg>
+      <p>No saved products yet. Tap the heart on any product to save it.</p>
+    </div>
+
+    <!-- Grid -->
+    <div class="saved-grid" id="saved-grid" hidden></div>
+  </section>
+
+  <script>
+    // ── Mock data ────────────────────────────────────────────────────────────
+    const SAMPLE_PRODUCTS = [
+      {
+        code: '5449000131805',
+        name: 'Coca-Cola Zero Sugar',
+        brands: ['Coca-Cola'],
+        image: 'https://images.openfoodfacts.org/v2/products/5449000131805/front_en.6.200.jpg',
+        healthGrade: 'b',
+        ecoGrade: 'not-applicable',
+        sentence: 'This product has 0g sugars per 100g, but a similar Nutri-Score (B vs B) to most soft drinks.',
+      },
+      {
+        code: '3017624010701',
+        name: 'Nutella',
+        brands: ['Ferrero'],
+        image: 'https://images.openfoodfacts.org/v2/products/3017624010701/front_en.3.200.jpg',
+        healthGrade: 'e',
+        ecoGrade: 'd',
+        sentence: 'This product has 57g sugars per 100g, which is 23g more than the category average.',
+      },
+      {
+        code: '8076809513753',
+        name: 'Barilla Spaghetti No. 5',
+        brands: ['Barilla'],
+        image: 'https://images.openfoodfacts.org/v2/products/8076809513753/front_en.4.200.jpg',
+        healthGrade: 'a',
+        ecoGrade: 'b',
+        sentence: 'This product has 10g protein per 100g, which is 3g more than the category average for pasta.',
+      },
+    ];
+
+    // ── Favourites state ────────────────────────────────────────────────────
+    const FAVOURITES_KEY = 'foodlens.favourites';
+    let savedProducts = JSON.parse(localStorage.getItem(FAVOURITES_KEY) || '[]');
+
+    function persist() {
+      localStorage.setItem(FAVOURITES_KEY, JSON.stringify(savedProducts));
+    }
+
+    function toggleFavourite(code, productData) {
+      const idx = savedProducts.findIndex(p => p.code === code);
+      if (idx !== -1) {
+        savedProducts.splice(idx, 1);
+      } else {
+        savedProducts.unshift({
+          code,
+          name: productData.name,
+          image: productData.image,
+          healthGrade: productData.healthGrade,
+          ecoGrade: productData.ecoGrade,
+          savedAt: Date.now(),
+        });
+      }
+      persist();
+      renderAll();
+    }
+
+    function isFavourite(code) {
+      return savedProducts.some(p => p.code === code);
+    }
+
+    function clearFavourites() {
+      savedProducts = [];
+      persist();
+      renderAll();
+    }
+
+    // ── Render helpers ────────────────────────────────────────────────────────
+    function buildHeartBtn(product) {
+      const btn = document.createElement('button');
+      btn.className = 'heart-btn' + (isFavourite(product.code) ? ' is-saved' : '');
+      btn.setAttribute('aria-label', isFavourite(product.code) ? 'Remove from saved' : 'Save product');
+      btn.setAttribute('aria-pressed', isFavourite(product.code) ? 'true' : 'false');
+      btn.setAttribute('type', 'button');
+      btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+      </svg>`;
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleFavourite(product.code, product);
+      });
+      return btn;
+    }
+
+    function buildBadge(grade, type) {
+      const span = document.createElement('span');
+      span.className = `badge badge--${type} badge--grade-${grade}`;
+      const labels = { a: 'A', b: 'B', c: 'C', d: 'D', e: 'E', unknown: '?', 'not-applicable': '—' };
+      span.textContent = labels[grade] || '?';
+      return span;
+    }
+
+    function buildCard(product) {
+      const article = document.createElement('article');
+      article.className = 'card';
+      article.setAttribute('role', 'listitem');
+
+      const header = document.createElement('div');
+      header.className = 'card__header';
+
+      const img = document.createElement('img');
+      img.className = 'card__image';
+      img.src = product.image;
+      img.alt = product.name;
+      img.onerror = function() {
+        this.replaceWith(Object.assign(document.createElement('div'), {
+          className: 'card__image card__image--placeholder', textContent: product.name?.[0] || '?'
+        }));
+      };
+
+      const titleBlock = document.createElement('div');
+      titleBlock.className = 'card__title-block';
+
+      const title = document.createElement('h3');
+      title.className = 'card__title';
+      title.textContent = product.name;
+
+      const brand = document.createElement('p');
+      brand.className = 'card__brand';
+      brand.textContent = product.brands.join(' · ');
+
+      titleBlock.appendChild(title);
+      titleBlock.appendChild(brand);
+      header.appendChild(img);
+      header.appendChild(titleBlock);
+      header.appendChild(buildHeartBtn(product));
+
+      const scores = document.createElement('div');
+      scores.className = 'card__scores';
+      scores.appendChild(buildBadge(product.healthGrade, 'nutri'));
+      scores.appendChild(buildBadge(product.ecoGrade, 'eco'));
+
+      const sentence = document.createElement('p');
+      sentence.className = 'card__sentence';
+      sentence.textContent = product.sentence;
+
+      article.appendChild(header);
+      article.appendChild(scores);
+      article.appendChild(sentence);
+
+      return article;
+    }
+
+    // ── Render saved view ────────────────────────────────────────────────────
+    function renderSavedView() {
+      const grid = document.getElementById('saved-grid');
+      const empty = document.getElementById('empty-state');
+      const clearBtn = document.getElementById('clear-all');
+      const countEl = document.getElementById('saved-count');
+      const badge = document.getElementById('saved-badge');
+
+      grid.innerHTML = '';
+      if (savedProducts.length === 0) {
+        grid.hidden = true;
+        empty.hidden = false;
+        clearBtn.hidden = true;
+        countEl.textContent = '';
+        badge.style.display = 'none';
+      } else {
+        grid.hidden = false;
+        empty.hidden = true;
+        clearBtn.hidden = false;
+        countEl.textContent = `${savedProducts.length} product${savedProducts.length !== 1 ? 's' : ''}`;
+        badge.style.display = 'inline';
+        badge.textContent = savedProducts.length;
+        for (const product of savedProducts) {
+          grid.appendChild(buildCard(product));
+        }
+      }
+    }
+
+    // ── Wire clear all ──────────────────────────────────────────────────────
+    document.getElementById('clear-all').addEventListener('click', () => {
+      clearFavourites();
+    });
+
+    // ── Initial render ───────────────────────────────────────────────────────
+    function renderAll() {
+      renderSavedView();
+    }
+    renderAll();
+  </script>
+</body>
+</html>

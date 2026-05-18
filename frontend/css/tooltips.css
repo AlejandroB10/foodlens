@@ -1,0 +1,217 @@
+/* FoodLens F-28 — Educational tooltips
+   Editorial "footnote" pop-out: anchored to the badge, concise body, eyebrow
+   tag + display-italic title + body in Bricolage + outbound link with arrow.
+   Position:fixed so the JS positioner can use viewport coordinates straight
+   from getBoundingClientRect. A configurable arrow (--arrow-offset) keeps
+   the pointer aligned to the badge even when the popover is clamped to the
+   viewport edge. */
+
+.badge[data-tooltip] {
+  cursor: help;
+}
+
+/* ─── popover shell ─────────────────────────────────────────────── */
+
+.tooltip-popover {
+  position: fixed;
+  z-index: 900;
+  width: max-content;
+  min-width: 240px;
+  max-width: 320px;
+  padding: var(--space-4) var(--space-5);
+  background: var(--color-paper);
+  border: var(--rule-w-bold) solid var(--color-rule);
+  /* Inset accent rule so the popover feels like a magazine pull-quote */
+  box-shadow:
+    0 2px 0 var(--color-rule),
+    0 18px 36px rgba(26, 26, 24, 0.18);
+  /* Default value — overridden inline by the positioner. */
+  --arrow-offset: 50%;
+  /* Entry animation: fade + tiny vertical reveal */
+  opacity: 0;
+  transform: translateY(-6px) scale(0.98);
+  transform-origin: top center;
+  transition:
+    opacity 160ms ease,
+    transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+  pointer-events: auto;
+}
+
+.tooltip-popover.is-visible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+/* When flipped above the badge, anchor the reveal direction the other way. */
+.tooltip-popover.flip {
+  transform: translateY(6px) scale(0.98);
+  transform-origin: bottom center;
+}
+
+.tooltip-popover.flip.is-visible {
+  transform: translateY(0) scale(1);
+}
+
+/* ─── caret pointing at the badge ──────────────────────────────── */
+
+/* Outer triangle (ink rule colour, slightly larger) */
+.tooltip-popover::before {
+  content: "";
+  position: absolute;
+  left: var(--arrow-offset);
+  bottom: 100%;
+  transform: translateX(-50%);
+  width: 14px;
+  height: 14px;
+  background: var(--color-paper);
+  border-left: var(--rule-w-bold) solid var(--color-rule);
+  border-top: var(--rule-w-bold) solid var(--color-rule);
+  rotate: 45deg;
+  margin-bottom: -7px;
+}
+
+.tooltip-popover.flip::before {
+  bottom: auto;
+  top: 100%;
+  rotate: -135deg;
+  margin-bottom: 0;
+  margin-top: -7px;
+}
+
+/* ─── eyebrow / category tag ───────────────────────────────────── */
+
+.tooltip-eyebrow {
+  display: inline-block;
+  font-family: var(--font-body);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--color-accent);
+  margin-bottom: var(--space-2);
+}
+
+.tooltip-popover--eco .tooltip-eyebrow {
+  color: var(--color-eco-a, #1B5E20);
+}
+
+/* ─── title ─────────────────────────────────────────────────────── */
+
+.tooltip-title {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 1.15rem;
+  line-height: 1.15;
+  color: var(--color-ink);
+  margin: 0 0 var(--space-2);
+  padding-right: var(--space-6);
+}
+
+/* ─── body ──────────────────────────────────────────────────────── */
+
+.tooltip-body {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  line-height: 1.45;
+  color: var(--color-ink);
+  margin: 0 0 var(--space-3);
+}
+
+/* ─── link ──────────────────────────────────────────────────────── */
+
+.tooltip-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-ink);
+  text-decoration: none;
+  padding-bottom: 2px;
+  border-bottom: var(--rule-w-bold) solid var(--color-ink);
+  transition: color 140ms ease, border-color 140ms ease, gap 180ms ease;
+}
+
+.tooltip-link span {
+  transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.tooltip-link:hover,
+.tooltip-link:focus-visible {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+  outline: 0;
+}
+
+.tooltip-link:hover span,
+.tooltip-link:focus-visible span {
+  transform: translateX(3px);
+}
+
+.tooltip-link:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 4px;
+}
+
+/* ─── close button ──────────────────────────────────────────────── */
+
+.tooltip-close {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background: transparent;
+  border: var(--rule-w) solid transparent;
+  color: var(--color-ink-soft);
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease, border-color 140ms ease;
+}
+
+.tooltip-close:hover,
+.tooltip-close:focus-visible {
+  background: var(--color-ink);
+  border-color: var(--color-ink);
+  color: var(--color-paper);
+  outline: 0;
+}
+
+.tooltip-close:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.tooltip-close svg {
+  display: block;
+}
+
+/* ─── reduced motion ───────────────────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .tooltip-popover,
+  .tooltip-popover.flip,
+  .tooltip-link span {
+    transition: opacity 100ms linear;
+    transform: none;
+  }
+  .tooltip-popover.is-visible,
+  .tooltip-popover.flip.is-visible {
+    transform: none;
+  }
+}
+
+/* ─── narrow viewports ─────────────────────────────────────────── */
+
+@media (max-width: 380px) {
+  .tooltip-popover {
+    max-width: calc(100vw - 24px);
+    min-width: 0;
+  }
+}

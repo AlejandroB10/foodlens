@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>FoodLens — Transparent multi-objective food recommendations</title>
   <meta name="description" content="Search any food product. See its Health and Eco scores side by side. Read the one-sentence reasoning behind each recommendation." />
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
 
   <!-- Backend integration (opt-in). Uncomment and set the URL to enable the Flask backend.
        When disabled (default), the app uses the in-browser JS KNN path — no backend needed.
@@ -20,6 +21,15 @@
   />
 
   <link rel="stylesheet" href="./css/style.css" />
+  <link rel="stylesheet" href="./css/onboarding.css" />
+  <link rel="stylesheet" href="./css/history.css" />
+  <link rel="stylesheet" href="./css/settings.css" />
+  <link rel="stylesheet" href="./css/tooltips.css" />
+  <link rel="stylesheet" href="./css/personas.css" />
+  <link rel="stylesheet" href="./css/print.css" />
+  <link rel="stylesheet" href="./css/favourites.css" />
+
+  <!-- Chart.js for SHAP waterfall (F-24) and Nutri x Eco scatter (F-43). -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 </head>
 <body>
@@ -39,6 +49,13 @@
           <span class="small-caps">UIB · HCI 11755 · WA4</span>
           <span class="small-caps">Issue Nº 001 · 2026</span>
           <span class="small-caps">Open Food Facts</span>
+          <button type="button" class="settings-trigger" data-action="settings" aria-label="Open settings">
+            <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="3"/>
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+            </svg>
+            <span class="visually-hidden">Settings</span>
+          </button>
         </div>
       </div>
     </header>
@@ -93,6 +110,35 @@
         </div>
       </section>
 
+      <!-- ─── Navigation ─────────────────────────────────────────── -->
+      <nav class="site-nav" aria-label="Main navigation">
+        <ul class="site-nav__list">
+          <li>
+            <button type="button" class="site-nav__link" id="nav-search" aria-pressed="true">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="16" height="16">
+                <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
+              </svg>
+              Search
+            </button>
+          </li>
+          <li>
+            <button type="button" class="site-nav__link" id="nav-saved" aria-pressed="false">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="16" height="16">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+              </svg>
+              Saved
+              <span id="saved-badge" class="saved-badge" hidden aria-hidden="true">0</span>
+            </button>
+          </li>
+        </ul>
+      </nav>
+
+      <!-- ─── Recently viewed (F-25) ─────────────────────────────── -->
+      <section id="recently-viewed" aria-label="Recently viewed products" hidden></section>
+
+      <!-- ─── Favourites / Saved (F-26) ───────────────────────────── -->
+      <section id="favourites" aria-label="Saved products" hidden></section>
+
       <!-- ─── State banners ─────────────────────────────────────── -->
       <p id="source-badge" class="source-badge" role="status" hidden>
         Showing offline sample data. The live Open Food Facts API was unreachable; the team should reload once it recovers.
@@ -124,6 +170,68 @@
       </section>
 
     </main>
+
+    <!-- ─── Personas showcase (F-31) ────────────────────────────────── -->
+    <section class="personas-showcase" aria-labelledby="personas-title">
+      <header class="personas-showcase__header">
+        <p class="personas-showcase__eyebrow">Meet the team</p>
+        <h2 id="personas-title" class="personas-showcase__title">
+          Three ways FoodLens <em>thinks</em> about food
+        </h2>
+        <p class="personas-showcase__subtitle">
+          Every feature is tested against three real people — not abstractions. See who we built this for.
+        </p>
+      </header>
+
+      <div class="personas-showcase__grid">
+
+        <!-- Marc Vidal -->
+        <article class="persona-card">
+          <div class="persona-card__meta">
+            <h3 class="persona-card__name">Marc Vidal</h3>
+            <span class="persona-card__badge">P01</span>
+          </div>
+          <p class="persona-card__role">27 · software engineer · Palma</p>
+          <blockquote class="persona-card__quote">
+            "I can live with a score I disagree with if I can see why it was given and decide for myself."
+          </blockquote>
+          <p class="persona-card__description">
+            Time-poor. Cooks weeknights. Trusts algorithms only when the reasoning is visible. Configures once if it saves repeated decision effort. FoodLens shows him the contrastive sentence upfront — top card in under 15 seconds.
+          </p>
+        </article>
+
+        <!-- Pau Estarellas -->
+        <article class="persona-card">
+          <div class="persona-card__meta">
+            <h3 class="persona-card__name">Pau Estarellas</h3>
+            <span class="persona-card__badge">P02</span>
+          </div>
+          <p class="persona-card__role">22 · maths undergrad · Barcelona</p>
+          <blockquote class="persona-card__quote">
+            "Tell me: compared to what you usually buy, this one has thirty percent less sugar and almost the same saturated fat."
+          </blockquote>
+          <p class="persona-card__description">
+            Tight budget, minimal cooking routine. Sceptical of marketing. Demands a number he can verify. Every claim in the contrastive sentence is one tap away from the drill-down nutrient table.
+          </p>
+        </article>
+
+        <!-- Lluís Tomàs -->
+        <article class="persona-card">
+          <div class="persona-card__meta">
+            <h3 class="persona-card__name">Lluís Tomàs</h3>
+            <span class="persona-card__badge">P03</span>
+          </div>
+          <p class="persona-card__role">26 · marketing professional · Madrid</p>
+          <blockquote class="persona-card__quote">
+            "What convinces me is a sharp sentence with a data point in it."
+          </blockquote>
+          <p class="persona-card__description">
+            Knows greenwashing from the inside. Wants a sharp contrastive sentence with a datum. Resists moralising. The system never claims authority — every comparison is grounded in data, never in "our recommendation."
+          </p>
+        </article>
+
+      </div>
+    </section>
 
     <!-- ─── Footer ───────────────────────────────────────────────── -->
     <footer class="site-footer" role="contentinfo">

@@ -1,0 +1,446 @@
+/* FoodLens F-11 — Onboarding Modal Styles
+   Uses design tokens from style.css via CSS custom properties.
+   Mobile-first. No new tokens introduced.
+*/
+
+/* ─── backdrop / overlay ─────────────────────────────────────────────────── */
+.onboarding-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 26, 24, 0.6);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: var(--space-5);
+  z-index: 100;
+  pointer-events: none; /* let clicks pass through to modal */
+}
+
+/* ─── modal shell ────────────────────────────────────────────────────────── */
+.onboarding {
+  background: var(--color-paper);
+  border: var(--rule-w-bold) solid var(--color-rule);
+  width: 100%;
+  max-width: 520px;
+  max-height: 90vh;
+  overflow-y: auto;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  pointer-events: auto; /* modal captures clicks, overriding backdrop */
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 101;
+}
+
+/* ─── header ─────────────────────────────────────────────────────────────── */
+.onboarding__header {
+  border-bottom: var(--rule-w) solid var(--color-rule);
+  padding: var(--space-6) var(--space-6) var(--space-5);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.onboarding__title {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(1.5rem, 4vw, 2rem);
+  line-height: var(--leading-tight);
+}
+
+.onboarding__close-btn {
+  background: none;
+  border: var(--rule-w) solid var(--color-rule);
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  color: var(--color-ink);
+  transition: background-color 120ms ease;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.onboarding__close-btn:hover,
+.onboarding__close-btn:focus-visible {
+  background: var(--color-paper-3);
+  outline: 0;
+}
+
+.onboarding__close-btn:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.onboarding__close-btn svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+}
+
+/* ─── progress bar ───────────────────────────────────────────────────────── */
+.onboarding__progress {
+  display: flex;
+  gap: var(--space-2);
+  padding: var(--space-4) var(--space-6);
+  border-bottom: var(--rule-w) solid var(--color-paper-3);
+}
+
+.progress-step {
+  flex: 1;
+  height: 3px;
+  background: var(--color-paper-3);
+  border: var(--rule-w) solid var(--color-rule);
+  transition: background-color 300ms ease;
+}
+
+.progress-step.is-active {
+  background: var(--color-accent);
+}
+
+.progress-step.is-done {
+  background: var(--color-ink);
+}
+
+/* ─── body / step content ─────────────────────────────────────────────────── */
+.onboarding__body {
+  padding: var(--space-8) var(--space-6);
+  display: grid;
+  gap: var(--space-6);
+}
+
+.step-title {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(1.25rem, 3vw, 1.65rem);
+  line-height: var(--leading-snug);
+  margin-bottom: var(--space-2);
+}
+
+.step-subtitle {
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--color-ink-soft);
+  line-height: var(--leading-normal);
+}
+
+/* ─── goals — multi-select chips ───────────────────────────────────────── */
+.goals-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--space-3);
+}
+
+@media (min-width: 420px) {
+  .goals-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.goal-card {
+  border: var(--rule-w-bold) solid var(--color-rule);
+  background: var(--color-paper);
+  padding: var(--space-5) var(--space-4);
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease;
+  position: relative;
+  display: grid;
+  gap: var(--space-2);
+  user-select: none;
+}
+
+.goal-card:hover {
+  background: var(--color-paper-2);
+}
+
+.goal-card.is-selected {
+  background: var(--color-paper-2);
+  border-color: var(--color-accent);
+}
+
+.goal-card input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.goal-card__check {
+  position: absolute;
+  top: var(--space-3);
+  right: var(--space-3);
+  width: 20px;
+  height: 20px;
+  border: var(--rule-w-bold) solid var(--color-rule);
+  background: var(--color-paper);
+  display: grid;
+  place-items: center;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.goal-card.is-selected .goal-card__check {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.goal-card__check svg {
+  width: 12px;
+  height: 12px;
+  stroke: var(--color-paper);
+  stroke-width: 3;
+  fill: none;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.goal-card.is-selected .goal-card__check svg {
+  opacity: 1;
+}
+
+.goal-card:focus-within {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.goal-card__icon {
+  font-size: 1.75rem;
+  line-height: 1;
+  margin-bottom: var(--space-1);
+}
+
+.goal-card__label {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: var(--color-ink);
+  line-height: var(--leading-snug);
+}
+
+.goal-card__desc {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--color-ink-soft);
+  line-height: var(--leading-normal);
+}
+
+/* ─── age + gender fields ─────────────────────────────────────────────────── */
+.field-group {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.field {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.field__label {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink-soft);
+}
+
+.field__input {
+  border: var(--rule-w-bold) solid var(--color-rule);
+  background: var(--color-paper);
+  padding: var(--space-3) var(--space-4);
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 1.1rem;
+  color: var(--color-ink);
+  width: 100%;
+  transition: border-color 120ms ease;
+}
+
+.field__input::placeholder {
+  color: var(--color-ink-mute);
+  font-style: italic;
+}
+
+.field__input:focus {
+  outline: 0;
+  border-color: var(--color-accent);
+}
+
+.field__error {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  color: var(--color-nutri-e);
+  display: none;
+  margin-top: var(--space-2);
+  line-height: 1.4;
+}
+
+.field__required {
+  color: var(--color-nutri-e);
+  font-weight: 600;
+  margin-left: 2px;
+}
+
+.field__input.has-error {
+  border-color: var(--color-nutri-e);
+}
+
+.field__input.has-error + .field__error,
+.field--invalid > .field__error,
+.field--invalid .field__error {
+  display: block;
+}
+
+/* Tint the surrounding label / legend when the field is in error */
+.field--invalid > .field__label,
+.field--invalid > .legend,
+.field--invalid > legend {
+  color: var(--color-nutri-e);
+}
+
+/* Tint goal cards / radio items when their group is invalid */
+.field--invalid .goal-card,
+.field--invalid .radio-item {
+  border-color: var(--color-nutri-e);
+}
+
+/* ─── radio group ─────────────────────────────────────────────────────────── */
+.radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.radio-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  cursor: pointer;
+  padding: var(--space-2) var(--space-3);
+  border: var(--rule-w) solid transparent;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.radio-item:hover {
+  background: var(--color-paper-2);
+  border-color: var(--color-rule);
+}
+
+.radio-item:focus-within {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.radio-item input[type="radio"] {
+  accent-color: var(--color-accent);
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.radio-item__label {
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--color-ink);
+}
+
+/* ─── optional body metrics ─────────────────────────────────────────────── */
+.rationale {
+  background: var(--color-paper-2);
+  border-left: var(--rule-w-bold) solid var(--color-accent);
+  padding: var(--space-4);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--color-ink-soft);
+  line-height: var(--leading-normal);
+  font-style: italic;
+}
+
+.metrics-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.field__unit {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--color-ink-mute);
+  margin-top: var(--space-1);
+}
+
+/* ─── footer / action bar ────────────────────────────────────────────────── */
+.onboarding__footer {
+  border-top: var(--rule-w-bold) solid var(--color-rule);
+  padding: var(--space-5) var(--space-6);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.step-counter {
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--color-ink-mute);
+}
+
+.btn-group {
+  display: flex;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.btn {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: var(--space-3) var(--space-5);
+  background: transparent;
+  border: var(--rule-w-bold) solid var(--color-rule);
+  color: var(--color-ink);
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.btn:hover,
+.btn:focus-visible {
+  background: var(--color-paper-3);
+  outline: 0;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+.btn--primary {
+  background: var(--color-ink);
+  color: var(--color-paper);
+}
+
+.btn--primary:hover,
+.btn--primary:focus-visible {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.btn--skip {
+  color: var(--color-ink-soft);
+}
+
+.btn--skip:hover,
+.btn--skip:focus-visible {
+  color: var(--color-ink);
+  background: var(--color-paper-3);
+}

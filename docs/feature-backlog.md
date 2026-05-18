@@ -207,8 +207,11 @@ These features unblock everyone else. Anyone can start with them.
 - **Persona**: Marc, Pau
 - **Prio**: P1
 - **Deps**: F-01
-- **Owner**: _available_
-- **Phases**: `[ ] R [ ] D [ ] C [ ] T`
+- **Owner**: Alejandro Bordón
+- **Phases**: `[x] R [x] D [x] C [x] T`
+
+**Requirements.** [`docs/reqs/F-11-requirements.md`](reqs/F-11-requirements.md)
+**Design.** [frontend/design/F-11-onboarding-modal.html](frontend/design/F-11-onboarding-modal.html)
 
 **What.** First-visit modal: goals (multi-select: weight management, dietary preferences, eco priorities), age (number), gender (radio + "prefer not to say"). Body metrics are an optional second step with inline rationale ("we use this to scale calorie ranges — you can skip it"). No lifestyle questions.
 
@@ -437,34 +440,42 @@ Eight features in localStorage + DOM. No backend, no new dependencies, no ML.
 ### F-11 · Onboarding modal
 - **Hook**: H6 · **Persona**: Marc, Pau · **Owner**: Alejandro Bordón
 - First-visit modal: goals (multi-select), age, gender (+ "prefer not to say"). Body metrics in an optional second step. Persist to `localStorage.foodlens.profile`. Shown once, then silent.
+- **Phases**: `[x] R [x] D [x] C [x] T` ✓ (23 tests passed) — bugs fixed: modal centering, backdrop pointer-events, removeAttribute cleanup
 
 ### F-25 · Recently viewed history
 - **Hook**: KI-5 · **Persona**: All · **Owner**: Alejandro Bordón
 - Keep the last 10 product codes visited in `localStorage`. Render a sidebar / collapsed strip "Recently viewed" with thumbnails and dual-axis badges. Click → opens the product.
+- **Phases**: `[x] R [x] D [x] C [x] T` ✓ (31 tests passed)
 
 ### F-26 · Favourites / Saved
 - **Hook**: H7 · **Persona**: Marc, Lluís · **Owner**: Alejandro Bordón
 - Heart toggle on every card. Saves codes to `localStorage.foodlens.favourites`. New "Saved" view lists them with the same card layout as search results.
+- **Phases**: `[x] R [x] D [x] C [x] T` ✓ (12 tests passed)
 
 ### F-27 · Settings page
 - **Hook**: KI-5 · **Persona**: All · **Owner**: Alejandro Bordón
 - Page (or modal) with: unit system (metric/imperial), language preference (placeholder until F-33), default slider weight, "clear my profile" button. Persists to `localStorage.foodlens.settings`.
+- **Phases**: `[x] R [x] D [x] C [x] T` ✓ (14 tests passed)
 
 ### F-28 · Educational tooltips on scores
 - **Hook**: KI-1 · **Persona**: Pau (analyst) · **Owner**: Alejandro Bordón
 - Hover/click on a Nutri or Eco badge opens a popover explaining the score's methodology (one paragraph + link to official source). Closes on outside click.
+- **Phases**: `[x] R [x] D [x] C [x] T` ✓
 
 ### F-29 · Share product (copy link to clipboard)
 - **Hook**: H7 · **Persona**: All · **Owner**: Alejandro Bordón
 - Action button on the focused card. Copies `https://world.openfoodfacts.org/product/<barcode>` to the clipboard via `navigator.clipboard.writeText`. Toast confirms.
+- **Phases**: `[x] R [x] D [x] C [x] T` ✓
 
 ### F-30 · Print-friendly product card
 - **Hook**: H7 (offline action) · **Persona**: Marc · **Owner**: Alejandro Bordón
 - Pure CSS `@media print` rule: hides header/footer/slider/footer, keeps card + contrastive sentence + drill-down table, A4 friendly margins.
+- **Phases**: `[x] R [x] D [x] C [x] T` ✓
 
 ### F-31 · Personas showcase block
 - **Hook**: storytelling · **Persona**: All (and the TA reading the paper) · **Owner**: Alejandro Bordón
 - Static block above the footer with three cards (Marc, Pau, Lluís) summarising who FoodLens serves. Pulled from `docs/user-flows.md`. Decorative — explains the project to a first-time visitor.
+- **Phases**: `[x] R [x] D [x] C [x] T` ✓
 
 ---
 
