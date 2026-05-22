@@ -134,15 +134,25 @@ async function fallbackByBarcode(barcode) {
   return match ? { ...match, source: 'sample' } : null;
 }
 
-async function fallbackBySearch(query) {
+async function fallbackBySearch(query, opts = {}) {
   const sample = await loadSampleProducts();
   const q = (query || '').toLowerCase().trim();
-  if (!q) return sample.map((p) => ({ ...p, source: 'sample' }));
+  const ingredient = (opts.ingredient || '').toLowerCase().trim();
+  if (!q && !ingredient) return sample.map((p) => ({ ...p, source: 'sample' }));
   const filtered = sample.filter((p) => {
     const haystack = [p.name, p.category, ...p.brands].filter(Boolean).join(' ').toLowerCase();
-    return haystack.includes(q);
+    const matchesQuery = !q || haystack.includes(q);
+    const matchesIngredient = !ingredient || haystack.includes(ingredient);
+    return matchesQuery && matchesIngredient;
   });
   return filtered.map((p) => ({ ...p, source: 'sample' }));
+}
+
+function normaliseIngredientTag(value) {
+  const raw = (value || '').trim().toLowerCase();
+  if (!raw) return null;
+  if (raw.includes(':')) return raw;
+  return `en:${raw.replace(/\s+/g, '-')}`;
 }
 
 export async function getProductByBarcode(barcode) {
@@ -166,7 +176,8 @@ export async function getProductByBarcode(barcode) {
 }
 
 export async function searchProducts(query, opts = {}) {
-  const { categoryTag = null, pageSize = 20, page = 1 } = opts;
+  const { categoryTag = null, ingredient = null, pageSize = 20, page = 1 } = opts;
+  const ingredientTag = normaliseIngredientTag(ingredient);
 
   const params = new URLSearchParams({
     fields: PRODUCT_FIELDS,
@@ -174,6 +185,7 @@ export async function searchProducts(query, opts = {}) {
     page: String(page),
   });
   if (categoryTag) params.set('categories_tags', categoryTag);
+  if (ingredientTag) params.set('ingredients_tags', ingredientTag);
   if (query) params.set('search_terms', query);
 
   const url = `${BASE_URL}/search?${params.toString()}`;
@@ -181,17 +193,17 @@ export async function searchProducts(query, opts = {}) {
   try {
     const res = await fetch(url, { headers: { 'User-Agent': USER_AGENT } });
     if (!res.ok) {
-      return fallbackBySearch(query);
+      return fallbackBySearch(query, { ingredient });
     }
     const data = await res.json();
     const products = Array.isArray(data.products) ? data.products : [];
     if (products.length === 0) {
-      return fallbackBySearch(query);
+      return fallbackBySearch(query, { ingredient });
     }
     return products.map(normaliseProduct).filter(Boolean);
   } catch (err) {
     console.warn('OFF API unreachable, using sample data', err);
-    return fallbackBySearch(query);
+    return fallbackBySearch(query, { ingredient });
   }
 }
 

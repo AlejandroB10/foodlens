@@ -119,6 +119,7 @@ Free-form product search.
 |---|---|---|---|
 | `categories_tags` | string | one of these | OFF taxonomy tag, e.g. `en:yogurts`. Most reliable filter. |
 | `search_terms` | string | one of these | Full-text query over product names/brands. Less reliable. |
+| `ingredients_tags` | string | no | OFF ingredient taxonomy tag, e.g. `en:almonds`. F-40 normalises simple input like `almonds` to this form. |
 | `countries_tags` | string | no | Filter by country, e.g. `en:spain`. |
 | `fields` | string | recommended | Same as `/product/`. |
 | `page_size` | integer | no | Default 20, max 1000. Use 20–50 for the UI. |
