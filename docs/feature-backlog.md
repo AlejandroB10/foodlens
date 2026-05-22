@@ -536,6 +536,7 @@ Eight features in localStorage + DOM. No backend, no new dependencies, no ML.
 ### F-38 · Performance pass
 - **Hook**: performance · **Persona**: Marc (time-poor) · **Owner**: Alejandro Rodríguez Arguimbau
 - Lazy-load `<img>`, subset the Google Fonts request to only the weights actually used, `defer` non-critical scripts, audit Lighthouse to >= 90 on all four pillars.
+- **Phases**: `[x] R [x] D [x] C [x] T`
 
 ### F-39 · Dark mode "paper-night" theme
 - **Hook**: KI-5 · **Persona**: All · **Owner**: Alejandro Rodríguez Arguimbau
