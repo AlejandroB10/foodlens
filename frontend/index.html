@@ -152,6 +152,19 @@
         Showing offline sample data. The live Open Food Facts API was unreachable; the team should reload once it recovers.
       </p>
 
+      <section id="seasonal-hint" class="seasonal-hint" aria-labelledby="seasonal-hint-title">
+        <div class="seasonal-hint__copy">
+          <h2 id="seasonal-hint-title" class="seasonal-hint__title">Seasonal context</h2>
+          <p id="seasonal-hint-text" class="seasonal-hint__text">
+            Add approximate location to show a local seasonality hint for produce-heavy products.
+          </p>
+        </div>
+        <div class="seasonal-hint__actions">
+          <button type="button" id="seasonal-hint-enable" class="btn btn--ghost">Use location</button>
+          <button type="button" id="seasonal-hint-dismiss" class="seasonal-hint__dismiss" aria-label="Dismiss seasonal hint">Dismiss</button>
+        </div>
+      </section>
+
       <p id="loading" class="loading" role="status" hidden>Querying Open Food Facts…</p>
 
       <!-- ─── Focused product (auto-selected top result) ───────── -->

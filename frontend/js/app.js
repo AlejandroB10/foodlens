@@ -23,6 +23,7 @@ import { init as initTooltips } from './views/tooltips.js';
 import { toggleFavourite, isFavourite, getFavourites, renderFavourites, buildHeartButton, clearFavourites } from './views/favourites.js';
 
 const STORAGE_KEY = 'foodlens.state';
+const SEASONAL_HINT_KEY = 'foodlens.seasonalHint';
 const ZXING_BROWSER_URL = 'https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/+esm';
 const DEFAULT_STATE = {
   healthWeight: 70,
@@ -95,6 +96,10 @@ const els = {
   resultsList: document.querySelector('#results-list'),
   resultsCount: document.querySelector('#results-count'),
   sourceBadge: document.querySelector('#source-badge'),
+  seasonalHint: document.querySelector('#seasonal-hint'),
+  seasonalHintText: document.querySelector('#seasonal-hint-text'),
+  seasonalHintEnable: document.querySelector('#seasonal-hint-enable'),
+  seasonalHintDismiss: document.querySelector('#seasonal-hint-dismiss'),
   weightSlider: document.querySelector('#weight-slider'),
   weightHealthLabel: document.querySelector('#weight-health-label'),
   weightEcoLabel: document.querySelector('#weight-eco-label'),
@@ -978,6 +983,99 @@ async function openBarcodeScanner() {
   }
 }
 
+// Seasonal hints (F-35)
+function getSeasonName(monthIndex) {
+  if ([11, 0, 1].includes(monthIndex)) return 'winter';
+  if ([2, 3, 4].includes(monthIndex)) return 'spring';
+  if ([5, 6, 7].includes(monthIndex)) return 'summer';
+  return 'autumn';
+}
+
+function getRegionLabel(coords) {
+  const { latitude, longitude } = coords;
+  if (latitude >= 38 && latitude <= 40.5 && longitude >= 1 && longitude <= 5) {
+    return 'the Balearic Islands';
+  }
+  if (latitude >= 35 && latitude <= 44 && longitude >= -10 && longitude <= 5) {
+    return 'Spain';
+  }
+  if (latitude >= 35 && latitude <= 72 && longitude >= -25 && longitude <= 45) {
+    return 'Europe';
+  }
+  return 'your area';
+}
+
+function buildSeasonalHint(coords, date = new Date()) {
+  const season = getSeasonName(date.getMonth());
+  const region = getRegionLabel(coords);
+  const seasonalProduce = {
+    winter: 'citrus, cabbage and root vegetables',
+    spring: 'strawberries, asparagus and artichokes',
+    summer: 'tomatoes, peppers and stone fruit',
+    autumn: 'apples, squash and mushrooms',
+  };
+  const produce = seasonalProduce[season];
+  return `Around ${region}, ${produce} are usually in season in ${season}; for produce-heavy products, check the origin label when Eco data is unknown.`;
+}
+
+function persistSeasonalHint(value) {
+  try {
+    localStorage.setItem(SEASONAL_HINT_KEY, JSON.stringify(value));
+  } catch {
+    /* localStorage disabled, ignore */
+  }
+}
+
+function readSeasonalHintState() {
+  try {
+    const raw = localStorage.getItem(SEASONAL_HINT_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function setSeasonalHintText(text) {
+  if (!els.seasonalHintText) return;
+  els.seasonalHintText.textContent = text;
+}
+
+function initSeasonalHint() {
+  if (!els.seasonalHint) return;
+  const saved = readSeasonalHintState();
+  if (saved.dismissed) {
+    setHidden(els.seasonalHint, true);
+    return;
+  }
+  if (saved.message) {
+    setSeasonalHintText(saved.message);
+  }
+  els.seasonalHintEnable?.addEventListener('click', requestSeasonalLocation);
+  els.seasonalHintDismiss?.addEventListener('click', () => {
+    persistSeasonalHint({ ...readSeasonalHintState(), dismissed: true });
+    setHidden(els.seasonalHint, true);
+  });
+}
+
+function requestSeasonalLocation() {
+  if (!navigator.geolocation) {
+    setSeasonalHintText('Location is not available in this browser; you can still compare products with the visible Health and Eco scores.');
+    return;
+  }
+  setSeasonalHintText('Requesting approximate location for a seasonal context note...');
+  navigator.geolocation.getCurrentPosition(
+    (position) => {
+      const message = buildSeasonalHint(position.coords);
+      persistSeasonalHint({ message, dismissed: false });
+      setSeasonalHintText(message);
+    },
+    () => {
+      setSeasonalHintText('Location permission was not granted; manual search and barcode lookup still work normally.');
+    },
+    { enableHighAccuracy: false, maximumAge: 86400000, timeout: 8000 },
+  );
+}
+
 function updateSavedBadge() {
   if (!els.savedBadge) return;
   const count = getFavourites().length;
@@ -1180,6 +1278,7 @@ async function bootstrap() {
   initTooltips();
   applyWeightToUI();
   wireEvents();
+  initSeasonalHint();
   initOnboarding();
 
   // Suppress all trackView calls during bootstrap so no sample product
