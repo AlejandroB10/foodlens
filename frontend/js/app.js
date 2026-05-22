@@ -23,6 +23,7 @@ import { init as initTooltips } from './views/tooltips.js';
 import { toggleFavourite, isFavourite, getFavourites, renderFavourites, buildHeartButton, clearFavourites } from './views/favourites.js';
 
 const STORAGE_KEY = 'foodlens.state';
+const ZXING_BROWSER_URL = 'https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/+esm';
 const DEFAULT_STATE = {
   healthWeight: 70,
   preset: 'balanced',
@@ -101,6 +102,7 @@ const els = {
   focusedView: document.querySelector('#focused'),
   emptyState: document.querySelector('#empty-state'),
   loading: document.querySelector('#loading'),
+  scanButton: document.querySelector('#barcode-scan'),
   recentlyViewed: document.querySelector('#recently-viewed'),
   settingsBtn: document.querySelector('[data-action="settings"]'),
   favouritesSection: document.querySelector('#favourites'),
@@ -835,6 +837,147 @@ function toast(message) {
 
 // ─── saved badge update ───────────────────────────────────────────
 
+// Barcode scanner (F-21)
+let zxingModulePromise = null;
+let activeScannerControls = null;
+
+function loadZxingModule() {
+  if (!zxingModulePromise) {
+    zxingModulePromise = import(ZXING_BROWSER_URL);
+  }
+  return zxingModulePromise;
+}
+
+function stopActiveScanner() {
+  if (!activeScannerControls) return;
+  activeScannerControls.stop();
+  activeScannerControls = null;
+}
+
+function isBarcodeCandidate(value) {
+  return /^\d{8,13}$/.test(String(value || '').trim());
+}
+
+function renderScannerDialog() {
+  const video = el('video', {
+    class: 'scanner__video',
+    autoplay: '',
+    muted: '',
+    playsinline: '',
+  });
+  const status = el(
+    'p',
+    { class: 'scanner__status', role: 'status', 'aria-live': 'polite' },
+    'Camera starts only for this scan.',
+  );
+  const manualInput = el('input', {
+    class: 'scanner__manual-input',
+    type: 'text',
+    inputmode: 'numeric',
+    pattern: '[0-9]*',
+    autocomplete: 'off',
+    placeholder: 'Paste barcode manually',
+    'aria-label': 'Manual barcode',
+  });
+
+  const closeDialog = () => {
+    stopActiveScanner();
+    dialog.remove();
+    els.scanButton?.focus();
+  };
+
+  const submitBarcode = (value) => {
+    const code = String(value || '').trim();
+    if (!isBarcodeCandidate(code)) {
+      status.textContent = 'Enter an 8 to 13 digit barcode.';
+      manualInput.focus();
+      return;
+    }
+    closeDialog();
+    if (els.searchInput) els.searchInput.value = code;
+    showView('search');
+    runSearch(code);
+  };
+
+  const dialog = el(
+    'div',
+    {
+      class: 'scanner',
+      role: 'dialog',
+      'aria-modal': 'true',
+      'aria-labelledby': 'scanner-title',
+    },
+    el('div', { class: 'scanner__panel' },
+      el('div', { class: 'scanner__header' },
+        el('h2', { id: 'scanner-title', class: 'scanner__title' }, 'Scan barcode'),
+        el('button', {
+          type: 'button',
+          class: 'scanner__close',
+          'aria-label': 'Close scanner',
+          onClick: closeDialog,
+        }, 'Close'),
+      ),
+      el('div', { class: 'scanner__viewport' }, video),
+      status,
+      el('form', {
+        class: 'scanner__manual',
+        onSubmit: (e) => {
+          e.preventDefault();
+          submitBarcode(manualInput.value);
+        },
+      },
+        manualInput,
+        el('button', { type: 'submit', class: 'btn btn--primary' }, 'Use barcode'),
+      ),
+    ),
+  );
+
+  dialog.addEventListener('click', (e) => {
+    if (e.target === dialog) closeDialog();
+  });
+  dialog.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeDialog();
+  });
+
+  return { dialog, video, status, manualInput, submitBarcode };
+}
+
+async function openBarcodeScanner() {
+  if (!els.scanButton) return;
+
+  const { dialog, video, status, manualInput, submitBarcode } = renderScannerDialog();
+  document.body.appendChild(dialog);
+  manualInput.focus();
+
+  if (!navigator.mediaDevices?.getUserMedia) {
+    status.textContent = 'Camera scanning is not available in this browser. Paste the barcode manually.';
+    return;
+  }
+
+  try {
+    status.textContent = 'Requesting camera permission...';
+    const { BrowserMultiFormatReader } = await loadZxingModule();
+    const reader = new BrowserMultiFormatReader();
+    activeScannerControls = await reader.decodeFromVideoDevice(undefined, video, (result, error, controls) => {
+      activeScannerControls = controls;
+      if (result) {
+        submitBarcode(result.getText());
+        return;
+      }
+      if (error?.name === 'NotAllowedError') {
+        status.textContent = 'Camera permission was denied. Paste the barcode manually.';
+      } else {
+        status.textContent = 'Point the barcode at the camera, or paste it manually.';
+      }
+    });
+    status.textContent = 'Point the barcode at the camera, or paste it manually.';
+  } catch (err) {
+    console.warn('Barcode scanner unavailable', err);
+    stopActiveScanner();
+    status.textContent = 'Camera scanning is unavailable here. Paste the barcode manually.';
+  }
+}
+
 function updateSavedBadge() {
   if (!els.savedBadge) return;
   const count = getFavourites().length;
@@ -966,6 +1109,7 @@ function wireEvents() {
   }
 
   els.settingsBtn?.addEventListener('click', showSettings);
+  els.scanButton?.addEventListener('click', openBarcodeScanner);
   els.navSearch?.addEventListener('click', () => showView('search'));
   els.navSaved?.addEventListener('click', () => showView('saved'));
 
