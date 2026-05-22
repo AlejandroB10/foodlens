@@ -226,6 +226,25 @@ h4 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; letter-sp
 
 .search__input::placeholder { color: var(--color-ink-mute); font-style: italic; }
 
+.search__scan {
+  display: grid;
+  place-items: center;
+  width: 3.5rem;
+  min-width: 3.5rem;
+  background: var(--color-paper-2);
+  color: var(--color-ink);
+  border: 0;
+  border-left: var(--rule-w) solid var(--color-rule);
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.search__scan:hover,
+.search__scan:focus-visible {
+  background: var(--color-paper-3);
+  color: var(--color-accent);
+  outline: 0;
+}
+
 .search__submit {
   background: var(--color-ink);
   color: var(--color-paper);
@@ -1021,6 +1040,100 @@ h4 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; letter-sp
 .toast.is-visible { opacity: 1; transform: translateY(0); }
 
 /* ─── footer ────────────────────────────────────────────────────────── */
+/* F-21 barcode scanner */
+.scanner {
+  position: fixed;
+  inset: 0;
+  z-index: 9200;
+  display: grid;
+  place-items: center;
+  padding: var(--space-5);
+  background: rgba(26, 26, 24, 0.72);
+}
+
+.scanner__panel {
+  width: min(100%, 34rem);
+  max-height: min(92vh, 42rem);
+  overflow: auto;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  border: var(--rule-w-bold) solid var(--color-rule);
+  padding: var(--space-5);
+  display: grid;
+  gap: var(--space-4);
+}
+
+.scanner__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--space-4);
+  border-bottom: var(--rule-w) solid var(--color-rule);
+  padding-bottom: var(--space-3);
+}
+
+.scanner__title {
+  font-size: 1.45rem;
+  font-style: italic;
+}
+
+.scanner__close {
+  background: transparent;
+  border: var(--rule-w) solid var(--color-rule);
+  color: var(--color-ink);
+  padding: var(--space-2) var(--space-3);
+  font-size: 0.78rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.scanner__close:hover,
+.scanner__close:focus-visible {
+  background: var(--color-paper-3);
+  outline: 0;
+}
+
+.scanner__viewport {
+  aspect-ratio: 4 / 3;
+  background: var(--color-ink);
+  border: var(--rule-w) solid var(--color-rule);
+  overflow: hidden;
+}
+
+.scanner__video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.scanner__status {
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--color-ink-soft);
+}
+
+.scanner__manual {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.scanner__manual-input {
+  width: 100%;
+  border: var(--rule-w) solid var(--color-rule);
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-mono);
+  font-size: 1rem;
+  padding: var(--space-3) var(--space-4);
+}
+
+@media (min-width: 520px) {
+  .scanner__manual {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: stretch;
+  }
+}
+
 .site-footer {
   margin-top: var(--space-16);
   padding-top: var(--space-5);
