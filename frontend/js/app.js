@@ -24,6 +24,7 @@ import { toggleFavourite, isFavourite, getFavourites, renderFavourites, buildHea
 
 const STORAGE_KEY = 'foodlens.state';
 const ZXING_BROWSER_URL = 'https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/+esm';
+const CHART_JS_URL = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js';
 const DEFAULT_STATE = {
   healthWeight: 70,
   preset: 'balanced',
@@ -333,8 +334,25 @@ async function shareProduct(product) {
 // ─── SHAP waterfall chart (F-24) ──────────────────────────────────────
 
 const _shapChartInstances = new WeakMap();
+let chartJsPromise = null;
 
-function renderShapChart(canvas, shapData) {
+function ensureChartJs() {
+  if (window.Chart) return Promise.resolve(window.Chart);
+  if (!chartJsPromise) {
+    chartJsPromise = new Promise((resolve, reject) => {
+      const script = document.createElement('script');
+      script.src = CHART_JS_URL;
+      script.async = true;
+      script.onload = () => resolve(window.Chart);
+      script.onerror = () => reject(new Error('Chart.js failed to load'));
+      document.head.appendChild(script);
+    });
+  }
+  return chartJsPromise;
+}
+
+async function renderShapChart(canvas, shapData) {
+  const Chart = await ensureChartJs();
   // Destroy any previous chart on this canvas to avoid Canvas reuse warning.
   const existing = _shapChartInstances.get(canvas);
   if (existing) existing.destroy();
@@ -423,7 +441,13 @@ function renderAdvancedToggle(product) {
     const canvas = el('canvas', { class: 'card__shap-canvas', 'aria-label': 'SHAP feature contributions' });
     body.appendChild(caption);
     body.appendChild(canvas);
-    renderShapChart(canvas, wf);
+    try {
+      await renderShapChart(canvas, wf);
+    } catch {
+      canvas.replaceWith(
+        el('p', { class: 'card__advanced-unavailable' }, 'Chart library could not load. The advanced explanation is unavailable.'),
+      );
+    }
   });
 
   return details;
@@ -433,7 +457,8 @@ function renderAdvancedToggle(product) {
 
 const _scatterChartInstances = new WeakMap();
 
-function renderScatterPlot(container, scatterData, focusedProduct) {
+async function renderScatterPlot(container, scatterData, focusedProduct) {
+  const Chart = await ensureChartJs();
   const existing = _scatterChartInstances.get(container);
   if (existing) existing.destroy();
 
@@ -715,7 +740,13 @@ async function rerenderFocused() {
     );
     const chartWrap = el('div', { class: 'scatter-wrap' });
     els.focusedView.appendChild(chartWrap);
-    renderScatterPlot(chartWrap, scatterData, focusedProduct);
+    try {
+      await renderScatterPlot(chartWrap, scatterData, focusedProduct);
+    } catch {
+      chartWrap.appendChild(
+        el('p', { class: 'section__hint' }, 'Chart library could not load, but the product scores above are still available.'),
+      );
+    }
   }
 
   els.focusedView.scrollIntoView({ behavior: 'smooth', block: 'start' });
