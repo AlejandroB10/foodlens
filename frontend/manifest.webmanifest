@@ -1,0 +1,19 @@
+{
+  "name": "FoodLens",
+  "short_name": "FoodLens",
+  "description": "Transparent food recommendations with Health and Eco scores side by side.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#FAF6EF",
+  "theme_color": "#FAF6EF",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "./favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

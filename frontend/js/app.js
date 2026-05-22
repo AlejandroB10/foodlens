@@ -978,6 +978,15 @@ function wireEvents() {
 
 // ─── telemetry consent banner (F-45) ───────────────────────────────────
 
+function registerServiceWorker() {
+  if (!('serviceWorker' in navigator)) return;
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch((err) => {
+      console.warn('Service worker registration failed', err);
+    });
+  });
+}
+
 function renderTelemetryBanner() {
   // Only show if the user hasn't decided yet.
   if (localStorage.getItem(TELEMETRY_KEY) !== null) return;
@@ -1023,6 +1032,7 @@ function renderTelemetryBanner() {
 
 async function bootstrap() {
   _loadSettings();
+  registerServiceWorker();
   initTooltips();
   applyWeightToUI();
   wireEvents();
