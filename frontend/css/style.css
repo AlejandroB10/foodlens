@@ -201,8 +201,16 @@ h4 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; letter-sp
   margin-bottom: var(--space-8);
 }
 
-@media (min-width: 600px) {
-  .search { grid-template-columns: 1fr auto; align-items: center; }
+.search__form {
+  display: grid;
+  gap: var(--space-3);
+}
+
+@media (min-width: 780px) {
+  .search__form {
+    grid-template-columns: minmax(0, 1.5fr) minmax(18rem, 0.75fr);
+    align-items: stretch;
+  }
 }
 
 .search__input-wrap {
@@ -241,6 +249,41 @@ h4 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; letter-sp
 .search__submit:hover, .search__submit:focus-visible {
   background: var(--color-accent);
   outline: 0;
+}
+
+.search__ingredient-wrap {
+  display: flex;
+  align-items: stretch;
+  border: var(--rule-w) solid var(--color-rule);
+  background: var(--color-paper-2);
+}
+
+.search__ingredient-prefix {
+  display: grid;
+  place-items: center;
+  padding: 0 var(--space-3);
+  border-right: var(--rule-w) solid var(--color-rule);
+  font-family: var(--font-body);
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--color-ink-soft);
+}
+
+.search__ingredient-input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  padding: var(--space-4);
+  outline: 0;
+}
+
+.search__ingredient-input::placeholder {
+  color: var(--color-ink-mute);
 }
 
 /* ─── weighting bar ─────────────────────────────────────────────────── */

@@ -90,6 +90,7 @@ let _searchCompletedAt = null;
 const els = {
   searchForm: document.querySelector('#search-form'),
   searchInput: document.querySelector('#search-input'),
+  ingredientInput: document.querySelector('#ingredient-input'),
   resultsRegion: document.querySelector('#results'),
   resultsList: document.querySelector('#results-list'),
   resultsCount: document.querySelector('#results-count'),
@@ -785,7 +786,8 @@ function rerenderResults() {
 
 // ─── search ────────────────────────────────────────────────────────────
 
-async function runSearch(query) {
+async function runSearch(query, opts = {}) {
+  const ingredient = (opts.ingredient || '').trim();
   setHidden(els.loading, false);
   try {
     let results;
@@ -796,8 +798,8 @@ async function runSearch(query) {
         trackView(single.code, single);
         renderRecentlyViewed(els.recentlyViewed, (code) => runSearch(code));
       }
-    } else if (query) {
-      results = await searchProducts(query);
+    } else if (query || ingredient) {
+      results = await searchProducts(query, { ingredient });
     } else {
       results = await getAllSampleProducts();
     }
@@ -946,8 +948,9 @@ function wireEvents() {
   els.searchForm?.addEventListener('submit', (e) => {
     e.preventDefault();
     const q = els.searchInput.value.trim();
+    const ingredient = els.ingredientInput?.value.trim() || '';
     showView('search');
-    runSearch(q);
+    runSearch(q, { ingredient });
   });
 
   els.weightSlider?.addEventListener('input', (e) => {

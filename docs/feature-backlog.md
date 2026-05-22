@@ -544,6 +544,7 @@ Eight features in localStorage + DOM. No backend, no new dependencies, no ML.
 ### F-40 · Search by ingredient
 - **Hook**: brief §3 Multi-Criteria · **Persona**: Pau · **Owner**: Alejandro Rodríguez Arguimbau
 - Second search field: "by ingredient". Uses OFF `/search?ingredients_tags=...`. Useful for the food-allergy case and for "find me everything containing X".
+- **Phases**: `[x] R [x] D [x] C [x] T`
 
 ### F-46 · SUS + Explanation Satisfaction Scale forms (WA5 instruments)
 - **Hook**: WA5 evaluation · **Persona**: WA5 evaluators · **Owner**: Alejandro Rodríguez Arguimbau
