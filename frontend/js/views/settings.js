@@ -9,6 +9,7 @@ const DEFAULT_SETTINGS = {
   unitSystem: 'metric',    // 'metric' | 'imperial'
   language: 'en',
   defaultSliderWeight: 50, // 0..100
+  theme: 'light',          // 'light' | 'dark'
 };
 
 let currentSettings = null;
@@ -52,6 +53,7 @@ function loadSettings() {
     if (!raw) {
       currentSettings = { ...DEFAULT_SETTINGS };
       persist();
+      applyTheme(currentSettings.theme);
       return currentSettings;
     }
     const parsed = JSON.parse(raw);
@@ -63,6 +65,7 @@ function loadSettings() {
   } catch {
     currentSettings = { ...DEFAULT_SETTINGS };
   }
+  applyTheme(currentSettings.theme);
   return currentSettings;
 }
 
@@ -70,6 +73,7 @@ function saveSettings(key, value) {
   if (!currentSettings) loadSettings();
   currentSettings[key] = value;
   persist();
+  if (key === 'theme') applyTheme(value);
 }
 
 function getSettings() {
@@ -82,6 +86,15 @@ function persist() {
     localStorage.setItem(SETTINGS_KEY, JSON.stringify(currentSettings));
   } catch {
     /* localStorage full or disabled */
+  }
+}
+
+function applyTheme(theme) {
+  const nextTheme = theme === 'dark' ? 'dark' : 'light';
+  document.documentElement.dataset.theme = nextTheme;
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) {
+    meta.setAttribute('content', nextTheme === 'dark' ? '#141714' : '#FAF6EF');
   }
 }
 
@@ -247,6 +260,35 @@ function buildSliderSection(settings) {
   );
 }
 
+function buildThemeSection(settings) {
+  const currentTheme = settings.theme === 'dark' ? 'dark' : 'light';
+  const tabs = el('div', {
+    class: 'settings__tabs settings__section-control',
+    role: 'radiogroup',
+    'aria-label': 'Theme',
+  },
+    buildThemeTab('light', 'Paper', 'Day', currentTheme === 'light'),
+    buildThemeTab('dark', 'Paper-night', 'Night', currentTheme === 'dark'),
+  );
+  return buildSection('04', 'Theme', tabs, 'Switches the interface colours only; product data and scores stay unchanged.');
+}
+
+function buildThemeTab(value, name, hint, checked) {
+  return el('label', { class: 'settings__tab' },
+    el('input', {
+      type: 'radio',
+      name: 'theme',
+      value: value,
+      checked: checked,
+      onChange: () => saveSettings('theme', value),
+    }),
+    el('span', { class: 'settings__tab-label' },
+      el('span', { class: 'settings__tab-name' }, name),
+      el('span', { class: 'settings__tab-hint' }, hint),
+    ),
+  );
+}
+
 function updateSliderReadout(wrap, weight) {
   if (!wrap) return;
   const eco = wrap.querySelector('[data-eco]');
@@ -263,7 +305,7 @@ function buildClearSection() {
     onClick: showConfirmation,
   }, 'Clear my profile');
   const section = buildSection(
-    '04',
+    '05',
     'Reset profile',
     button,
     'Wipes onboarding answers, saved products, history and weighting preferences.',
@@ -357,6 +399,7 @@ function show() {
     buildUnitSection(settings),
     buildLanguageSection(settings),
     buildSliderSection(settings),
+    buildThemeSection(settings),
     buildClearSection(),
   );
   panel.appendChild(body);
@@ -391,6 +434,7 @@ export {
   loadSettings,
   saveSettings,
   getSettings,
+  applyTheme,
   clearProfile,
   show,
   hide,
