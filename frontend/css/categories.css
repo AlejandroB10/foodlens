@@ -1,0 +1,55 @@
+/* frontend/css/categories.css */
+/* ==========================================================================
+   Category Browser (F-22)
+   ========================================================================== */
+
+.category-scroll-wrapper {
+  display: flex;
+  gap: var(--space-2);
+  overflow-x: auto;
+  padding-bottom: var(--space-2);
+  margin-bottom: var(--space-4);
+  /* Hide scrollbar for a cleaner look, while keeping touch/trackpad scrolling */
+  scrollbar-width: none; 
+}
+
+.category-scroll-wrapper::-webkit-scrollbar {
+  display: none;
+}
+
+.category-chip {
+  /* Typography and color */
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  color: var(--color-ink-mute);
+  background-color: var(--color-paper-2);
+  
+  /* Layout and borders */
+  padding: var(--space-2) var(--space-4);
+  border: var(--rule-w) solid var(--color-paper-3);
+  border-radius: 9999px; /* Pill shape */
+  cursor: pointer;
+  white-space: nowrap;
+  
+  /* Transitions for system feedback */
+  transition: all 0.2s ease;
+}
+
+/* Hover feedback (HCI: Discoverability) */
+.category-chip:hover {
+  background-color: var(--color-paper-3);
+  color: var(--color-ink);
+}
+
+/* Active state (HCI: System Status) */
+.category-chip.active {
+  background-color: var(--color-ink);
+  color: var(--color-paper);
+  border-color: var(--color-ink);
+}
+
+/* Accessibility: Visible focus ring when keyboard navigating */
+.category-chip:focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 2px;
+}

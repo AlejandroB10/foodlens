@@ -21,6 +21,7 @@ import { trackView, renderRecentlyViewed, startBootstrap, endBootstrap, RECENTLY
 import { loadSettings as _loadSettings, show as showSettings } from './views/settings.js';
 import { init as initTooltips } from './views/tooltips.js';
 import { toggleFavourite, isFavourite, getFavourites, renderFavourites, buildHeartButton, clearFavourites } from './views/favourites.js';
+import { initCategoryBrowser } from './views/categories.js';
 
 const STORAGE_KEY = 'foodlens.state';
 const SEASONAL_HINT_KEY = 'foodlens.seasonalHint';
@@ -118,6 +119,7 @@ const els = {
   navSaved: document.querySelector('#nav-saved'),
   navEvaluation: document.querySelector('#nav-evaluation'),
   savedBadge: document.querySelector('#saved-badge'),
+  categoryBrowser: document.getElementById('category-browser')
 };
 
 // ─── state persistence ──────────────────────────────────────────────────
@@ -1112,6 +1114,20 @@ function initSeasonalHint() {
   });
 }
 
+function initCategories() {
+  if (!els.categoryBrowser) return;
+
+  initCategoryBrowser(els.categoryBrowser, (selectedCategory) => {
+    console.log('[HCI System Feedback] Category changed:', selectedCategory);
+
+    const searchQuery = selectedCategory === 'all' 
+      ? '' 
+      : selectedCategory.replace('en:', '').replace(/-/g, ' ');
+    
+    //runSearch(searchQuery);
+  });
+}
+
 function requestSeasonalLocation() {
   if (!navigator.geolocation) {
     setSeasonalHintText('Location is not available in this browser; you can still compare products with the visible Health and Eco scores.');
@@ -1525,7 +1541,7 @@ async function bootstrap() {
   wireEvents();
   initSeasonalHint();
   initOnboarding();
-
+  initCategories();
   // Suppress all trackView calls during bootstrap so no sample product
   // (loaded via runSearch('')) gets recorded as "recently viewed".
   startBootstrap();

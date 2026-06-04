@@ -9,12 +9,8 @@
   <link rel="icon" type="image/svg+xml" href="favicon.svg" />
   <link rel="manifest" href="manifest.webmanifest" />
 
-  <!-- Backend integration (opt-in). Uncomment and set the URL to enable the Flask backend.
-       When disabled (default), the app uses the in-browser JS KNN path — no backend needed.
-       See backend/README.md for how to start the backend server. -->
   <meta name="foodlens-backend-url" content="http://localhost:5000" />
 
-  <!-- Editorial typography. Newsreader (display serif italic), Bricolage Grotesque (body), JetBrains Mono (data). -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link rel="preconnect" href="https://cdn.jsdelivr.net" />
@@ -24,7 +20,7 @@
   />
 
   <link rel="stylesheet" href="./css/style.css" />
-  <link rel="stylesheet" href="./css/onboarding.css" />
+  <link rel="stylesheet" href="./css/categories.css" /> <link rel="stylesheet" href="./css/onboarding.css" />
   <link rel="stylesheet" href="./css/history.css" />
   <link rel="stylesheet" href="./css/settings.css" />
   <link rel="stylesheet" href="./css/tooltips.css" />
@@ -35,7 +31,6 @@
 <body>
   <div class="shell">
 
-    <!-- ─── Masthead ──────────────────────────────────────────────── -->
     <header class="site-header" role="banner">
       <div class="site-header__masthead">
         <div class="site-header__brand">
@@ -62,7 +57,6 @@
 
     <main>
 
-      <!-- ─── Search ────────────────────────────────────────────── -->
       <section class="search" aria-labelledby="search-label">
         <h2 id="search-label" class="visually-hidden">Search products</h2>
         <form id="search-form" class="search__form" role="search">
@@ -101,7 +95,8 @@
         </form>
       </section>
 
-      <!-- ─── Weighting bar ─────────────────────────────────────── -->
+      <section id="category-browser" class="category-browser" aria-label="Browse by category"></section>
+
       <section class="weighting" aria-labelledby="weighting-label">
         <div class="weighting__header">
           <h2 id="weighting-label" class="weighting__label">What weighs more in your decision today?</h2>
@@ -129,7 +124,6 @@
         </div>
       </section>
 
-      <!-- ─── Navigation ─────────────────────────────────────────── -->
       <nav class="site-nav" aria-label="Main navigation">
         <ul class="site-nav__list">
           <li>
@@ -162,16 +156,12 @@
         </ul>
       </nav>
 
-      <!-- ─── Recently viewed (F-25) ─────────────────────────────── -->
       <section id="recently-viewed" aria-label="Recently viewed products" hidden></section>
 
-      <!-- ─── Favourites / Saved (F-26) ───────────────────────────── -->
       <section id="favourites" aria-label="Saved products" hidden></section>
 
-      <!-- ─── Evaluation forms (F-46) ─────────────────────────────── -->
       <section id="evaluation" aria-label="Evaluation instruments" hidden></section>
 
-      <!-- ─── State banners ─────────────────────────────────────── -->
       <p id="source-badge" class="source-badge" role="status" hidden>
         Showing offline sample data. The live Open Food Facts API was unreachable; the team should reload once it recovers.
       </p>
@@ -184,17 +174,15 @@
           </p>
         </div>
         <div class="seasonal-hint__actions">
-          <button type="button" id="seasonal-hint-enable" class="btn btn--ghost">Use location</button>
+          <button type="button" id="seasonal-hint-enable" class="btn btn btn--ghost">Use location</button>
           <button type="button" id="seasonal-hint-dismiss" class="seasonal-hint__dismiss" aria-label="Dismiss seasonal hint">Dismiss</button>
         </div>
       </section>
 
       <p id="loading" class="loading" role="status" hidden>Querying Open Food Facts…</p>
 
-      <!-- ─── Focused product (auto-selected top result) ───────── -->
       <section id="focused" class="focused" hidden aria-label="Currently selected product"></section>
 
-      <!-- ─── All results ──────────────────────────────────────── -->
       <section id="results" class="results" aria-labelledby="results-title">
         <div class="section-head">
           <h2 id="results-title">Results</h2>
@@ -216,7 +204,6 @@
 
     </main>
 
-    <!-- ─── Personas showcase (F-31) ────────────────────────────────── -->
     <section class="personas-showcase" aria-labelledby="personas-title">
       <header class="personas-showcase__header">
         <p class="personas-showcase__eyebrow">Meet the team</p>
@@ -230,7 +217,6 @@
 
       <div class="personas-showcase__grid">
 
-        <!-- Marc Vidal -->
         <article class="persona-card">
           <div class="persona-card__meta">
             <h3 class="persona-card__name">Marc Vidal</h3>
@@ -245,7 +231,6 @@
           </p>
         </article>
 
-        <!-- Pau Estarellas -->
         <article class="persona-card">
           <div class="persona-card__meta">
             <h3 class="persona-card__name">Pau Estarellas</h3>
@@ -260,7 +245,6 @@
           </p>
         </article>
 
-        <!-- Lluís Tomàs -->
         <article class="persona-card">
           <div class="persona-card__meta">
             <h3 class="persona-card__name">Lluís Tomàs</h3>
@@ -278,7 +262,6 @@
       </div>
     </section>
 
-    <!-- ─── Footer ───────────────────────────────────────────────── -->
     <footer class="site-footer" role="contentinfo">
       <p>
         <span class="small-caps">FoodLens</span> is the WA4 prototype of the
@@ -301,7 +284,6 @@
 
   </div>
 
-  <!-- A bit of accessibility-only styling, kept inline because it is two lines. -->
   <style>
     .visually-hidden {
       position: absolute; width: 1px; height: 1px;
