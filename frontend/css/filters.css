@@ -1,0 +1,107 @@
+/* frontend/css/filters.css */
+/* ==========================================================================
+   Search Controls Bar (Categorías y Filtros Desplegables)
+   ========================================================================== */
+
+/* Contenedor principal que abraza ambas secciones */
+.search-controls-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-4) 0;
+  border-bottom: var(--rule-w, 1px) solid var(--color-paper-3);
+  margin-bottom: var(--space-4);
+}
+
+/* Anulamos el padding que tenía el category-browser antes para que encaje */
+.search-controls-bar .category-browser {
+  padding: 0;
+  width: auto;
+}
+
+/* --- Controles del Desplegable --- */
+.filters-dropdown-wrapper {
+  display: flex;
+  gap: var(--space-4);
+}
+
+.filter-dropdown {
+  position: relative;
+}
+
+/* El botón principal "Diet & Ethics" */
+.filter-dropdown__trigger {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-ink);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: var(--space-2) 0;
+  transition: color 0.2s;
+}
+
+.filter-dropdown__trigger:hover {
+  color: var(--color-ink-mute);
+}
+
+/* El número circulado (Badge) */
+.filter-badge {
+  background: var(--color-ink);
+  color: var(--color-paper);
+  padding: 1px 6px;
+  border-radius: 999px;
+  font-size: 0.65rem;
+  margin-left: 6px;
+}
+
+/* El menú flotante */
+.filter-dropdown__menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0; /* Se alinea a la derecha para no salirse de la pantalla */
+  background: var(--color-paper);
+  border: var(--rule-w, 1px) solid var(--color-ink);
+  min-width: 200px;
+  display: none; /* Oculto por defecto */
+  flex-direction: column;
+  z-index: 100;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.filter-dropdown__menu.open {
+  display: flex; /* Se muestra al hacer clic */
+}
+
+/* Las opciones internas (Checkboxes) */
+.filter-dropdown__item {
+  display: flex;
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--color-ink);
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--color-paper-3);
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.2s;
+}
+
+.filter-dropdown__item:last-child {
+  border-bottom: none;
+}
+
+.filter-dropdown__item:hover {
+  background: var(--color-paper-2);
+}
+
+.filter-dropdown__item.active {
+  font-weight: 600;
+}

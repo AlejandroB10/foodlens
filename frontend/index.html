@@ -27,6 +27,7 @@
   <link rel="stylesheet" href="./css/personas.css" />
   <link rel="stylesheet" href="./css/print.css" />
   <link rel="stylesheet" href="./css/favourites.css" />
+  <link rel="stylesheet" href="./css/filters.css" />
 </head>
 <body>
   <div class="shell">
@@ -95,8 +96,12 @@
         </form>
       </section>
 
-      <section id="category-browser" class="category-browser" aria-label="Browse by category"></section>
-
+      <div class="search-controls-bar">
+        <section id="category-browser" class="category-browser" aria-label="Browse by category"></section>
+        
+        <section id="filters-browser" class="filters-browser" aria-label="Product filters"></section>
+      </div>
+      
       <section class="weighting" aria-labelledby="weighting-label">
         <div class="weighting__header">
           <h2 id="weighting-label" class="weighting__label">What weighs more in your decision today?</h2>

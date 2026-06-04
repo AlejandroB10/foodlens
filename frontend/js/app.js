@@ -22,6 +22,7 @@ import { loadSettings as _loadSettings, show as showSettings } from './views/set
 import { init as initTooltips } from './views/tooltips.js';
 import { toggleFavourite, isFavourite, getFavourites, renderFavourites, buildHeartButton, clearFavourites } from './views/favourites.js';
 import { initCategoryBrowser } from './views/categories.js';
+import { initFilters } from './views/filters.js';
 
 const STORAGE_KEY = 'foodlens.state';
 const SEASONAL_HINT_KEY = 'foodlens.seasonalHint';
@@ -65,6 +66,7 @@ const GRADE_LABELS = {
 const state = loadState();
 let lastResults = [];
 let focusedProduct = null;
+let currentFilters = [];
 
 // ─── telemetry (F-45) ──────────────────────────────────────────────────
 
@@ -119,7 +121,8 @@ const els = {
   navSaved: document.querySelector('#nav-saved'),
   navEvaluation: document.querySelector('#nav-evaluation'),
   savedBadge: document.querySelector('#saved-badge'),
-  categoryBrowser: document.getElementById('category-browser')
+  categoryBrowser: document.getElementById('category-browser'),
+  filtersBrowser: document.getElementById('filters-browser'),
 };
 
 // ─── state persistence ──────────────────────────────────────────────────
@@ -801,7 +804,11 @@ async function computeAlternatives(product, pool) {
 function rerenderResults() {
   if (!els.resultsList) return;
   clear(els.resultsList);
-  const ranked = [...lastResults];
+  let filteredResults = lastResults.filter(p => passesFilters(p, currentFilters));
+  console.log(
+    `[HCI Filters] Displaying ${filteredResults.length} of ${lastResults.length} products`
+  );
+  const ranked = [...filteredResults];
   const hw = state.healthWeight / 100;
   ranked.sort((a, b) => {
     const aScore = (a.nutriScore?.numeric ?? 0) * hw + (a.ecoScore?.numeric ?? 0) * (1 - hw);
@@ -1125,6 +1132,71 @@ function initCategories() {
       : selectedCategory.replace('en:', '').replace(/-/g, ' ');
     
     //runSearch(searchQuery);
+  });
+}
+
+function passesFilters(product, filters) {
+  if (!filters || filters.length === 0) return true;
+
+  for (const filterId of filters) {
+    switch (filterId) {
+      // ─── Diet & Ethics ───
+      case 'high-protein':
+        // STRICT: If protein data is missing or below 8g, hide the product.
+        if ((product.nutrients?.proteins_100g || 0) < 8) return false;
+        break;
+
+      case 'low-sodium':
+        // STRICT: If salt content is higher than 0.12g, hide the product.
+        if ((product.nutrients?.salt_100g || 1) > 0.12) return false;
+        break;
+
+      case 'plastic-free':
+        const packaging = (product.packaging || '').toLowerCase();
+        // STRICT: If packaging material is not explicitly specified,
+        // or if it contains plastic, hide the product.
+        if (!packaging || packaging.includes('plastic')) return false;
+        break;
+
+      // ─── Allergens ───
+      case 'no-gluten':
+        const allergensG = (product.allergens || '').toLowerCase();
+        if (allergensG.includes('gluten') || allergensG.includes('wheat')) return false;
+        break;
+
+      case 'no-lactose':
+        const allergensL = (product.allergens || '').toLowerCase();
+        if (allergensL.includes('milk') || allergensL.includes('lactose')) return false;
+        break;
+
+      case 'no-nuts':
+        const allergensN = (product.allergens || '').toLowerCase();
+        if (
+          allergensN.includes('nut') ||
+          allergensN.includes('almond') ||
+          allergensN.includes('peanut')
+        ) {
+          return false;
+        }
+        break;
+    }
+  }
+
+  return true;
+}
+
+function initProductFilters() {
+  if (!els.filtersBrowser) return;
+
+  initFilters(els.filtersBrowser, (activeFilters) => {
+    // 1. Store the currently selected filters
+    currentFilters = activeFilters;
+
+    // 2. Telemetry (optional, but useful for HCI evaluation)
+    console.log('[HCI System Feedback] Filters applied:', currentFilters);
+
+    // 3. The magic: force the UI to re-render using the products already in memory
+    rerenderResults();
   });
 }
 
@@ -1542,6 +1614,7 @@ async function bootstrap() {
   initSeasonalHint();
   initOnboarding();
   initCategories();
+  initProductFilters();
   // Suppress all trackView calls during bootstrap so no sample product
   // (loaded via runSearch('')) gets recorded as "recently viewed".
   startBootstrap();
