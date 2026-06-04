@@ -224,7 +224,17 @@ function wireBadgeEvents() {
     if (e.key === 'Escape' && active) {
       e.stopPropagation();
       hideTooltip(true); // immediate dismiss on Escape
+      return;
     }
+    if (e.key !== 'Enter' && e.key !== ' ') {
+      return;
+    }
+    const badge = e.target.closest('.badge[data-tooltip]');
+    if (!badge) {
+      return;
+    }
+    e.preventDefault();
+    handleClick(e);
   });
 
   document.addEventListener('click', handleClick, true);

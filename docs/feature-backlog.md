@@ -532,6 +532,9 @@ Eight features in localStorage + DOM. No backend, no new dependencies, no ML.
 ### F-37 · WCAG audit + fixes
 - **Hook**: accessibility · **Persona**: All (and Aina-equivalent low-vision users) · **Owner**: Alejandro Rodríguez Arguimbau
 - Run axe-core on the page, fix the findings: focus rings, ARIA labels, contrast ratios (Nutri-Score colours border on AA failure for some grades), keyboard navigation on all interactive components.
+- **Requirements.** [`docs/reqs/F-37-requirements.md`](reqs/F-37-requirements.md)
+- **Design.** [`docs/design/F-37-wcag-audit.md`](design/F-37-wcag-audit.md)
+- **Phases**: `[x] R [x] D [x] C [x] T`
 
 ### F-38 · Performance pass
 - **Hook**: performance · **Persona**: Marc (time-poor) · **Owner**: Alejandro Rodríguez Arguimbau

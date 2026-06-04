@@ -13,6 +13,7 @@ const DEFAULT_SETTINGS = {
 };
 
 let currentSettings = null;
+let previouslyFocused = null;
 
 // ─── DOM factory ────────────────────────────────────────────────────────────
 
@@ -383,10 +384,15 @@ function hide() {
   if (backdrop) backdrop.remove();
   if (panel) panel.remove();
   document.removeEventListener('keydown', handleKeydown);
+  if (previouslyFocused && typeof previouslyFocused.focus === 'function') {
+    previouslyFocused.focus();
+  }
+  previouslyFocused = null;
 }
 
 function show() {
   hide(); // dedupe any previous instance
+  previouslyFocused = document.activeElement;
 
   const settings = loadSettings();
 
@@ -411,7 +417,7 @@ function show() {
   requestAnimationFrame(() => {
     backdrop.classList.add('is-visible');
     panel.classList.add('is-open');
-    const firstFocusable = panel.querySelector('input, button, select, [tabindex="0"]');
+    const firstFocusable = panel.querySelector('.settings__close-btn, button, input, select, [tabindex="0"]');
     if (firstFocusable) firstFocusable.focus();
   });
 
@@ -419,6 +425,29 @@ function show() {
 }
 
 function handleKeydown(e) {
+  if (e.key === 'Tab') {
+    const dialog = document.getElementById('settings-confirm-dialog') || document.getElementById('settings-panel');
+    if (!dialog) return;
+    const focusable = [...dialog.querySelectorAll('button, input, select, textarea, [tabindex]:not([tabindex="-1"])')]
+      .filter((node) => !node.disabled && node.offsetParent !== null);
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (!dialog.contains(document.activeElement)) {
+      e.preventDefault();
+      first.focus();
+      return;
+    }
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
+    return;
+  }
+
   if (e.key !== 'Escape') return;
   const dialog = document.getElementById('settings-confirm-dialog');
   if (dialog) {

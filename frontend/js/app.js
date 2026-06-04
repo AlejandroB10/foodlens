@@ -215,7 +215,7 @@ function renderBadge(scope, score) {
   const grade = score?.grade || 'unknown';
   const color = scope === 'nutri' ? NUTRI_COLORS[grade] : ECO_COLORS[grade];
   const label = GRADE_LABELS[grade] || '?';
-  const axisName = scope === 'nutri' ? 'Nutri-Score' : 'Eco';
+  const axisName = scope === 'nutri' ? 'Nutri-Score' : 'Eco-Score';
   const caption = grade === 'not-applicable'
     ? 'Score does not apply to this category'
     : grade === 'unknown'
@@ -227,6 +227,9 @@ function renderBadge(scope, score) {
   const isScored = ['a', 'b', 'c', 'd', 'e'].includes(grade);
   const attrs = {
     class: `badge badge--${scope} badge--grade-${grade}`,
+    role: isScored ? 'button' : 'img',
+    tabindex: isScored ? '0' : null,
+    'aria-label': `${axisName}: ${label}${caption ? `. ${caption}` : '. Open score methodology'}`,
     style: { '--badge-color': color },
   };
   if (isScored) attrs.dataset = { tooltip: scope };
@@ -271,7 +274,7 @@ function renderNutrientTable(nutrients) {
   return el(
     'table',
     { class: 'nutrient-table', 'aria-label': 'Nutrients per 100g' },
-    el('thead', {}, el('tr', {}, el('th', {}, 'Per 100g'), el('th', {}, ''))),
+    el('thead', {}, el('tr', {}, el('th', { scope: 'col' }, 'Per 100g'), el('th', { scope: 'col' }, 'Amount'))),
     el(
       'tbody',
       {},
@@ -443,7 +446,7 @@ function renderAdvancedToggle(product) {
       `Predicted grade: ${wf.predicted_class.toUpperCase()} (${Math.round(wf.predicted_proba * 100)}% confidence). ` +
       'Red bars push the model toward this grade; green bars oppose it.',
     );
-    const canvas = el('canvas', { class: 'card__shap-canvas', 'aria-label': 'SHAP feature contributions' });
+    const canvas = el('canvas', { class: 'card__shap-canvas', role: 'img', 'aria-label': 'SHAP feature contributions' });
     body.appendChild(caption);
     body.appendChild(canvas);
     try {
@@ -484,7 +487,7 @@ async function renderScatterPlot(container, scatterData, focusedProduct) {
     else regular.push(point);
   }
 
-  const canvas = el('canvas', { 'aria-label': `Nutri-Score vs Eco-Score scatter for ${scatterData.category}` });
+  const canvas = el('canvas', { role: 'img', 'aria-label': `Nutri-Score vs Eco-Score scatter for ${scatterData.category}` });
   container.appendChild(canvas);
 
   const chart = new Chart(canvas, {
@@ -650,6 +653,7 @@ function renderAlternativeCard(product, alternative) {
     {
       class: 'alt-card',
       dataset: { code: alternative.code },
+      'aria-label': `Open ${alternative.name || alternative.code} as the focused product`,
       onClick: () => {
       telemetry.send({
         event: 'alternative_click',
@@ -974,7 +978,23 @@ function renderScannerDialog() {
     if (e.target === dialog) closeDialog();
   });
   dialog.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') closeDialog();
+    if (e.key === 'Escape') {
+      closeDialog();
+      return;
+    }
+    if (e.key !== 'Tab') return;
+    const focusable = [...dialog.querySelectorAll('button, input, video, [tabindex]:not([tabindex="-1"])')]
+      .filter((node) => !node.disabled && node.offsetParent !== null);
+    if (!focusable.length) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey && document.activeElement === first) {
+      e.preventDefault();
+      last.focus();
+    } else if (!e.shiftKey && document.activeElement === last) {
+      e.preventDefault();
+      first.focus();
+    }
   });
 
   return { dialog, video, status, manualInput, submitBarcode };

@@ -11,10 +11,11 @@
   --color-paper-3: #E8E0CB;
   --color-ink: #1A1A18;
   --color-ink-soft: #5A574F;
-  --color-ink-mute: #8C8779;
+  --color-ink-mute: #6D675B;
   --color-rule: #1A1A18;
   --color-accent: #7B3F00;
   --color-accent-2: #B05A1A;
+  --focus-ring: #005FCC;
   --color-heart: #e63946;
 
   /* Nutri-Score (official palette, slightly desaturated for paper) */
@@ -77,6 +78,7 @@
   --color-rule: #D8CBB8;
   --color-accent: #E2A45F;
   --color-accent-2: #F0BE79;
+  --focus-ring: #8CB7FF;
   --color-heart: #FF6B78;
 
   --color-nutri-a: #55B66A;
@@ -1295,8 +1297,28 @@ button:focus-visible,
 .alt-card:focus-visible,
 input:focus-visible,
 summary:focus-visible {
-  outline: 2px solid var(--color-accent);
-  outline-offset: 2px;
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 3px;
+}
+
+.search__scan:focus-visible,
+.search__submit:focus-visible,
+.search__ingredient-input:focus-visible,
+.weighting__slider:focus-visible,
+.preset:focus-visible,
+.seasonal-hint__dismiss:focus-visible,
+.btn:focus-visible,
+.btn--print:focus-visible,
+.alt-card:focus-visible,
+.scanner__close:focus-visible,
+.scanner__manual-input:focus-visible,
+.card__drilldown summary:focus-visible,
+.card__advanced > summary:focus-visible,
+.badge[data-tooltip]:focus-visible,
+.heart-btn:focus-visible,
+.site-nav__link:focus-visible {
+  outline: 3px solid var(--focus-ring);
+  outline-offset: 3px;
 }
 
 /* ─── print styles (F-30) ────────────────────────────────────────────── */
