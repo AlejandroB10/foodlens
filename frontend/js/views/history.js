@@ -181,11 +181,13 @@ function renderBadge(scope, score) {
   const grade = score?.grade || score || 'unknown';
   const color = scope === 'nutri' ? NUTRI_COLORS[grade] : ECO_COLORS[grade];
   const label = GRADE_LABELS[grade] || '?';
-  const axisName = scope === 'nutri' ? 'Nutri' : 'Eco';
+  const axisName = scope === 'nutri' ? 'Nutri-Score' : 'Eco-Score';
   return el(
     'div',
     {
       class: `badge badge--${scope} badge--grade-${grade} badge--mini`,
+      role: 'img',
+      'aria-label': `${axisName}: ${label}`,
       style: { '--badge-color': color },
     },
     el('span', { class: 'badge__axis' }, axisName),
@@ -232,7 +234,7 @@ function buildItemImage(image, name) {
 
 function buildPlaceholder(name) {
   const initial = (name || '?')[0].toUpperCase();
-  return el('span', { class: 'recent-item__placeholder' }, initial);
+  return el('span', { class: 'recent-item__placeholder', 'aria-hidden': 'true' }, initial);
 }
 
 function buildHistoryItem(item, onOpen, index) {
@@ -251,7 +253,7 @@ function buildHistoryItem(item, onOpen, index) {
         }
       },
       tabindex: '0',
-      'aria-label': item.name,
+      'aria-label': `Open ${item.name}`,
     },
     el('span', { class: 'recent-item__ordinal', 'aria-hidden': 'true' }, ordinal),
     el('div', { class: 'recent-item__image-wrap' }, buildItemImage(item.image, item.name)),
