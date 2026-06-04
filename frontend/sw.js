@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'foodlens-pwa-v2';
+const CACHE_VERSION = 'foodlens-pwa-v3';
 
 const STATIC_ASSETS = [
   './',

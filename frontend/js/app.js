@@ -113,8 +113,10 @@ const els = {
   recentlyViewed: document.querySelector('#recently-viewed'),
   settingsBtn: document.querySelector('[data-action="settings"]'),
   favouritesSection: document.querySelector('#favourites'),
+  evaluationSection: document.querySelector('#evaluation'),
   navSearch: document.querySelector('#nav-search'),
   navSaved: document.querySelector('#nav-saved'),
+  navEvaluation: document.querySelector('#nav-evaluation'),
   savedBadge: document.querySelector('#saved-badge'),
 };
 
@@ -1129,6 +1131,174 @@ function requestSeasonalLocation() {
   );
 }
 
+// Evaluation forms (F-46)
+const EVALUATION_RESULTS_KEY = 'foodlens.evaluationResults';
+
+const SUS_ITEMS = [
+  'I think that I would like to use FoodLens frequently.',
+  'I found FoodLens unnecessarily complex.',
+  'I thought FoodLens was easy to use.',
+  'I think that I would need support to use FoodLens.',
+  'I found the different FoodLens functions well integrated.',
+  'I thought there was too much inconsistency in FoodLens.',
+  'I would imagine that most people would learn to use FoodLens quickly.',
+  'I found FoodLens cumbersome to use.',
+  'I felt confident using FoodLens.',
+  'I needed to learn a lot before I could use FoodLens.',
+];
+
+const ESS_ITEMS = [
+  'The explanation helped me understand why the product was ranked there.',
+  'The explanation gave enough detail for the decision I was making.',
+  'The explanation was clear.',
+  'The explanation made the product comparison feel trustworthy.',
+  'The explanation let me judge the Health and Eco trade-off myself.',
+  'The explanation used data I could verify.',
+];
+
+function readEvaluationResults() {
+  try {
+    const raw = localStorage.getItem(EVALUATION_RESULTS_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveEvaluationResult(result) {
+  const results = readEvaluationResults();
+  results.unshift(result);
+  localStorage.setItem(EVALUATION_RESULTS_KEY, JSON.stringify(results));
+}
+
+function getCheckedValues(form, prefix, count) {
+  const values = [];
+  for (let index = 0; index < count; index += 1) {
+    const checked = form.querySelector(`input[name="${prefix}-${index}"]:checked`);
+    if (!checked) return null;
+    values.push(Number(checked.value));
+  }
+  return values;
+}
+
+function computeSusScore(values) {
+  const raw = values.reduce((sum, value, index) => {
+    const isPositiveItem = index % 2 === 0;
+    return sum + (isPositiveItem ? value - 1 : 5 - value);
+  }, 0);
+  return Math.round(raw * 2.5 * 10) / 10;
+}
+
+function computeAverage(values) {
+  const total = values.reduce((sum, value) => sum + value, 0);
+  return Math.round((total / values.length) * 10) / 10;
+}
+
+function buildLikertGroup(prefix, index, label) {
+  return el(
+    'fieldset',
+    { class: 'evaluation__item' },
+    el('legend', { class: 'evaluation__prompt' }, `${index + 1}. ${label}`),
+    el(
+      'div',
+      { class: 'evaluation__scale', role: 'radiogroup' },
+      ...[1, 2, 3, 4, 5].map((value) =>
+        el(
+          'label',
+          { class: 'evaluation__choice' },
+          el('input', { type: 'radio', name: `${prefix}-${index}`, value: String(value), required: '' }),
+          el('span', { class: 'evaluation__choice-label' }, String(value)),
+        ),
+      ),
+    ),
+  );
+}
+
+function exportEvaluationResults() {
+  const results = readEvaluationResults();
+  const blob = new Blob([JSON.stringify(results, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = 'foodlens-evaluation-results.json';
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
+function renderEvaluationView() {
+  if (!els.evaluationSection) return;
+  clear(els.evaluationSection);
+
+  const resultPanel = el('aside', {
+    class: 'evaluation__result',
+    role: 'status',
+    'aria-live': 'polite',
+    hidden: '',
+  });
+
+  const form = el(
+    'form',
+    {
+      class: 'evaluation__form',
+      onSubmit: (event) => {
+        event.preventDefault();
+        const susAnswers = getCheckedValues(form, 'sus', SUS_ITEMS.length);
+        const explanationAnswers = getCheckedValues(form, 'ess', ESS_ITEMS.length);
+        if (!susAnswers || !explanationAnswers) {
+          resultPanel.hidden = false;
+          resultPanel.textContent = 'Answer every item before scoring the response.';
+          return;
+        }
+
+        const susScore = computeSusScore(susAnswers);
+        const explanationAverage = computeAverage(explanationAnswers);
+        saveEvaluationResult({
+          createdAt: new Date().toISOString(),
+          susAnswers,
+          explanationAnswers,
+          susScore,
+          explanationAverage,
+        });
+
+        resultPanel.hidden = false;
+        clear(resultPanel);
+        resultPanel.append(
+          el('p', { class: 'evaluation__result-label' }, 'Current response'),
+          el(
+            'div',
+            { class: 'evaluation__scores' },
+            el('p', {}, el('span', {}, 'SUS'), el('strong', {}, susScore.toFixed(1))),
+            el('p', {}, el('span', {}, 'Explanation satisfaction'), el('strong', {}, explanationAverage.toFixed(1))),
+          ),
+        );
+      },
+    },
+    el('h2', { class: 'evaluation__title' }, 'Evaluate FoodLens'),
+    el('p', { class: 'evaluation__intro' },
+      'Use these WA5 instruments after a participant completes the search, comparison or barcode flow.',
+    ),
+    el('section', { class: 'evaluation__block', 'aria-labelledby': 'sus-title' },
+      el('h3', { id: 'sus-title', class: 'evaluation__section-title' }, 'System Usability Scale'),
+      el('p', { class: 'evaluation__hint' }, '1 means strongly disagree. 5 means strongly agree.'),
+      ...SUS_ITEMS.map((item, index) => buildLikertGroup('sus', index, item)),
+    ),
+    el('section', { class: 'evaluation__block', 'aria-labelledby': 'ess-title' },
+      el('h3', { id: 'ess-title', class: 'evaluation__section-title' }, 'Explanation Satisfaction Scale'),
+      el('p', { class: 'evaluation__hint' }, 'Rate the explanation shown during the task.'),
+      ...ESS_ITEMS.map((item, index) => buildLikertGroup('ess', index, item)),
+    ),
+    el('div', { class: 'evaluation__actions' },
+      el('button', { type: 'submit', class: 'btn btn--primary' }, 'Score response'),
+      el('button', { type: 'button', class: 'btn btn--ghost', onClick: exportEvaluationResults }, 'Export JSON'),
+    ),
+  );
+
+  els.evaluationSection.append(form, resultPanel);
+}
+
 function updateSavedBadge() {
   if (!els.savedBadge) return;
   const count = getFavourites().length;
@@ -1144,7 +1314,7 @@ function updateSavedBadge() {
 
 // ─── view navigation ─────────────────────────────────────────────
 
-let currentView = 'search'; // 'search' | 'saved'
+let currentView = 'search'; // 'search' | 'saved' | 'evaluation'
 
 // ─── routing ───────────────────────────────────────────────────────────────
 // Map view name ↔ URL path. The app keeps a single HTML file (index.html)
@@ -1152,6 +1322,7 @@ let currentView = 'search'; // 'search' | 'saved'
 const VIEW_PATHS = {
   search: '/',
   saved: '/saved',
+  evaluation: '/evaluation',
 };
 
 function viewFromPath(path) {
@@ -1159,6 +1330,7 @@ function viewFromPath(path) {
   // Tolerate trailing slash and case differences.
   const clean = path.toLowerCase().replace(/\/+$/, '') || '/';
   if (clean === '/saved') return 'saved';
+  if (clean === '/evaluation') return 'evaluation';
   return 'search';
 }
 
@@ -1166,7 +1338,7 @@ function pushViewHistory(view, replace = false) {
   const path = VIEW_PATHS[view] || '/';
   // Preserve the directory prefix if the app is served from a sub-path
   // (e.g. http://localhost:8090/foodlens/). We only override the final segment.
-  const base = window.location.pathname.replace(/\/(saved\/?)?$/i, '') || '';
+  const base = window.location.pathname.replace(/\/((saved|evaluation)\/?)?$/i, '') || '';
   const newPath = (base + path).replace(/\/{2,}/g, '/');
   const url = newPath + window.location.search + window.location.hash;
   // No-op if we already are on this URL — avoids polluting the history stack.
@@ -1185,10 +1357,20 @@ function showView(view, opts = {}) {
   if (els.navSearch) {
     els.navSearch.classList.toggle('is-active', view === 'search');
     els.navSearch.setAttribute('aria-pressed', view === 'search' ? 'true' : 'false');
+    if (view === 'search') els.navSearch.setAttribute('aria-current', '');
+    else els.navSearch.removeAttribute('aria-current');
   }
   if (els.navSaved) {
     els.navSaved.classList.toggle('is-active', view === 'saved');
     els.navSaved.setAttribute('aria-pressed', view === 'saved' ? 'true' : 'false');
+    if (view === 'saved') els.navSaved.setAttribute('aria-current', '');
+    else els.navSaved.removeAttribute('aria-current');
+  }
+  if (els.navEvaluation) {
+    els.navEvaluation.classList.toggle('is-active', view === 'evaluation');
+    els.navEvaluation.setAttribute('aria-pressed', view === 'evaluation' ? 'true' : 'false');
+    if (view === 'evaluation') els.navEvaluation.setAttribute('aria-current', '');
+    else els.navEvaluation.removeAttribute('aria-current');
   }
 
   // Show/hide sections
@@ -1196,14 +1378,22 @@ function showView(view, opts = {}) {
     setHidden(els.resultsRegion, true);
     setHidden(els.focusedView, true);
     setHidden(els.favouritesSection, false);
+    setHidden(els.evaluationSection, true);
     renderFavourites(els.favouritesSection, openSavedProductInSearch, () => {
       updateSavedBadge();
       if (currentView === 'saved') {
         renderFavourites(els.favouritesSection, openSavedProductInSearch, () => updateSavedBadge());
       }
     });
+  } else if (view === 'evaluation') {
+    setHidden(els.resultsRegion, true);
+    setHidden(els.focusedView, true);
+    setHidden(els.favouritesSection, true);
+    setHidden(els.evaluationSection, false);
+    renderEvaluationView();
   } else {
     setHidden(els.favouritesSection, true);
+    setHidden(els.evaluationSection, true);
     setHidden(els.resultsRegion, false);
     rerenderResults();
   }
@@ -1264,6 +1454,7 @@ function wireEvents() {
   els.scanButton?.addEventListener('click', openBarcodeScanner);
   els.navSearch?.addEventListener('click', () => showView('search'));
   els.navSaved?.addEventListener('click', () => showView('saved'));
+  els.navEvaluation?.addEventListener('click', () => showView('evaluation'));
 
   // Back/forward buttons: read the URL and switch view without pushing again.
   window.addEventListener('popstate', () => {

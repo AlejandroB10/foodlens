@@ -553,6 +553,9 @@ Eight features in localStorage + DOM. No backend, no new dependencies, no ML.
 ### F-46 · SUS + Explanation Satisfaction Scale forms (WA5 instruments)
 - **Hook**: WA5 evaluation · **Persona**: WA5 evaluators · **Owner**: Alejandro Rodríguez Arguimbau
 - In-app embeddable forms: Brooke 1996 SUS (10 items, 1–5 scale, score formula) and Hoffman et al. Explanation Satisfaction Scale. Auto-computes the SUS score on submit. Exports results as JSON. Reusable component the team uses during the user study.
+- **Requirements.** [`docs/reqs/F-46-requirements.md`](reqs/F-46-requirements.md)
+- **Design.** [`docs/design/F-46-evaluation-forms.md`](design/F-46-evaluation-forms.md)
+- **Phases**: `[x] R [x] D [x] C [x] T`
 
 ---
 
