@@ -1,0 +1,164 @@
+/* --- BANDEJA FLOTANTE (TRAY) --- */
+.comparison-tray {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  background-color: #FAF6EF;
+  border-top: 2px solid #1a1a1a;
+  padding: 1rem 2rem;
+  box-shadow: 0 -4px 12px rgba(0,0,0,0.1);
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1000;
+  display: flex;
+  justify-content: center;
+}
+
+.comparison-tray.visible {
+  transform: translateY(0);
+}
+
+.tray-content {
+  width: 100%;
+  max-width: 1200px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.tray-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+/* --- MODAL Y TABLA --- */
+.editorial-modal {
+  border: 2px solid #1a1a1a;
+  background-color: #FAF6EF;
+  color: #1a1a1a;
+  padding: 0;
+  width: 90vw;
+  max-width: 1000px;
+  max-height: 85vh;
+  box-shadow: 8px 8px 0px rgba(0,0,0,1);
+}
+
+.editorial-modal::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(2px);
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  border-bottom: 2px solid #1a1a1a;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-family: 'Newsreader', serif;
+  font-style: italic;
+  font-size: 2rem;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  color: #1a1a1a;
+}
+
+.table-responsive {
+  padding: 2rem;
+  overflow-x: auto;
+}
+
+.editorial-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.9rem;
+}
+
+.editorial-table th, 
+.editorial-table td {
+  border: 1px solid #1a1a1a;
+  padding: 1rem;
+  text-align: center;
+}
+
+.editorial-table .attr-col {
+  text-align: left;
+  font-weight: bold;
+  background-color: rgba(0,0,0,0.03);
+}
+
+/* --- ESTILO DEL SELECTOR EN LA TARJETA (DISEÑO EDITORIAL CENTRADO) --- */
+
+.card-compare-action {
+  display: flex;
+  justify-content: center; /* Centramos el botón horizontalmente */
+  width: 100%;
+  margin-bottom: var(--space-4);
+  cursor: pointer;
+}
+
+/* Checkbox nativo oculto pero accesible */
+.card-compare-action input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.card-compare-action input[type="checkbox"]:focus-visible + .compare-custom-toggle {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 4px;
+}
+
+/* El botón visual */
+.compare-custom-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-body); /* Usamos Bricolage Grotesque (empasta con los otros botones) */
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding: var(--space-2) var(--space-4);
+  border: var(--rule-w) solid var(--color-ink);
+  background-color: var(--color-paper);
+  color: var(--color-ink);
+  transition: all 0.1s ease-in-out;
+  box-shadow: 3px 3px 0px var(--color-ink); /* Sombra dura adaptable al modo oscuro */
+}
+
+/* Estado Hover */
+.card-compare-action:hover .compare-custom-toggle {
+  background-color: var(--color-paper-2);
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0px var(--color-ink);
+}
+
+/* Estado Checkeado (Se hunde y se invierten los colores) */
+.card-compare-action input[type="checkbox"]:checked + .compare-custom-toggle {
+  background-color: var(--color-ink);
+  color: var(--color-paper);
+  transform: translate(3px, 3px);
+  box-shadow: 0px 0px 0px var(--color-ink);
+}
+
+/* Textos inyectados dinámicamente */
+.card-compare-action input[type="checkbox"]:not(:checked) + .compare-custom-toggle::before {
+  content: '+ Add to comparison';
+}
+
+.card-compare-action input[type="checkbox"]:checked + .compare-custom-toggle::before {
+  content: '✓ Selected';
+}

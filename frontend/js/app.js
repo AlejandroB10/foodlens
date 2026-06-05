@@ -23,6 +23,7 @@ import { init as initTooltips } from './views/tooltips.js';
 import { toggleFavourite, isFavourite, getFavourites, renderFavourites, buildHeartButton, clearFavourites } from './views/favourites.js';
 import { initCategoryBrowser } from './views/categories.js';
 import { initFilters } from './views/filters.js';
+import { toggleProductSelection } from './views/comparison.js';
 
 const STORAGE_KEY = 'foodlens.state';
 const SEASONAL_HINT_KEY = 'foodlens.seasonalHint';
@@ -568,9 +569,26 @@ function renderProductCard(product, reference, isAlternative = false) {
     ? el('img', { class: 'card__image', src: product.image, alt: product.name || product.code, loading: 'lazy' })
     : el('div', { class: 'card__image card__image--placeholder', 'aria-hidden': 'true' }, product.name?.[0] || '?');
 
+  // Control de selección para comparar
+  const compareAction = !isAlternative 
+    ? el(
+        'label',
+        { class: 'card-compare-action', title: 'Select to compare' },
+        el('input', { 
+          type: 'checkbox', 
+          class: 'compare-checkbox', 
+          dataset: { productId: product.code },
+          onChange: (e) => toggleProductSelection(product.code, product, e.target.checked, e.target)
+        }),
+        // Importante: No hay ningún texto suelto aquí. El CSS inyecta el '+ Add to comparison'
+        el('span', { class: 'compare-custom-toggle', 'aria-hidden': 'true' })
+      )
+    : null;
+
   return el(
     'article',
     { class: `card${isAlternative ? ' card--alt' : ''}`, dataset: { code: product.code } },
+    compareAction,
     el(
       'header',
       { class: 'card__header' },
@@ -611,7 +629,6 @@ function renderProductCard(product, reference, isAlternative = false) {
           'div',
           { class: 'card__actions' },
           buildHeartButton(product.code, product, () => {
-            // re-render all heart buttons on page to reflect new favourite state
             document.querySelectorAll('.heart-btn').forEach((btn) => {
               const card = btn.closest('[data-code]');
               if (card && card.dataset.code) {
