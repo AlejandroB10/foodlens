@@ -17,6 +17,9 @@
   --color-accent-2: #B05A1A;
   --focus-ring: #005FCC;
   --color-heart: #e63946;
+  /* Text colour for light-background badges (B/C). Always dark — these badges
+     stay bright in dark mode, so it must NOT follow --color-ink, which inverts. */
+  --color-badge-on-light: #1A1A18;
 
   /* Nutri-Score (official palette, slightly desaturated for paper) */
   --color-nutri-a: #1F8A3F;
@@ -864,27 +867,27 @@ h4 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; letter-sp
 .badge--grade-b,
 .badge--grade-c,
 .badge--eco.badge--grade-c {
-  color: var(--color-ink);
+  color: var(--color-badge-on-light);
 }
 
 .badge--grade-b .badge__axis,
 .badge--grade-c .badge__axis,
 .badge--eco.badge--grade-c .badge__axis {
-  color: var(--color-ink);
+  color: var(--color-badge-on-light);
   opacity: 0.78;
 }
 
 .badge--grade-b .badge__letter,
 .badge--grade-c .badge__letter,
 .badge--eco.badge--grade-c .badge__letter {
-  color: var(--color-ink);
+  color: var(--color-badge-on-light);
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
 }
 
 .badge--grade-b .badge__caption,
 .badge--grade-c .badge__caption,
 .badge--eco.badge--grade-c .badge__caption {
-  color: var(--color-ink);
+  color: var(--color-badge-on-light);
   opacity: 0.78;
 }
 

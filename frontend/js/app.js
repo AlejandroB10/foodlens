@@ -1555,6 +1555,19 @@ function wireEvents() {
 
 function registerServiceWorker() {
   if (!('serviceWorker' in navigator)) return;
+  const host = location.hostname;
+  const isLocal = host === 'localhost' || host === '127.0.0.1' || host === '[::1]';
+  if (isLocal) {
+    // This project only ever runs locally. Never register the SW, and tear
+    // down any registration + caches left from a previous visit so edits to
+    // app.js / style.css are never served stale.
+    navigator.serviceWorker.getRegistrations()
+      .then((regs) => regs.forEach((reg) => reg.unregister()));
+    if (window.caches) {
+      caches.keys().then((keys) => keys.forEach((k) => caches.delete(k)));
+    }
+    return;
+  }
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js').catch((err) => {
       console.warn('Service worker registration failed', err);
