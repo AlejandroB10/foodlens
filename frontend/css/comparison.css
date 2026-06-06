@@ -154,11 +154,11 @@
   box-shadow: 0px 0px 0px var(--color-ink);
 }
 
-/* Textos inyectados dinámicamente */
+/* Textos inyectados leyendo atributos (Para soporte i18n) */
 .card-compare-action input[type="checkbox"]:not(:checked) + .compare-custom-toggle::before {
-  content: '+ Add to comparison';
+  content: attr(data-text-add);
 }
 
 .card-compare-action input[type="checkbox"]:checked + .compare-custom-toggle::before {
-  content: '✓ Selected';
+  content: attr(data-text-selected);
 }

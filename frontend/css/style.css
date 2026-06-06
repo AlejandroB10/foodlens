@@ -1814,3 +1814,37 @@ summary:focus-visible {
     top: var(--space-5);
   }
 }
+
+/* --- F-33 Selector de Idiomas (Rediseño Editorial) --- */
+.lang-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.lang-btn {
+  background: transparent;
+  border: none;
+  font-family: var(--font-mono, monospace);
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-ink-mute, #8c8779);
+  cursor: pointer;
+  padding: 0.2rem 0.4rem;
+  transition: all 0.15s ease;
+  border-radius: 2px;
+}
+
+.lang-btn:hover {
+  color: var(--color-ink, #1A1A18);
+  background-color: var(--color-paper-2, #F2ECDE);
+}
+
+.lang-btn.is-active {
+  color: var(--color-ink, #1A1A18);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--color-accent, #7B3F00);
+}

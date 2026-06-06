@@ -2,7 +2,7 @@
 // Vanilla JS, no build step. ES modules.
 
 export const FAVOURITES_KEY = 'foodlens.favourites';
-
+import { downloadCSV } from './export.js';
 // ─── storage ─────────────────────────────────────────────────────────────────
 
 /**
@@ -340,6 +340,38 @@ export function renderFavourites(container, onOpenProduct, onToggleHeart) {
     const header = el('div', { class: 'saved__header' },
       el('h2', { class: 'saved__title' }, 'Saved'),
       el('span', { class: 'saved__count' }),
+      
+      // --- INICIO F-47: Export to CSV ---
+      el('button', {
+        type: 'button',
+        class: 'saved__export',
+        'aria-label': 'Export saved products to CSV',
+        onClick: () => {
+          const currentItems = getFavourites();
+          if (currentItems.length === 0) return;
+          
+          const csvData = [
+            ['Barcode', 'Product Name', 'Brand', 'Health Grade', 'Eco Grade', 'Saved Date']
+          ];
+
+          currentItems.forEach(item => {
+            const dateStr = item.savedAt ? new Date(item.savedAt).toISOString().slice(0, 10) : 'Unknown';
+            csvData.push([
+              item.code,
+              item.name || 'Unnamed product',
+              item.brand || '-',
+              item.healthGrade.toUpperCase(),
+              item.ecoGrade.toUpperCase(),
+              dateStr
+            ]);
+          });
+
+          // downloadCSV viene importado de export.js
+          downloadCSV(csvData, `foodlens_saved_products_${new Date().toISOString().slice(0, 10)}.csv`);
+        }
+      }, 'Export CSV'),
+      // --- FIN F-47 ---
+
       el('button', {
         type: 'button',
         class: 'saved__clear',
@@ -372,6 +404,7 @@ export function renderFavourites(container, onOpenProduct, onToggleHeart) {
 
   const countEl = container.querySelector('.saved__count');
   const clearBtn = container.querySelector('.saved__clear');
+  const exportBtn = container.querySelector('.saved__export'); // Capturamos el botón export
   const emptyEl = container.querySelector('.saved-empty');
   const grid = container.querySelector('.saved-grid');
 
@@ -380,6 +413,7 @@ export function renderFavourites(container, onOpenProduct, onToggleHeart) {
     grid.hidden = true;
     emptyEl.hidden = false;
     clearBtn.hidden = true;
+    if (exportBtn) exportBtn.hidden = true; // Ocultamos el export si está vacío
     if (countEl) countEl.textContent = '';
     container.hidden = false;
     return;
@@ -389,6 +423,7 @@ export function renderFavourites(container, onOpenProduct, onToggleHeart) {
   grid.hidden = false;
   emptyEl.hidden = true;
   clearBtn.hidden = false;
+  if (exportBtn) exportBtn.hidden = false; // Mostramos el export
   if (countEl) countEl.textContent = `${items.length} product${items.length !== 1 ? 's' : ''}`;
 
   grid.innerHTML = '';

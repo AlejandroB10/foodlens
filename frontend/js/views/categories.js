@@ -1,78 +1,51 @@
 // frontend/js/views/categories.js
+import { t } from './i18n.js';
 
-/**
- * Module to handle the Category Browser (F-22).
- * Exposes functions to render and manage the selected category state.
- */
-
-// Internal state of the module
 let currentCategory = null;
 const categories = [
-    { id: 'all', label: 'All Products' },
-    { id: 'en:plant-based-milks', label: 'Plant Milks' },
-    { id: 'en:cereals', label: 'Cereals' },
-    { id: 'en:snacks', label: 'Snacks' },
-    { id: 'en:beverages', label: 'Drinks' }
+    { id: 'all', labelKey: 'cat.all', label: 'All Products' },
+    { id: 'en:plant-based-milks', labelKey: 'cat.plant_milks', label: 'Plant Milks' },
+    { id: 'en:cereals', labelKey: 'cat.cereals', label: 'Cereals' },
+    { id: 'en:snacks', labelKey: 'cat.snacks', label: 'Snacks' },
+    { id: 'en:beverages', labelKey: 'cat.drinks', label: 'Drinks' }
 ];
 
-// Callback to notify app.js when the category changes
 let onCategoryChangeCallback = null;
+let translator = null;
 
-/**
- * Initializes the component in the provided container.
- * @param {HTMLElement} container - DOM element where chips will be injected.
- * @param {Function} onChange - Function to execute when a category is selected.
- */
-export function initCategoryBrowser(container, onChange) {
+// Escucha el cambio de idioma global para redibujar
+window.addEventListener('languageChanged', () => {
+    const container = document.getElementById('category-browser');
+    if (container) renderCategoryChips(container);
+});
+
+export function initCategoryBrowser(container, onChange, tFunc) {
     if (!container) return;
-    
     onCategoryChangeCallback = onChange;
-    currentCategory = 'all'; // Default category
-    
+    translator = tFunc; 
+    currentCategory = 'all'; 
     renderCategoryChips(container);
 }
 
-/**
- * Generates the HTML and adds event listeners to the chips.
- */
 function renderCategoryChips(container) {
-    // 1. Clear the container
     container.innerHTML = '';
-    
-    // 2. Add a scrollable wrapper (for accessibility and mobile layout)
     const scrollWrapper = document.createElement('div');
     scrollWrapper.className = 'category-scroll-wrapper';
-    scrollWrapper.setAttribute('role', 'tablist');
-    scrollWrapper.setAttribute('aria-label', 'Product categories');
     
-    // 3. Generate the chips
     categories.forEach(cat => {
         const btn = document.createElement('button');
         btn.className = `category-chip ${currentCategory === cat.id ? 'active' : ''}`;
-        btn.textContent = cat.label;
-        btn.setAttribute('role', 'tab');
-        btn.setAttribute('aria-selected', currentCategory === cat.id);
         
-        // Click event listener
-        btn.addEventListener('click', () => handleCategoryClick(cat.id, container));
+        // Uso del traductor de forma segura
+        btn.textContent = translator ? translator(cat.labelKey, cat.label) : cat.label;
+        
+        btn.addEventListener('click', () => {
+            currentCategory = cat.id;
+            renderCategoryChips(container); // Redibujar para actualizar el botón activo
+            if (onCategoryChangeCallback) onCategoryChangeCallback(currentCategory);
+        });
         
         scrollWrapper.appendChild(btn);
     });
-    
     container.appendChild(scrollWrapper);
-}
-
-/**
- * Handles state changes and triggers a re-render.
- */
-function handleCategoryClick(categoryId, container) {
-    if (currentCategory === categoryId) return; // Prevent unnecessary re-renders
-    
-    currentCategory = categoryId;
-    renderCategoryChips(container); // Re-render to update 'active' classes
-    
-    // Notify the main application to fetch new products
-    if (onCategoryChangeCallback) {
-        onCategoryChangeCallback(currentCategory);
-    }
 }

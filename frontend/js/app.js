@@ -24,6 +24,7 @@ import { toggleFavourite, isFavourite, getFavourites, renderFavourites, buildHea
 import { initCategoryBrowser } from './views/categories.js';
 import { initFilters } from './views/filters.js';
 import { toggleProductSelection } from './views/comparison.js';
+import { initI18n, setLang, t } from './views/i18n.js';
 
 const STORAGE_KEY = 'foodlens.state';
 const SEASONAL_HINT_KEY = 'foodlens.seasonalHint';
@@ -63,6 +64,8 @@ const GRADE_LABELS = {
   unknown: '?',
   'not-applicable': '—',
 };
+
+const USUAL_PRODUCT_KEY = 'foodlens.usualProduct';
 
 const state = loadState();
 let lastResults = [];
@@ -422,7 +425,7 @@ async function renderShapChart(canvas, shapData) {
 
 function renderAdvancedToggle(product) {
   const details = el('details', { class: 'card__advanced' },
-    el('summary', { class: 'card__advanced-summary' }, 'Advanced explanation (SHAP)'),
+    el('summary', { class: 'card__advanced-summary', dataset: { i18n: 'card.adv_expl' } }, t('card.adv_expl', 'Advanced explanation (SHAP)')),
   );
 
   const body = el('div', { class: 'card__advanced-body' });
@@ -569,7 +572,7 @@ function renderProductCard(product, reference, isAlternative = false) {
     ? el('img', { class: 'card__image', src: product.image, alt: product.name || product.code, loading: 'lazy' })
     : el('div', { class: 'card__image card__image--placeholder', 'aria-hidden': 'true' }, product.name?.[0] || '?');
 
-  // Control de selección para comparar
+  // Control de selección para comparar usando la función t() de i18n
   const compareAction = !isAlternative 
     ? el(
         'label',
@@ -580,8 +583,13 @@ function renderProductCard(product, reference, isAlternative = false) {
           dataset: { productId: product.code },
           onChange: (e) => toggleProductSelection(product.code, product, e.target.checked, e.target)
         }),
-        // Importante: No hay ningún texto suelto aquí. El CSS inyecta el '+ Add to comparison'
-        el('span', { class: 'compare-custom-toggle', 'aria-hidden': 'true' })
+        // Pasamos los textos traducidos a los atributos que el CSS leerá
+        el('span', { 
+          class: 'compare-custom-toggle', 
+          'aria-hidden': 'true',
+          'data-text-add': t('card.compare_add', '+ Add to comparison'),
+          'data-text-selected': t('card.compare_sel', '☑ Selected')
+        })
       )
     : null;
 
@@ -597,7 +605,7 @@ function renderProductCard(product, reference, isAlternative = false) {
         'div',
         { class: 'card__title-block' },
         el('h3', { class: 'card__title' }, product.name || 'Unnamed product'),
-        product.brands.length > 0
+        product.brands?.length > 0
           ? el('p', { class: 'card__brand' }, product.brands.join(' · '))
           : null,
         product.source === 'sample'
@@ -620,7 +628,7 @@ function renderProductCard(product, reference, isAlternative = false) {
     el(
       'details',
       { class: 'card__drilldown' },
-      el('summary', {}, 'See numbers'),
+      el('summary', { dataset: { i18n: 'card.see_numbers' } }, t('card.see_numbers', 'See numbers')),
       renderNutrientTable(product.nutrients),
     ),
     !isAlternative ? renderAdvancedToggle(product) : null,
@@ -642,28 +650,68 @@ function renderProductCard(product, reference, isAlternative = false) {
           }),
           el(
             'button',
-            { type: 'button', class: 'btn btn--print', onClick: () => printFocusedCard() },
-            'Print card',
+            { type: 'button', class: 'btn btn--print', dataset: { i18n: 'card.print' }, onClick: () => printFocusedCard() },
+            t('card.print', 'Print card'),
           ),
           el(
             'button',
-            { type: 'button', class: 'btn btn--share', onClick: () => shareProduct(product) },
-            'Share product',
+            { 
+              type: 'button', 
+              class: 'btn btn--ghost', 
+              onClick: async () => {
+                // Si hacemos clic desde la lista izquierda, lo enfocamos primero
+                if (focusedProduct?.code !== product.code) {
+                  await focusProduct(product);
+                }
+                setUsualProduct(product);
+              }
+            },
+            t('card.set_usual', 'Set as usual')
           ),
           el(
             'button',
-            { type: 'button', class: 'btn btn--ghost', onClick: () => toast('Recipe view coming soon (F-17).') },
-            'See recipe',
+            { type: 'button', class: 'btn btn--share', dataset: { i18n: 'card.share' }, onClick: () => shareProduct(product) },
+            t('card.share', 'Share product'),
           ),
           el(
             'button',
-            { type: 'button', class: 'btn btn--ghost', onClick: () => toast('Shopping list coming soon (F-17).') },
-            'Add to list',
+            { type: 'button', class: 'btn btn--ghost', dataset: { i18n: 'card.recipe' }, onClick: () => toast('Recipe view coming soon (F-17).') },
+            t('card.recipe', 'See recipe'),
           ),
           el(
             'button',
-            { type: 'button', class: 'btn btn--primary', onClick: () => toast('Compare with usual coming soon (F-18).') },
-            'Compare with usual',
+            { type: 'button', class: 'btn btn--ghost', dataset: { i18n: 'card.add_list' }, onClick: () => toast('Shopping list coming soon (F-17).') },
+            t('card.add_list', 'Add to list'),
+          ),
+          el(
+            'button',
+            { 
+              type: 'button', 
+              class: 'btn btn--primary', 
+              onClick: async () => {
+                const usual = getUsualProduct();
+                
+                if (!usual) {
+                  toast(t('compare.no_usual_saved', 'You haven\'t set a usual product yet. Click "Set as usual" on any product first!'));
+                  return;
+                } 
+                if (usual.code === product.code) {
+                  toast(t('compare.same_usual', 'This is already your usual product! Inspect a different one to compare.'));
+                  return;
+                } 
+                
+                // Si el usuario clicó en la lista lateral, esperamos a que el producto cargue
+                if (focusedProduct?.code !== product.code) {
+                  await focusProduct(product);
+                }
+
+                toast(t('compare.scrolling', 'Showing comparison below…'));
+                // Ahora es seguro hacer scroll porque sabemos que la sección existe
+                const sectionTitle = document.getElementById('usual-comparison-section');
+                if (sectionTitle) sectionTitle.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              } 
+            },
+            t('card.compare_usual', 'Compare with usual'),
           ),
         )
       : null,
@@ -712,8 +760,7 @@ function renderAlternativeCard(product, alternative) {
 
 // ─── rendering flows ───────────────────────────────────────────────────
 
-function focusProduct(product, { skipTrack = false } = {}) {
-  // decision_time: ms from search completion to product selection (F-45).
+async function focusProduct(product, { skipTrack = false } = {}) {
   if (_searchCompletedAt && product?.code) {
     telemetry.send({
       event: 'decision_time',
@@ -726,7 +773,9 @@ function focusProduct(product, { skipTrack = false } = {}) {
     trackView(product.code, product);
     renderRecentlyViewed(els.recentlyViewed, (code) => runSearch(code));
   }
-  rerenderFocused();
+  
+  // AÑADIDO: await para que devuelva una promesa y podamos sincronizar los clicks
+  await rerenderFocused();
 }
 
 async function rerenderFocused() {
@@ -734,23 +783,111 @@ async function rerenderFocused() {
     setHidden(els.focusedView, true);
     return;
   }
+  
+  // F-18: Recuperamos el objeto entero (Cero llamadas a la API = 100% offline support)
+  const usualProduct = getUsualProduct();
+  
   const reference = pickReference(focusedProduct, lastResults);
+  
   const [alternatives, scatterData] = await Promise.all([
     computeAlternatives(focusedProduct, lastResults),
-    getCategoryScatter(focusedProduct.category),
+    getCategoryScatter(focusedProduct.category)
   ]);
 
   setHidden(els.focusedView, false);
   clear(els.focusedView);
 
+  // 1. Tarjeta principal
   els.focusedView.appendChild(
-    el('h2', { class: 'section__title' }, 'Selected product'),
+    el('h2', { class: 'section__title' }, t('ui.selected_product', 'Selected product')),
   );
   els.focusedView.appendChild(renderProductCard(focusedProduct, reference, false));
 
+  // 2. F-18: Renderizado del Producto Habitual (Comparación Real)
+  if (usualProduct && usualProduct.code !== focusedProduct.code) {
+    els.focusedView.appendChild(
+      el('h3', { id: 'usual-comparison-section', class: 'section__subtitle' }, t('compare.usual_title', 'Compared to your usual choice')),
+    );
+
+    // 1. Traducimos los deltas básicos
+    let deltaText = formatAlternativeDelta(usualProduct, focusedProduct);
+    if (deltaText) {
+      deltaText = deltaText
+        .replace('less sugar', t('compare.less_sugar', 'less sugar'))
+        .replace('less fat', t('compare.less_fat', 'less fat'))
+        .replace('less saturated fat', t('compare.less_satfat', 'less saturated fat'))
+        .replace('less salt', t('compare.less_salt', 'less salt'))
+        .replace('more protein', t('compare.more_protein', 'more protein'))
+        .replace('more fiber', t('compare.more_fiber', 'more fiber'))
+        .replace('per 100g', t('compare.per_100g', 'per 100g'))
+        .replace('better Nutri-Score', t('compare.better_nutri', 'better Nutri-Score'))
+        .replace('better Eco-Score', t('compare.better_eco', 'better Eco-Score'));
+    }
+
+    const currentName = focusedProduct.name || 'Current product';
+    const usualName = usualProduct.name || 'Usual product';
+
+    // 2. Construimos la frase de conclusión con el nombre en negrita
+    const deltaParagraph = el('p', { class: 'alt-card__delta', style: { color: 'var(--color-ink)', marginTop: '0.5rem' } });
+
+    if (deltaText) {
+       deltaParagraph.append(
+         `👉 ${t('compare.compared_to_usual', 'Compared to this,')} `,
+         el('strong', {}, currentName),
+         ` ${t('compare.has', 'has')} ${deltaText}`
+       );
+    } else {
+       deltaParagraph.append(
+         `🤝 `,
+         el('strong', {}, currentName),
+         ` ${t('compare.is_similar', 'has a very similar profile.')}`
+       );
+    }
+
+    // 2. Construimos la tarjeta con doble cabecera (Actual arriba, Habitual abajo)
+    const comparisonCard = el(
+      'article',
+      { 
+        class: 'alt-card', 
+        style: { borderLeft: '4px solid var(--color-ink)' } 
+      }, 
+      // Cabecera Producto ACTUAL
+      el(
+        'header',
+        { class: 'alt-card__head', style: { borderBottom: '1px solid rgba(0,0,0,0.05)', paddingBottom: '0.5rem', marginBottom: '0.5rem' } },
+        el('div', {}, 
+            el('span', { style: { fontSize: '0.7rem', textTransform: 'uppercase', opacity: '0.6', display: 'block' } }, t('compare.current_label', 'Current:')),
+            el('h4', { class: 'alt-card__title', style: { margin: 0 } }, currentName)
+        ),
+        el('div', { class: 'alt-card__badges' },
+          renderBadge('nutri', focusedProduct.nutriScore),
+          renderBadge('eco', focusedProduct.ecoScore),
+        )
+      ),
+      // Cabecera Producto HABITUAL
+      el(
+        'header',
+        { class: 'alt-card__head', style: { opacity: '0.8' } },
+        el('div', {}, 
+            el('span', { style: { fontSize: '0.7rem', textTransform: 'uppercase', opacity: '0.6', display: 'block' } }, t('compare.your_usual', 'Your usual choice:')),
+            el('h4', { class: 'alt-card__title', style: { margin: 0 } }, usualName)
+        ),
+        el('div', { class: 'alt-card__badges' },
+          renderBadge('nutri', usualProduct.nutriScore),
+          renderBadge('eco', usualProduct.ecoScore),
+        )
+      ),
+      // Conclusión
+      deltaParagraph
+    );
+
+    els.focusedView.appendChild(comparisonCard);
+  }
+
+  // 3. Alternativas
   if (alternatives.length > 0) {
     els.focusedView.appendChild(
-      el('h3', { class: 'section__subtitle' }, 'Better alternatives in this category'),
+      el('h3', { class: 'section__subtitle' }, t('ui.better_alternatives', 'Better alternatives in this category')),
     );
     const grid = el('div', { class: 'alt-grid' });
     for (const alt of alternatives) {
@@ -759,17 +896,17 @@ async function rerenderFocused() {
     els.focusedView.appendChild(grid);
   } else {
     els.focusedView.appendChild(
-      el('p', { class: 'alt-grid__empty' }, 'This is already among the best in its category.'),
+      el('p', { class: 'alt-grid__empty' }, t('ui.best_in_category', 'This is already among the best in its category.')),
     );
   }
 
-  // Scatter plot (F-43) — only when backend has category data.
+  // 4. Scatter plot
   if (scatterData) {
     els.focusedView.appendChild(
-      el('h3', { class: 'section__subtitle' }, 'Health vs Eco in this category'),
+      el('h3', { class: 'section__subtitle' }, t('ui.health_vs_eco', 'Health vs Eco in this category')),
     );
     els.focusedView.appendChild(
-      el('p', { class: 'section__hint' }, 'Top-right corner = best on both axes. The orange star is this product.'),
+      el('p', { class: 'section__hint' }, t('ui.scatter_hint', 'Top-right corner = best on both axes. The orange star is this product.')),
     );
     const chartWrap = el('div', { class: 'scatter-wrap' });
     els.focusedView.appendChild(chartWrap);
@@ -777,7 +914,7 @@ async function rerenderFocused() {
       await renderScatterPlot(chartWrap, scatterData, focusedProduct);
     } catch {
       chartWrap.appendChild(
-        el('p', { class: 'section__hint' }, 'Chart library could not load, but the product scores above are still available.'),
+        el('p', { class: 'section__hint' }, t('ui.chart_error', 'Chart library could not load, but the product scores above are still available.')),
       );
     }
   }
@@ -1149,7 +1286,7 @@ function initCategories() {
       : selectedCategory.replace('en:', '').replace(/-/g, ' ');
     
     //runSearch(searchQuery);
-  });
+  }, t);
 }
 
 function passesFilters(product, filters) {
@@ -1214,7 +1351,24 @@ function initProductFilters() {
 
     // 3. The magic: force the UI to re-render using the products already in memory
     rerenderResults();
-  });
+  }, t);
+}
+
+// --- F-18: Guardamos el OBJETO entero, no solo el código ---
+function setUsualProduct(productObj) {
+  localStorage.setItem(USUAL_PRODUCT_KEY, JSON.stringify(productObj));
+  // Mensaje más claro para la UX
+  toast(t('toast.usual_set', 'Saved! Now select a different product to compare.'));
+  rerenderFocused();
+}
+
+function getUsualProduct() {
+  try {
+    const raw = localStorage.getItem(USUAL_PRODUCT_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
 }
 
 function requestSeasonalLocation() {
@@ -1546,6 +1700,13 @@ function wireEvents() {
     telemetry.send({ event: 'slider_change', value: v });
   });
 
+  document.querySelectorAll('.lang-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const selectedLang = e.currentTarget.dataset.lang;
+      setLang(selectedLang);
+    });
+  });
+
   for (const btn of els.presetButtons) {
     btn.addEventListener('click', () => {
       const preset = btn.dataset.preset;
@@ -1637,6 +1798,7 @@ function renderTelemetryBanner() {
 
 async function bootstrap() {
   _loadSettings();
+  initI18n();
   registerServiceWorker();
   initTooltips();
   applyWeightToUI();

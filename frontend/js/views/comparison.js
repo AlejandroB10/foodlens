@@ -2,6 +2,7 @@
 
 export const selectedProducts = new Map();
 const MAX_PRODUCTS = 4;
+import { downloadCSV } from './export.js';
 
 export function toggleProductSelection(productId, productObj, isChecked, checkboxElement) {
   if (isChecked) {
@@ -111,4 +112,35 @@ document.addEventListener('DOMContentLoaded', () => {
       modalElement.close();
     }
   });
+
+  document.getElementById('export-comparison-btn')?.addEventListener('click', () => {
+    const products = Array.from(selectedProducts.values());
+    if (products.length === 0) return;
+
+    // Construir matriz bidimensional para el CSV
+    // Fila 0: Cabeceras
+    const headers = ['Attribute', ...products.map(p => p.name || p.code || 'Unknown')];
+    const csvData = [headers];
+
+    // Las mismas filas que usamos en la tabla HTML
+    const rowsData = [
+      { label: 'Nutri-Score', getValue: p => p.nutriScore?.grade ? p.nutriScore.grade.toUpperCase() : '?' },
+      { label: 'Eco-Score', getValue: p => p.ecoScore?.grade ? p.ecoScore.grade.toUpperCase() : '?' },
+      { label: 'Energy (kcal)', getValue: p => p.nutrients?.energyKcal_100g ? Math.round(p.nutrients.energyKcal_100g) : '-' },
+      { label: 'Sugars (g)', getValue: p => p.nutrients?.sugars_100g ? p.nutrients.sugars_100g.toFixed(1) : '-' },
+      { label: 'Fat (g)', getValue: p => p.nutrients?.fat_100g ? p.nutrients.fat_100g.toFixed(1) : '-' },
+      { label: 'Saturated Fat (g)', getValue: p => p.nutrients?.saturatedFat_100g ? p.nutrients.saturatedFat_100g.toFixed(1) : '-' },
+      { label: 'Salt (g)', getValue: p => p.nutrients?.salt_100g ? p.nutrients.salt_100g.toFixed(1) : '-' }
+    ];
+
+    rowsData.forEach(row => {
+      const csvRow = [row.label, ...products.map(p => row.getValue(p))];
+      csvData.push(csvRow);
+    });
+
+    // Generar timestamp para el nombre del archivo
+    const dateStr = new Date().toISOString().slice(0, 10);
+    downloadCSV(csvData, `foodlens_comparison_${dateStr}.csv`);
+  });
 });
+

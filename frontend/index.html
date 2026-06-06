@@ -20,7 +20,8 @@
   />
 
   <link rel="stylesheet" href="./css/style.css" />
-  <link rel="stylesheet" href="./css/categories.css" /> <link rel="stylesheet" href="./css/onboarding.css" />
+  <link rel="stylesheet" href="./css/categories.css" /> 
+  <link rel="stylesheet" href="./css/onboarding.css" />
   <link rel="stylesheet" href="./css/history.css" />
   <link rel="stylesheet" href="./css/settings.css" />
   <link rel="stylesheet" href="./css/tooltips.css" />
@@ -37,21 +38,30 @@
       <div class="site-header__masthead">
         <div class="site-header__brand">
           <h1 class="site-header__title"><em>Food</em>Lens</h1>
-          <p class="site-header__tagline">
+          <p class="site-header__tagline" data-i18n="header.tagline">
             Transparent multi-objective food recommendations.
             Two scores, side by side. One sentence of reasoning per product.
           </p>
         </div>
         <div class="site-header__meta">
           <span class="small-caps">UIB · HCI 11755 · WA4</span>
+          
           <span class="small-caps">Issue Nº 001 · 2026</span>
+
           <span class="small-caps">Open Food Facts</span>
+
+          <div class="lang-selector" role="group" aria-label="Language selection">
+            <button class="lang-btn is-active" data-lang="en">EN</button>
+            <button class="lang-btn" data-lang="es">ES</button>
+            <button class="lang-btn" data-lang="ca">CA</button>
+          </div>
+
           <button type="button" class="settings-trigger" data-action="settings" aria-label="Open settings">
             <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="3"/>
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
             </svg>
-            <span class="visually-hidden">Settings</span>
+            <span class="visually-hidden" data-i18n="header.settings">Settings</span>
           </button>
         </div>
       </div>
@@ -60,15 +70,16 @@
     <main>
 
       <section class="search" aria-labelledby="search-label">
-        <h2 id="search-label" class="visually-hidden">Search products</h2>
+        <h2 id="search-label" class="visually-hidden" data-i18n="search.label">Search products</h2>
         <form id="search-form" class="search__form" role="search">
-          <label for="search-input" class="visually-hidden">Search a product or barcode</label>
+          <label for="search-input" class="visually-hidden" data-i18n="search.input_label">Search a product or barcode</label>
           <div class="search__input-wrap">
             <input
               type="text"
               id="search-input"
               name="q"
               class="search__input"
+              data-i18n="search.placeholder"
               placeholder="Type a name or paste a barcode…"
               autocomplete="off"
               spellcheck="false"
@@ -79,16 +90,17 @@
                 <circle cx="12" cy="13" r="4"/>
               </svg>
             </button>
-            <button type="submit" class="search__submit">Inspect</button>
+            <button type="submit" class="search__submit" data-i18n="search.inspect">Inspect</button>
           </div>
-          <label for="ingredient-input" class="visually-hidden">Search by ingredient</label>
+          <label for="ingredient-input" class="visually-hidden" data-i18n="search.ingredient_label">Search by ingredient</label>
           <div class="search__ingredient-wrap">
-            <span class="search__ingredient-prefix">Ingredient</span>
+            <span class="search__ingredient-prefix" data-i18n="search.ingredient">Ingredient</span>
             <input
               type="text"
               id="ingredient-input"
               name="ingredient"
               class="search__ingredient-input"
+              data-i18n="search.ingredient.placeholder"
               placeholder="e.g. almonds, gluten, oat"
               autocomplete="off"
               spellcheck="false"
@@ -105,10 +117,10 @@
       
       <section class="weighting" aria-labelledby="weighting-label">
         <div class="weighting__header">
-          <h2 id="weighting-label" class="weighting__label">What weighs more in your decision today?</h2>
+          <h2 id="weighting-label" class="weighting__label" data-i18n="weighting.title">What weighs more in your decision today?</h2>
           <div class="weighting__readout" aria-live="polite">
-            <span>Health <strong id="weight-health-label">70%</strong></span>
-            <span>Eco <strong id="weight-eco-label">30%</strong></span>
+            <span><span data-i18n="weighting.health">Health</span> <strong id="weight-health-label">70%</strong></span>
+            <span><span data-i18n="weighting.eco">Eco</span> <strong id="weight-eco-label">30%</strong></span>
           </div>
         </div>
 
@@ -124,9 +136,9 @@
         />
 
         <div class="weighting__presets" role="group" aria-label="Preset weightings">
-          <button type="button" class="preset" data-preset="eco-first" aria-pressed="false">Eco-first</button>
-          <button type="button" class="preset is-active" data-preset="balanced" aria-pressed="true">Balanced</button>
-          <button type="button" class="preset" data-preset="health-first" aria-pressed="false">Health-first</button>
+          <button type="button" class="preset" data-preset="eco-first" aria-pressed="false" data-i18n="weighting.preset.eco">Eco-first</button>
+          <button type="button" class="preset is-active" data-preset="balanced" aria-pressed="true" data-i18n="weighting.preset.balanced">Balanced</button>
+          <button type="button" class="preset" data-preset="health-first" aria-pressed="false" data-i18n="weighting.preset.health">Health-first</button>
         </div>
       </section>
 
@@ -137,7 +149,7 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="16" height="16">
                 <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
               </svg>
-              Search
+              <span data-i18n="nav.search">Search</span>
             </button>
           </li>
           <li>
@@ -145,7 +157,7 @@
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="16" height="16">
                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
               </svg>
-              Saved
+              <span data-i18n="nav.saved">Saved</span>
               <span id="saved-badge" class="saved-badge" hidden aria-hidden="true">0</span>
             </button>
           </li>
@@ -156,7 +168,7 @@
                 <path d="M5 4h14v16H5z"/>
                 <path d="M9 17h6"/>
               </svg>
-              Evaluate
+              <span data-i18n="nav.evaluate">Evaluate</span>
             </button>
           </li>
         </ul>
@@ -168,36 +180,36 @@
 
       <section id="evaluation" aria-label="Evaluation instruments" hidden></section>
 
-      <p id="source-badge" class="source-badge" role="status" hidden>
+      <p id="source-badge" class="source-badge" role="status" hidden data-i18n="badge.offline">
         Showing offline sample data. The live Open Food Facts API was unreachable; the team should reload once it recovers.
       </p>
 
       <section id="seasonal-hint" class="seasonal-hint" aria-labelledby="seasonal-hint-title">
         <div class="seasonal-hint__copy">
-          <h2 id="seasonal-hint-title" class="seasonal-hint__title">Seasonal context</h2>
-          <p id="seasonal-hint-text" class="seasonal-hint__text">
+          <h2 id="seasonal-hint-title" class="seasonal-hint__title" data-i18n="seasonal.title">Seasonal context</h2>
+          <p id="seasonal-hint-text" class="seasonal-hint__text" data-i18n="seasonal.desc">
             Add approximate location to show a local seasonality hint for produce-heavy products.
           </p>
         </div>
         <div class="seasonal-hint__actions">
-          <button type="button" id="seasonal-hint-enable" class="btn btn btn--ghost">Use location</button>
-          <button type="button" id="seasonal-hint-dismiss" class="seasonal-hint__dismiss" aria-label="Dismiss seasonal hint">Dismiss</button>
+          <button type="button" id="seasonal-hint-enable" class="btn btn btn--ghost" data-i18n="seasonal.btn.enable">Use location</button>
+          <button type="button" id="seasonal-hint-dismiss" class="seasonal-hint__dismiss" aria-label="Dismiss seasonal hint" data-i18n="seasonal.btn.dismiss">Dismiss</button>
         </div>
       </section>
 
-      <p id="loading" class="loading" role="status" hidden>Querying Open Food Facts…</p>
+      <p id="loading" class="loading" role="status" hidden data-i18n="ui.loading">Querying Open Food Facts…</p>
 
       <section id="focused" class="focused" hidden aria-label="Currently selected product"></section>
 
       <section id="results" class="results" aria-labelledby="results-title">
         <div class="section-head">
-          <h2 id="results-title">Results</h2>
+          <h2 id="results-title" data-i18n="ui.results">Results</h2>
           <p id="results-count" class="results-count">Loading…</p>
         </div>
 
         <div id="empty-state" class="empty-state" hidden>
-          <h2>No products to inspect yet.</h2>
-          <p>Try one of these to begin:</p>
+          <h2 data-i18n="empty.title">No products to inspect yet.</h2>
+          <p data-i18n="empty.desc">Try one of these to begin:</p>
           <ul class="num">
             <li>5449000131805 — Coca-Cola Zero Sugar</li>
             <li>3017624010701 — Nutella</li>
@@ -212,11 +224,11 @@
 
     <section class="personas-showcase" aria-labelledby="personas-title">
       <header class="personas-showcase__header">
-        <p class="personas-showcase__eyebrow">Meet the team</p>
-        <h2 id="personas-title" class="personas-showcase__title">
+        <p class="personas-showcase__eyebrow" data-i18n="personas.eyebrow">Meet the team</p>
+        <h2 id="personas-title" class="personas-showcase__title" data-i18n-html="personas.title">
           Three ways FoodLens <em>thinks</em> about food
         </h2>
-        <p class="personas-showcase__subtitle">
+        <p class="personas-showcase__subtitle" data-i18n="personas.subtitle">
           Every feature is tested against three real people — not abstractions. See who we built this for.
         </p>
       </header>
@@ -229,10 +241,10 @@
             <span class="persona-card__badge">P01</span>
           </div>
           <p class="persona-card__role">27 · software engineer · Palma</p>
-          <blockquote class="persona-card__quote">
+          <blockquote class="persona-card__quote" data-i18n="persona.p1.quote">
             "I can live with a score I disagree with if I can see why it was given and decide for myself."
           </blockquote>
-          <p class="persona-card__description">
+          <p class="persona-card__description" data-i18n="persona.p1.desc">
             Time-poor. Cooks weeknights. Trusts algorithms only when the reasoning is visible. Configures once if it saves repeated decision effort. FoodLens shows him the contrastive sentence upfront — top card in under 15 seconds.
           </p>
         </article>
@@ -243,10 +255,10 @@
             <span class="persona-card__badge">P02</span>
           </div>
           <p class="persona-card__role">22 · maths undergrad · Barcelona</p>
-          <blockquote class="persona-card__quote">
+          <blockquote class="persona-card__quote" data-i18n="persona.p2.quote">
             "Tell me: compared to what you usually buy, this one has thirty percent less sugar and almost the same saturated fat."
           </blockquote>
-          <p class="persona-card__description">
+          <p class="persona-card__description" data-i18n="persona.p2.desc">
             Tight budget, minimal cooking routine. Sceptical of marketing. Demands a number he can verify. Every claim in the contrastive sentence is one tap away from the drill-down nutrient table.
           </p>
         </article>
@@ -257,10 +269,10 @@
             <span class="persona-card__badge">P03</span>
           </div>
           <p class="persona-card__role">26 · marketing professional · Madrid</p>
-          <blockquote class="persona-card__quote">
+          <blockquote class="persona-card__quote" data-i18n="persona.p3.quote">
             "What convinces me is a sharp sentence with a data point in it."
           </blockquote>
-          <p class="persona-card__description">
+          <p class="persona-card__description" data-i18n="persona.p3.desc">
             Knows greenwashing from the inside. Wants a sharp contrastive sentence with a datum. Resists moralising. The system never claims authority — every comparison is grounded in data, never in "our recommendation."
           </p>
         </article>
@@ -269,20 +281,20 @@
     </section>
 
     <footer class="site-footer" role="contentinfo">
-      <p>
+      <p data-i18n-html="footer.p1">
         <span class="small-caps">FoodLens</span> is the WA4 prototype of the
         <em>Transparent Multi-Objective Food Recommendations</em> project at
         UIB — Master in Intelligent Systems, course 11755 Human-Computer
         Interaction.
       </p>
-      <p>
+      <p data-i18n-html="footer.p2">
         Data sourced from <a href="https://world.openfoodfacts.org" rel="noopener" target="_blank">Open Food Facts</a>,
         an open, collaborative database of food products from around the
         world. Scores reflect the official Nutri-Score (French public health
         authority) and Environmental Score (ADEME) methodologies — we
         consume them, we do not recompute them.
       </p>
-      <p>
+      <p data-i18n-html="footer.p3">
         Built with vanilla HTML, CSS and JavaScript. No build step. Open
         <code>index.html</code> to run.
       </p>
@@ -302,22 +314,25 @@
     <div class="tray-content">
       <span id="tray-count">0 items selected</span>
       <div class="tray-actions">
-        <button id="clear-comparison-btn" class="btn btn--ghost" aria-label="Clear selection">Clear</button>
-        <button id="open-comparison-btn" class="search__submit">View Comparison</button>
+        <button id="clear-comparison-btn" class="btn btn--ghost" aria-label="Clear selection" data-i18n="compare.clear">Clear</button>
+        <button id="open-comparison-btn" class="search__submit" data-i18n="compare.view">View Comparison</button>
       </div>
     </div>
   </div>
 
   <dialog id="comparison-modal" class="editorial-modal">
     <div class="modal-header">
-      <h2>Product Comparison</h2>
-      <button id="close-modal-btn" class="icon-btn" aria-label="Close comparison">✕</button>
+      <h2 data-i18n="compare.modal.title">Product Comparison</h2>
+      <div style="display: flex; gap: 1rem; align-items: center;">
+        <button id="export-comparison-btn" class="btn btn--ghost" aria-label="Export to CSV" data-i18n="compare.export">Export CSV</button>
+        <button id="close-modal-btn" class="icon-btn" aria-label="Close comparison">✕</button>
+      </div>
     </div>
     <div class="table-responsive">
       <table id="comparison-table" class="editorial-table">
         <thead>
           <tr id="table-header-row">
-            <th scope="col" class="attr-col">Attributes</th>
+            <th scope="col" class="attr-col" data-i18n="compare.attr">Attributes</th>
           </tr>
         </thead>
         <tbody id="table-body"></tbody>
