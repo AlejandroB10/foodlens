@@ -22,6 +22,9 @@ const PRODUCT_FIELDS = [
   'nutrient_levels',
   'nutriments',
   'categories_tags',
+  'allergens_tags',
+  'packaging_tags',
+  'labels_tags',
 ].join(',');
 
 const GRADE_TO_NUMERIC = { a: 5, b: 4, c: 3, d: 2, e: 1 };
@@ -112,6 +115,14 @@ function splitBrands(brands) {
   return brands.split(',').map((b) => b.trim()).filter(Boolean);
 }
 
+// OFF *_tags arrays (e.g. ["en:milk", "en:gluten"]) -> a single lowercase,
+// space-separated string for cheap token matching downstream. When the field
+// is absent we return '' (empty = "unknown"), never a guessed value.
+function joinTags(tags) {
+  if (!Array.isArray(tags)) return '';
+  return tags.map((tag) => String(tag).trim().toLowerCase()).filter(Boolean).join(' ');
+}
+
 export function normaliseProduct(raw) {
   if (!raw) return null;
   return {
@@ -125,6 +136,11 @@ export function normaliseProduct(raw) {
     ecoScore: readEcoScore(raw),
     nutrientLevels: readNutrientLevels(raw.nutrient_levels),
     nutrients: readNutrients(raw.nutriments),
+    // Lowercase, space-separated tag strings. '' means "unknown" (field absent),
+    // which passesFilters must treat as "do not hide", never as a value.
+    allergens: joinTags(raw.allergens_tags),
+    packaging: joinTags(raw.packaging_tags),
+    labels: joinTags(raw.labels_tags),
   };
 }
 
@@ -138,12 +154,21 @@ async function fallbackBySearch(query, opts = {}) {
   const sample = await loadSampleProducts();
   const q = (query || '').toLowerCase().trim();
   const ingredient = (opts.ingredient || '').toLowerCase().trim();
-  if (!q && !ingredient) return sample.map((p) => ({ ...p, source: 'sample' }));
+  // Category tag matched against the sample product's category bucket, with the
+  // "en:" prefix stripped so "en:cereals" matches a sample category of "cereals".
+  const categoryTag = (opts.categoryTag || '').toLowerCase().trim();
+  const categoryNeedle = categoryTag.includes(':')
+    ? categoryTag.slice(categoryTag.indexOf(':') + 1)
+    : categoryTag;
+  if (!q && !ingredient && !categoryNeedle) {
+    return sample.map((p) => ({ ...p, source: 'sample' }));
+  }
   const filtered = sample.filter((p) => {
     const haystack = [p.name, p.category, ...p.brands].filter(Boolean).join(' ').toLowerCase();
     const matchesQuery = !q || haystack.includes(q);
     const matchesIngredient = !ingredient || haystack.includes(ingredient);
-    return matchesQuery && matchesIngredient;
+    const matchesCategory = !categoryNeedle || (p.category || '').toLowerCase().includes(categoryNeedle);
+    return matchesQuery && matchesIngredient && matchesCategory;
   });
   return filtered.map((p) => ({ ...p, source: 'sample' }));
 }
@@ -193,17 +218,17 @@ export async function searchProducts(query, opts = {}) {
   try {
     const res = await fetch(url, { headers: { 'User-Agent': USER_AGENT } });
     if (!res.ok) {
-      return fallbackBySearch(query, { ingredient });
+      return fallbackBySearch(query, { ingredient, categoryTag });
     }
     const data = await res.json();
     const products = Array.isArray(data.products) ? data.products : [];
     if (products.length === 0) {
-      return fallbackBySearch(query, { ingredient });
+      return fallbackBySearch(query, { ingredient, categoryTag });
     }
     return products.map(normaliseProduct).filter(Boolean);
   } catch (err) {
     console.warn('OFF API unreachable, using sample data', err);
-    return fallbackBySearch(query, { ingredient });
+    return fallbackBySearch(query, { ingredient, categoryTag });
   }
 }
 

@@ -60,6 +60,21 @@ export function toggleFavourite(code, productData) {
   else if (Array.isArray(productData.brands) && productData.brands.length) brand = productData.brands[0];
   else if (typeof productData.brands === 'string' && productData.brands) brand = productData.brands.split(',')[0].trim();
 
+  // Persist the per-100g nutrients so the favourites CSV (F-47) can export
+  // numbers. We copy the normalised shape (api.js readNutrients) and keep
+  // genuine 0 values; missing fields stay null (never invented).
+  const n = productData.nutrients || {};
+  const keep = (v) => (Number.isFinite(v) ? v : null);
+  const nutrients = {
+    energyKcal_100g: keep(n.energyKcal_100g),
+    fat_100g: keep(n.fat_100g),
+    saturatedFat_100g: keep(n.saturatedFat_100g),
+    sugars_100g: keep(n.sugars_100g),
+    salt_100g: keep(n.salt_100g),
+    fiber_100g: keep(n.fiber_100g),
+    proteins_100g: keep(n.proteins_100g),
+  };
+
   // Not saved — add it (newest first)
   items.unshift({
     code,
@@ -68,6 +83,7 @@ export function toggleFavourite(code, productData) {
     image: productData.image || productData.image_small_url || null,
     healthGrade: productData.healthGrade ?? productData.nutriScore?.grade ?? 'unknown',
     ecoGrade: productData.ecoGrade ?? productData.ecoScore?.grade ?? 'unknown',
+    nutrients,
     savedAt: Date.now(),
   });
 
@@ -350,19 +366,36 @@ export function renderFavourites(container, onOpenProduct, onToggleHeart) {
           const currentItems = getFavourites();
           if (currentItems.length === 0) return;
           
+          // Explicit finite check so genuine 0 (e.g. 0 g sugar) exports as "0",
+          // missing data as "-" — never a falsy-coerced blank.
+          const numCell = (v) => (Number.isFinite(v) ? v : '-');
+
           const csvData = [
-            ['Barcode', 'Product Name', 'Brand', 'Health Grade', 'Eco Grade', 'Saved Date']
+            [
+              'Barcode', 'Product Name', 'Brand', 'Health Grade', 'Eco Grade',
+              'Energy (kcal/100g)', 'Fat (g/100g)', 'Saturated Fat (g/100g)',
+              'Sugars (g/100g)', 'Salt (g/100g)', 'Fibre (g/100g)',
+              'Protein (g/100g)', 'Saved Date',
+            ],
           ];
 
           currentItems.forEach(item => {
             const dateStr = item.savedAt ? new Date(item.savedAt).toISOString().slice(0, 10) : 'Unknown';
+            const n = item.nutrients || {};
             csvData.push([
               item.code,
               item.name || 'Unnamed product',
               item.brand || '-',
-              item.healthGrade.toUpperCase(),
-              item.ecoGrade.toUpperCase(),
-              dateStr
+              (item.healthGrade || 'unknown').toUpperCase(),
+              (item.ecoGrade || 'unknown').toUpperCase(),
+              numCell(n.energyKcal_100g),
+              numCell(n.fat_100g),
+              numCell(n.saturatedFat_100g),
+              numCell(n.sugars_100g),
+              numCell(n.salt_100g),
+              numCell(n.fiber_100g),
+              numCell(n.proteins_100g),
+              dateStr,
             ]);
           });
 

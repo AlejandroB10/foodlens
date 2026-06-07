@@ -4,22 +4,49 @@ const filterGroups = {
   criteria: {
     titleKey: 'filter.group.criteria',
     items: [
-      { id: 'high-protein', labelKey: 'filter.high_protein' },
-      { id: 'low-sodium', labelKey: 'filter.low_sodium' },
-      { id: 'plastic-free', labelKey: 'filter.plastic_free' }
+      { id: 'high-protein', labelKey: 'filter.high_protein', label: 'High protein' },
+      { id: 'low-sodium', labelKey: 'filter.low_sodium', label: 'Low sodium' },
+      { id: 'plastic-free', labelKey: 'filter.plastic_free', label: 'Plastic-free' },
+      { id: 'low-co2', labelKey: 'filter.low_co2', label: 'Low CO2' },
+      { id: 'organic', labelKey: 'filter.organic', label: 'Organic' }
     ]
   },
   allergens: {
     titleKey: 'filter.group.allergens',
     items: [
-      { id: 'no-gluten', labelKey: 'filter.no_gluten' },
-      { id: 'no-lactose', labelKey: 'filter.no_lactose' },
-      { id: 'no-nuts', labelKey: 'filter.no_nuts' }
+      { id: 'no-gluten', labelKey: 'filter.no_gluten', label: 'Gluten-free' },
+      { id: 'no-lactose', labelKey: 'filter.no_lactose', label: 'Lactose-free' },
+      { id: 'no-nuts', labelKey: 'filter.no_nuts', label: 'Nut-free' },
+      { id: 'no-soy', labelKey: 'filter.no_soy', label: 'Soy-free' },
+      { id: 'no-egg', labelKey: 'filter.no_egg', label: 'Egg-free' },
+      { id: 'no-fish', labelKey: 'filter.no_fish', label: 'Fish-free' }
     ]
   }
 };
 
-const activeFilters = new Set();
+const ACTIVE_FILTERS_KEY = 'foodlens.activeFilters';
+
+// Restore filters persisted for this browser session (F-32 requires active
+// allergen filters to survive a reload within the session).
+function loadPersistedFilters() {
+  try {
+    const raw = sessionStorage.getItem(ACTIVE_FILTERS_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return new Set(Array.isArray(parsed) ? parsed : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function persistActiveFilters() {
+  try {
+    sessionStorage.setItem(ACTIVE_FILTERS_KEY, JSON.stringify(Array.from(activeFilters)));
+  } catch {
+    /* sessionStorage disabled, ignore */
+  }
+}
+
+const activeFilters = loadPersistedFilters();
 let onFilterChangeCallback = null;
 let translator = null; // Guardamos el traductor aquí
 
@@ -41,6 +68,12 @@ export function initFilters(container, onChange, tFunc) {
   });
 
   renderFilters(container);
+
+  // Apply any session-restored filters so the rendered results honour them
+  // immediately on load, without requiring the user to re-toggle.
+  if (activeFilters.size > 0 && onFilterChangeCallback) {
+    onFilterChangeCallback(Array.from(activeFilters));
+  }
 }
 
 function renderFilters(container) {
@@ -97,6 +130,7 @@ function renderFilters(container) {
          e.stopPropagation();
          if (activeFilters.has(item.id)) activeFilters.delete(item.id);
          else activeFilters.add(item.id);
+         persistActiveFilters();
          renderItemState();
          updateTriggerText();
          if (onFilterChangeCallback) onFilterChangeCallback(Array.from(activeFilters));

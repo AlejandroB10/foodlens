@@ -245,6 +245,9 @@ export function formatAlternativeDelta(product, alternative) {
     parts.push(`${formatted} ${direction} ${NUTRIENT_DISPLAY_NAMES[key] || key}`);
     if (parts.length >= 2) break;
   }
-  if (parts.length === 0) return 'Same nutritional profile, different overall score.';
+  // Return an empty string (falsy) when there is no nutrient delta to report so
+  // callers can fall back to their own TRANSLATED "similar profile" copy instead
+  // of leaking this English sentence. See app.js rerenderFocused (`if (deltaText)`).
+  if (parts.length === 0) return '';
   return `${parts.join(', ')} per 100g.`;
 }

@@ -3,7 +3,15 @@
 // Editorial right-side drawer: numbered sections (01/02/03/04),
 // segmented tabs for units, weighting slider, danger button + confirm dialog.
 
+import { setLang, getCurrentLang } from './i18n.js';
+
 const SETTINGS_KEY = 'foodlens.settings';
+
+const LANGUAGES = [
+  { code: 'en', label: 'English' },
+  { code: 'es', label: 'Español' },
+  { code: 'ca', label: 'Català' },
+];
 
 const DEFAULT_SETTINGS = {
   unitSystem: 'metric',    // 'metric' | 'imperial'
@@ -205,15 +213,24 @@ function buildTab(value, name, hint, checked) {
 }
 
 function buildLanguageSection(settings) {
+  // getCurrentLang() is the i18n source of truth, kept in sync with the header
+  // language buttons; fall back to the stored settings value if needed.
+  const activeLang = getCurrentLang() || settings.language || 'en';
   const select = el('select', {
     class: 'settings__select settings__section-control',
     'aria-label': 'Language',
-    disabled: true,
-    onChange: (e) => saveSettings('language', e.target.value),
+    onChange: (e) => {
+      const lang = e.target.value;
+      setLang(lang);               // switches the UI and persists foodlens.language
+      saveSettings('language', lang); // mirror choice in the settings object
+    },
   },
-    el('option', { value: 'en', selected: settings.language === 'en' }, 'English'),
+    ...LANGUAGES.map((lang) => el('option', {
+      value: lang.code,
+      selected: lang.code === activeLang,
+    }, lang.label)),
   );
-  const section = buildSection('02', 'Language', select, 'More languages coming soon.');
+  const section = buildSection('02', 'Language', select, 'Switch the interface language. Applies immediately.');
   // Legacy alias on the hint paragraph for tests.
   const hint = section.querySelector('.settings__section-hint');
   if (hint) hint.classList.add('settings__select-note');

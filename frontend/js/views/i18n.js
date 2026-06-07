@@ -68,12 +68,6 @@ export const translations = {
 
     // --- Filters & Categories ---
     'cat.all': 'All categories',
-    'filter.high_protein': 'High protein',
-    'filter.low_sodium': 'Low sodium',
-    'filter.plastic_free': 'Plastic-free',
-    'filter.no_gluten': 'Gluten-free',
-    'filter.no_lactose': 'Lactose-free',
-    'filter.no_nuts': 'Nut-free',
 
     'filter.group.criteria': 'Diet & Ethics',
     'filter.group.allergens': 'Allergens',
@@ -83,6 +77,11 @@ export const translations = {
     'filter.no_gluten': 'Gluten-free',
     'filter.no_lactose': 'Lactose-free',
     'filter.no_nuts': 'Nut-free',
+    'filter.no_soy': 'Soy-free',
+    'filter.no_egg': 'Egg-free',
+    'filter.no_fish': 'Fish-free',
+    'filter.low_co2': 'Low CO2',
+    'filter.organic': 'Organic',
     'compare.usual_title': 'Compared to your usual choice',
 
     'compare.no_usual_saved': 'You haven\'t set a usual product yet. Click "Set as usual" on any product first!',
@@ -107,6 +106,18 @@ export const translations = {
     'compare.compared_to_usual': 'Compared to this,',
     'compare.has': 'has',
     'compare.is_similar': 'has a very similar profile.',
+    'compare.current_label': 'Current:',
+
+    // --- Card actions / drill-down / chart UI ---
+    'card.set_usual': 'Set as usual',
+    'card.set_usual_category': 'Set as my usual {category}',
+    'toast.usual_set': 'Saved! Now select a different product to compare.',
+    'ui.selected_product': 'Selected product',
+    'ui.better_alternatives': 'Better alternatives in this category',
+    'ui.best_in_category': 'This is already among the best in its category.',
+    'ui.health_vs_eco': 'Health vs Eco in this category',
+    'ui.scatter_hint': 'Top-right corner = best on both axes. The orange star is this product.',
+    'ui.chart_error': 'Chart library could not load, but the product scores above are still available.',
   },
   es: {
     // ... (Mantén aquí todos los que ya teníamos de es)
@@ -168,12 +179,6 @@ export const translations = {
 
     // --- Filters & Categories ---
     'cat.all': 'Todas las categorías',
-    'filter.high_protein': 'Alto en proteína',
-    'filter.low_sodium': 'Bajo en sodio',
-    'filter.plastic_free': 'Sin plástico',
-    'filter.no_gluten': 'Sin gluten',
-    'filter.no_lactose': 'Sin lactosa',
-    'filter.no_nuts': 'Sin frutos secos',
 
     'cat.plant_milks': 'Leches vegetales',
     'cat.cereals': 'Cereales',
@@ -188,6 +193,11 @@ export const translations = {
     'filter.no_gluten': 'Sin gluten',
     'filter.no_lactose': 'Sin lactosa',
     'filter.no_nuts': 'Sin frutos secos',
+    'filter.no_soy': 'Sin soja',
+    'filter.no_egg': 'Sin huevo',
+    'filter.no_fish': 'Sin pescado',
+    'filter.low_co2': 'Bajo CO2',
+    'filter.organic': 'Ecológico',
     'compare.usual_title': 'Comparado con tu elección habitual',
 
     'compare.no_usual_saved': 'Aún no has fijado un producto habitual. ¡Pulsa primero "Set as usual" en cualquier producto!',
@@ -211,6 +221,18 @@ export const translations = {
     'compare.compared_to_usual': 'En comparación,',
     'compare.has': 'tiene',
     'compare.is_similar': 'tiene un perfil muy similar.',
+    'compare.current_label': 'Actual:',
+
+    // --- Card actions / drill-down / chart UI ---
+    'card.set_usual': 'Fijar como habitual',
+    'card.set_usual_category': 'Fijar como mi {category} habitual',
+    'toast.usual_set': '¡Guardado! Ahora selecciona un producto diferente para comparar.',
+    'ui.selected_product': 'Producto seleccionado',
+    'ui.better_alternatives': 'Mejores alternativas en esta categoría',
+    'ui.best_in_category': 'Este ya está entre los mejores de su categoría.',
+    'ui.health_vs_eco': 'Salud frente a Eco en esta categoría',
+    'ui.scatter_hint': 'Esquina superior derecha = mejor en ambos ejes. La estrella naranja es este producto.',
+    'ui.chart_error': 'No se pudo cargar la librería de gráficos, pero las puntuaciones del producto siguen disponibles arriba.',
 
   },
   ca: {
@@ -273,12 +295,6 @@ export const translations = {
 
     // --- Filters & Categories ---
     'cat.all': 'Totes les categories',
-    'filter.high_protein': 'Alt en proteïna',
-    'filter.low_sodium': 'Baix en sodi',
-    'filter.plastic_free': 'Sense plàstic',
-    'filter.no_gluten': 'Sense gluten',
-    'filter.no_lactose': 'Sense lactosa',
-    'filter.no_nuts': 'Sense fruits secs',
 
     'cat.plant_milks': 'Llets vegetals',
     'cat.cereals': 'Cereals',
@@ -293,6 +309,11 @@ export const translations = {
     'filter.no_gluten': 'Sense gluten',
     'filter.no_lactose': 'Sense lactosa',
     'filter.no_nuts': 'Sense fruits secs',
+    'filter.no_soy': 'Sense soja',
+    'filter.no_egg': 'Sense ou',
+    'filter.no_fish': 'Sense peix',
+    'filter.low_co2': 'Baix CO2',
+    'filter.organic': 'Ecològic',
     'compare.usual_title': 'Comparat amb la teva elecció habitual',
 
     'compare.no_usual_saved': 'Encara no has fixat un producte habitual. Prem primer "Set as usual" en qualsevol producte!',
@@ -317,6 +338,18 @@ export const translations = {
     'compare.compared_to_usual': 'En comparació,',
     'compare.has': 'té',
     'compare.is_similar': 'té un perfil molt similar.',
+    'compare.current_label': 'Actual:',
+
+    // --- Card actions / drill-down / chart UI ---
+    'card.set_usual': 'Fixar com a habitual',
+    'card.set_usual_category': 'Fixar com el meu {category} habitual',
+    'toast.usual_set': 'Desat! Ara selecciona un producte diferent per comparar.',
+    'ui.selected_product': 'Producte seleccionat',
+    'ui.better_alternatives': 'Millors alternatives en aquesta categoria',
+    'ui.best_in_category': 'Aquest ja és entre els millors de la seva categoria.',
+    'ui.health_vs_eco': 'Salut enfront d\'Eco en aquesta categoria',
+    'ui.scatter_hint': 'Cantonada superior dreta = millor en tots dos eixos. L\'estrella taronja és aquest producte.',
+    'ui.chart_error': 'No s\'ha pogut carregar la llibreria de gràfics, però les puntuacions del producte continuen disponibles a dalt.',
   }
 };
 

@@ -65,7 +65,12 @@ const GRADE_LABELS = {
   'not-applicable': '—',
 };
 
-const USUAL_PRODUCT_KEY = 'foodlens.usualProduct';
+// F-18: usual products are stored PER CATEGORY inside the onboarding profile
+// object (foodlens.profile) under a `usualByCategory` map, so a usual cola is
+// only ever compared against other colas. The legacy single global key
+// (foodlens.usualProduct) is migrated on first read.
+const PROFILE_KEY = 'foodlens.profile';
+const LEGACY_USUAL_PRODUCT_KEY = 'foodlens.usualProduct';
 
 const state = loadState();
 let lastResults = [];
@@ -558,11 +563,37 @@ async function renderScatterPlot(container, scatterData, focusedProduct) {
 // ─── product card ──────────────────────────────────────────────────────
 
 function pickReference(product, products) {
+  // F-18: when the user has set a "usual" for THIS product's category, the
+  // contrastive sentence re-anchors on that usual instead of the category
+  // average. A usual from a different category is never used here.
+  const usual = getUsualProduct(product);
+  if (usual && usual.code !== product.code && usual.category === product.category) {
+    return { kind: 'usual', ...usual };
+  }
   const sameCategory = products.filter((p) => p.code !== product.code && p.category === product.category);
   if (sameCategory.length >= 2) {
     return buildCategoryAverageReference(sameCategory, product.category);
   }
   return null;
+}
+
+// Turn an OFF category tag (e.g. "en:diet-cola-soft-drink") into a short,
+// human-readable label. Never invents a category: returns '' when absent.
+function categoryDisplayName(product) {
+  const cat = product?.category;
+  if (typeof cat !== 'string' || cat.length === 0) return '';
+  return cat.replace(/^[a-z]{2}:/, '').replace(/-/g, ' ').trim();
+}
+
+// Build the "Set as my usual <category>" button label, falling back to a plain
+// "Set as usual" when the product carries no category. Uses t() so the framing
+// stays translatable.
+function usualButtonLabel(product) {
+  const name = categoryDisplayName(product);
+  if (!name) {
+    return t('card.set_usual', 'Set as usual');
+  }
+  return t('card.set_usual_category', 'Set as my usual {category}').replace('{category}', name);
 }
 
 function renderProductCard(product, reference, isAlternative = false) {
@@ -666,7 +697,7 @@ function renderProductCard(product, reference, isAlternative = false) {
                 setUsualProduct(product);
               }
             },
-            t('card.set_usual', 'Set as usual')
+            usualButtonLabel(product)
           ),
           el(
             'button',
@@ -689,12 +720,14 @@ function renderProductCard(product, reference, isAlternative = false) {
               type: 'button', 
               class: 'btn btn--primary', 
               onClick: async () => {
-                const usual = getUsualProduct();
-                
+                // Pull the usual for THIS product's category so we never compare
+                // across shelves (e.g. a usual cola against a yoghurt).
+                const usual = getUsualProduct(product);
+
                 if (!usual) {
                   toast(t('compare.no_usual_saved', 'You haven\'t set a usual product yet. Click "Set as usual" on any product first!'));
                   return;
-                } 
+                }
                 if (usual.code === product.code) {
                   toast(t('compare.same_usual', 'This is already your usual product! Inspect a different one to compare.'));
                   return;
@@ -719,7 +752,10 @@ function renderProductCard(product, reference, isAlternative = false) {
 }
 
 function renderAlternativeCard(product, alternative) {
-  const delta = formatAlternativeDelta(product, alternative);
+  // formatAlternativeDelta now returns '' when there is no nutrient delta; fall
+  // back to the translated "similar profile" copy rather than an empty line.
+  const delta = formatAlternativeDelta(product, alternative)
+    || t('compare.similar', 'Very similar profile to your usual.');
   return el(
     'article',
     {
@@ -784,9 +820,10 @@ async function rerenderFocused() {
     return;
   }
   
-  // F-18: Recuperamos el objeto entero (Cero llamadas a la API = 100% offline support)
-  const usualProduct = getUsualProduct();
-  
+  // F-18: the usual is keyed by the focused product's category, so we only ever
+  // surface a usual that belongs to the same shelf.
+  const usualProduct = getUsualProduct(focusedProduct);
+
   const reference = pickReference(focusedProduct, lastResults);
   
   const [alternatives, scatterData] = await Promise.all([
@@ -803,8 +840,14 @@ async function rerenderFocused() {
   );
   els.focusedView.appendChild(renderProductCard(focusedProduct, reference, false));
 
-  // 2. F-18: Renderizado del Producto Habitual (Comparación Real)
-  if (usualProduct && usualProduct.code !== focusedProduct.code) {
+  // 2. F-18: Renderizado del Producto Habitual (Comparación Real).
+  // Guard by CATEGORY (not just code) so a usual from one shelf is never
+  // compared against a product from another.
+  if (
+    usualProduct &&
+    usualProduct.code !== focusedProduct.code &&
+    usualProduct.category === focusedProduct.category
+  ) {
     els.focusedView.appendChild(
       el('h3', { id: 'usual-comparison-section', class: 'section__subtitle' }, t('compare.usual_title', 'Compared to your usual choice')),
     );
@@ -832,13 +875,12 @@ async function rerenderFocused() {
 
     if (deltaText) {
        deltaParagraph.append(
-         `👉 ${t('compare.compared_to_usual', 'Compared to this,')} `,
+         `${t('compare.compared_to_usual', 'Compared to this,')} `,
          el('strong', {}, currentName),
          ` ${t('compare.has', 'has')} ${deltaText}`
        );
     } else {
        deltaParagraph.append(
-         `🤝 `,
          el('strong', {}, currentName),
          ` ${t('compare.is_similar', 'has a very similar profile.')}`
        );
@@ -980,11 +1022,12 @@ function rerenderResults() {
     els.resultsList.appendChild(card);
   }
   if (els.resultsCount) {
-    els.resultsCount.textContent = lastResults.length === 0
+    // Report the FILTERED count so the number is truthful when filters hide rows.
+    els.resultsCount.textContent = filteredResults.length === 0
       ? 'No results'
-      : `${lastResults.length} ${lastResults.length === 1 ? 'result' : 'results'}`;
+      : `${filteredResults.length} ${filteredResults.length === 1 ? 'result' : 'results'}`;
   }
-  setHidden(els.emptyState, lastResults.length > 0);
+  setHidden(els.emptyState, filteredResults.length > 0);
   if (els.sourceBadge) {
     const isSample = lastResults.some((p) => p.source === 'sample');
     els.sourceBadge.hidden = !isSample;
@@ -995,6 +1038,7 @@ function rerenderResults() {
 
 async function runSearch(query, opts = {}) {
   const ingredient = (opts.ingredient || '').trim();
+  const categoryTag = (opts.categoryTag || '').trim();
   setHidden(els.loading, false);
   try {
     let results;
@@ -1005,8 +1049,8 @@ async function runSearch(query, opts = {}) {
         trackView(single.code, single);
         renderRecentlyViewed(els.recentlyViewed, (code) => runSearch(code));
       }
-    } else if (query || ingredient) {
-      results = await searchProducts(query, { ingredient });
+    } else if (query || ingredient || categoryTag) {
+      results = await searchProducts(query, { ingredient, categoryTag });
     } else {
       results = await getAllSampleProducts();
     }
@@ -1281,58 +1325,92 @@ function initCategories() {
   initCategoryBrowser(els.categoryBrowser, (selectedCategory) => {
     console.log('[HCI System Feedback] Category changed:', selectedCategory);
 
-    const searchQuery = selectedCategory === 'all' 
-      ? '' 
-      : selectedCategory.replace('en:', '').replace(/-/g, ' ');
-    
-    //runSearch(searchQuery);
+    // 'all' clears the category filter and shows the full sample set.
+    // Otherwise route the OFF category tag (e.g. "en:cereals") through the
+    // categories_tags param so results are scoped correctly, not free-text.
+    const categoryTag = selectedCategory === 'all' ? '' : selectedCategory;
+    runSearch('', { categoryTag });
   }, t);
 }
+
+// Tokenise an OFF *_tags string ("en:milk en:gluten") into bare tokens
+// (["milk", "gluten"]). The "en:" / "xx:" language prefix is stripped so we
+// compare on the meaningful tag, not the locale.
+function tagTokens(tagString) {
+  if (!tagString) return [];
+  return tagString
+    .split(/\s+/)
+    .map((token) => token.includes(':') ? token.slice(token.indexOf(':') + 1) : token)
+    .filter(Boolean);
+}
+
+// Map each allergen chip to the exact OFF allergen tokens it must exclude.
+// Matching is EXACT against tokens, never substring, so "coconut" never trips
+// the "nuts" filter and "nutmeg" never trips it either.
+const ALLERGEN_TOKENS = {
+  'no-gluten': ['gluten'],
+  'no-lactose': ['milk'],
+  'no-nuts': ['nuts', 'peanuts'],
+  'no-soy': ['soybeans', 'soya', 'soy'],
+  'no-egg': ['eggs'],
+  'no-fish': ['fish'],
+};
 
 function passesFilters(product, filters) {
   if (!filters || filters.length === 0) return true;
 
   for (const filterId of filters) {
+    // ─── Allergens (F-32): exact token match; '' allergens = unknown, never hide ───
+    if (filterId in ALLERGEN_TOKENS) {
+      const tokens = tagTokens(product.allergens);
+      if (tokens.length === 0) continue; // unknown allergens -> do not exclude
+      const banned = ALLERGEN_TOKENS[filterId];
+      if (tokens.some((token) => banned.includes(token))) return false;
+      continue;
+    }
+
     switch (filterId) {
       // ─── Diet & Ethics ───
-      case 'high-protein':
-        // STRICT: If protein data is missing or below 8g, hide the product.
-        if ((product.nutrients?.proteins_100g || 0) < 8) return false;
+      case 'high-protein': {
+        // Missing protein data is unknown, not "0" — do not exclude on absence.
+        const protein = product.nutrients?.proteins_100g;
+        if (protein != null && protein < 8) return false;
         break;
+      }
 
-      case 'low-sodium':
-        // STRICT: If salt content is higher than 0.12g, hide the product.
-        if ((product.nutrients?.salt_100g || 1) > 0.12) return false;
+      case 'low-sodium': {
+        // Missing salt data is unknown — do not exclude on absence.
+        const salt = product.nutrients?.salt_100g;
+        if (salt != null && salt > 0.12) return false;
         break;
+      }
 
-      case 'plastic-free':
-        const packaging = (product.packaging || '').toLowerCase();
-        // STRICT: If packaging material is not explicitly specified,
-        // or if it contains plastic, hide the product.
-        if (!packaging || packaging.includes('plastic')) return false;
+      case 'plastic-free': {
+        // Only hide products whose packaging ACTUALLY indicates plastic.
+        // Unknown packaging ('') must NOT be hidden (unknown != plastic).
+        const tokens = tagTokens(product.packaging);
+        if (tokens.some((token) => token.includes('plastic'))) return false;
         break;
+      }
 
-      // ─── Allergens ───
-      case 'no-gluten':
-        const allergensG = (product.allergens || '').toLowerCase();
-        if (allergensG.includes('gluten') || allergensG.includes('wheat')) return false;
+      // ─── Eco (F-20) ───
+      case 'low-co2': {
+        // Use the eco grade as a CO2 proxy: keep only a/b. Unknown grade is not
+        // a value, so do not exclude on absence.
+        const grade = product.ecoScore?.grade;
+        if (grade && grade !== 'a' && grade !== 'b') return false;
         break;
+      }
 
-      case 'no-lactose':
-        const allergensL = (product.allergens || '').toLowerCase();
-        if (allergensL.includes('milk') || allergensL.includes('lactose')) return false;
+      case 'organic': {
+        // OFF exposes organic via labels_tags (e.g. "en:organic"). If labels
+        // data is absent we treat it as unknown and do not exclude — we never
+        // invent an "organic" status the API did not provide.
+        const tokens = tagTokens(product.labels);
+        if (tokens.length === 0) continue; // unknown labels -> do not exclude
+        if (!tokens.some((token) => token.includes('organic'))) return false;
         break;
-
-      case 'no-nuts':
-        const allergensN = (product.allergens || '').toLowerCase();
-        if (
-          allergensN.includes('nut') ||
-          allergensN.includes('almond') ||
-          allergensN.includes('peanut')
-        ) {
-          return false;
-        }
-        break;
+      }
     }
   }
 
@@ -1354,21 +1432,86 @@ function initProductFilters() {
   }, t);
 }
 
-// --- F-18: Guardamos el OBJETO entero, no solo el código ---
+// --- F-18: usual products stored per category inside foodlens.profile ---
+
+// Normalise a product category into a stable map key. Missing category data is
+// never invented: such products fall back to a shared "uncategorised" bucket so
+// the feature still works without claiming a category the API did not provide.
+function usualCategoryKey(product) {
+  const cat = product?.category;
+  return typeof cat === 'string' && cat.length > 0 ? cat : '__uncategorised__';
+}
+
+function loadProfileObject() {
+  try {
+    const raw = localStorage.getItem(PROFILE_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+// Read the per-category usual map, migrating the legacy single-key value once.
+function getUsualByCategory() {
+  const profile = loadProfileObject();
+  const map = profile.usualByCategory && typeof profile.usualByCategory === 'object'
+    ? profile.usualByCategory
+    : {};
+
+  // One-time migration of the old global key into this category-keyed map.
+  try {
+    const legacyRaw = localStorage.getItem(LEGACY_USUAL_PRODUCT_KEY);
+    if (legacyRaw) {
+      const legacy = JSON.parse(legacyRaw);
+      if (legacy && legacy.code) {
+        const key = usualCategoryKey(legacy);
+        if (!map[key]) {
+          map[key] = legacy;
+          profile.usualByCategory = map;
+          try {
+            localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+          } catch {
+            /* storage disabled, ignore */
+          }
+        }
+      }
+      localStorage.removeItem(LEGACY_USUAL_PRODUCT_KEY);
+    }
+  } catch {
+    /* malformed legacy value, ignore */
+  }
+
+  return map;
+}
+
+// Persist the whole product object under its category key.
 function setUsualProduct(productObj) {
-  localStorage.setItem(USUAL_PRODUCT_KEY, JSON.stringify(productObj));
-  // Mensaje más claro para la UX
+  const profile = loadProfileObject();
+  const map = profile.usualByCategory && typeof profile.usualByCategory === 'object'
+    ? { ...profile.usualByCategory }
+    : {};
+  map[usualCategoryKey(productObj)] = productObj;
+  profile.usualByCategory = map;
+  try {
+    localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+  } catch {
+    /* storage disabled, ignore */
+  }
   toast(t('toast.usual_set', 'Saved! Now select a different product to compare.'));
   rerenderFocused();
 }
 
-function getUsualProduct() {
-  try {
-    const raw = localStorage.getItem(USUAL_PRODUCT_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch {
-    return null;
+// Return the usual for a given product's category (the focused product's
+// category when comparing). Without a category we still expose any single
+// stored usual so the legacy/uncategorised case keeps working.
+function getUsualProduct(forProduct) {
+  const map = getUsualByCategory();
+  if (forProduct) {
+    return map[usualCategoryKey(forProduct)] || null;
   }
+  const entries = Object.values(map);
+  return entries.length === 1 ? entries[0] : null;
 }
 
 function requestSeasonalLocation() {

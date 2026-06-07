@@ -98,6 +98,46 @@
   background-color: rgba(0,0,0,0.03);
 }
 
+/* F-34: best value per nutrient row (lower is better for sugar/salt/sat-fat/
+   energy; higher for fibre/protein). Editorial highlight, not a coloured fill,
+   so it reads in both light and dark mode. */
+.editorial-table td.cell--winner {
+  font-weight: 700;
+  background-color: rgba(26, 26, 26, 0.06);
+  box-shadow: inset 0 0 0 2px #1a1a1a;
+}
+
+.editorial-table td.cell--winner::after {
+  content: " \2605"; /* star marks the winning cell */
+  font-size: 0.75em;
+}
+
+/* F-34: nutrient-levels chips row (low/moderate/high per nutrient). */
+.cell-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  justify-content: center;
+}
+
+.cell-chip {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border: 1px solid #1a1a1a;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  white-space: nowrap;
+}
+
+.cell-chip--low { background-color: #d8efd8; }
+.cell-chip--moderate { background-color: #fdf0cc; }
+.cell-chip--high { background-color: #f7d9d4; }
+.cell-chip--unknown {
+  background-color: transparent;
+  border-style: dashed;
+  color: #666;
+}
+
 /* --- ESTILO DEL SELECTOR EN LA TARJETA (DISEÑO EDITORIAL CENTRADO) --- */
 
 .card-compare-action {
@@ -161,4 +201,42 @@
 
 .card-compare-action input[type="checkbox"]:checked + .compare-custom-toggle::before {
   content: attr(data-text-selected);
+}
+/* ─── F-19 ranked summary (H5: ranked list + per-product justification) ─── */
+.ranked-summary {
+  margin-bottom: 1.5rem;
+}
+
+.ranked-summary:empty {
+  display: none;
+}
+
+.ranked-summary__title {
+  font-size: 1rem;
+  margin: 0 0 0.75rem;
+}
+
+.ranked-summary__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.ranked-summary__item {
+  display: grid;
+  gap: 0.15rem;
+  padding: 0.5rem 0.75rem;
+  border-left: 3px solid var(--color-ink);
+  background: var(--color-paper-2, rgba(0, 0, 0, 0.03));
+}
+
+.ranked-summary__name {
+  font-weight: 600;
+}
+
+.ranked-summary__why {
+  font-size: 0.85rem;
+  opacity: 0.8;
 }
