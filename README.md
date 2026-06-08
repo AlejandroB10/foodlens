@@ -68,6 +68,7 @@ The backend respects OFF rate limits: 10 req/min on `/search`, 100 req/min on `/
 | Route | Purpose |
 |---|---|
 | `GET /health` | Liveness + diagnostics (index size, cache backend, model status) |
+| `GET /api/products?limit&offset` | Full index catalogue (powers the listing / "All categories" instead of the 10-sample fallback) |
 | `GET /api/search?...` | OFF product search proxy (cached) |
 | `GET /api/product/<barcode>` | Single product (cached) |
 | `GET /api/alternatives/<barcode>` | Weighted-KNN strictly-better alternatives + contrastive deltas |

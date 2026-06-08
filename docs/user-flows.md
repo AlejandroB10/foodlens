@@ -24,7 +24,7 @@ Full personas live in `../Assignments/03-assignment/openspec/artifacts/personas-
    - Nutri-Score badge (left) and Eco-Score badge (right) **side by side (F-07)** — both always visible
    - `nutrient_levels` chips
    - Contrastive sentence **open by default (F-10)**: *"Among oat milks, this one has 30% less sugar per 100g than the category average."*
-   - Three action buttons at the bottom (F-17)
+   - Action row at the bottom (F-17): favourite heart + *Compare with my usual* (F-18), plus *Share product* and *Print card*
 5. User sees the **weighting slider (F-12)** above the results. Default 70% health / 30% eco.
 6. User drags the slider to 30% health / 70% eco. Cards re-rank live (debounced).
 7. User taps a card to open its detail view, which expands the sentence into a small nutrient drill-down (numbers per 100g).
@@ -33,7 +33,7 @@ Full personas live in `../Assignments/03-assignment/openspec/artifacts/personas-
 
 #### Marc Vidal (Time-Strapped Pragmatist)
 
-Marc filled in the onboarding once. He searches `"oat milk"`, glances at the top three cards. He needs the **first card** to be the right answer because he is not going to scroll. He reads the contrastive sentence ("30% less sugar than the category average") and trusts the algorithm because the sentence is concrete. He picks the top card and taps *Add to shopping list*. **Total time: under 15 seconds.** If the slider is hidden or the explanation is collapsed, Marc disengages.
+Marc filled in the onboarding once. He searches `"oat milk"`, glances at the top three cards. He needs the **first card** to be the right answer because he is not going to scroll. He reads the contrastive sentence ("30% less sugar than the category average") and trusts the algorithm because the sentence is concrete. He picks the top card and taps *Compare with my usual* to confirm it beats his current buy. **Total time: under 15 seconds.** If the slider is hidden or the explanation is collapsed, Marc disengages.
 
 **Acceptance for Marc**: the right product is in the top three for the default 70/30 weighting; the contrastive sentence is visible without expanding anything.
 
@@ -67,7 +67,7 @@ Lluís searched `"oat milk"`. He is suspicious of the algorithm's defaults becau
 4. Below the card, **Alternative Engine (F-15)** displays up to 3 alternatives ranked by the current slider weighting.
 5. Each alternative shows: name + image + Nutri/Eco badges + **one-line delta (F-16)**, e.g. *"4.1g less sugar, 3.7g more protein per 100g."*
 6. User taps an alternative. That alternative becomes the focused card. The original product moves into a small "Was looking at" link at the top.
-7. User taps an action button (Add to shopping list / See recipe / Compare with usual).
+7. User taps an action button (Compare with my usual / Share product / save via the favourite heart).
 
 ### Per-persona walkthrough
 
@@ -108,7 +108,7 @@ Lluís scanned a packaged snack. He notices the alternatives section includes a 
    - Both badges
    - One-line contrastive justification ("vs the worst of the selection" or "vs the best Eco-Score in the selection")
 5. User can re-rank by moving the slider, which immediately reorders the list.
-6. User picks one and triggers an action (add to list, etc.).
+6. User picks one and triggers an action (Compare with my usual, Share product, or save via the favourite heart).
 
 ### Per-persona walkthrough
 

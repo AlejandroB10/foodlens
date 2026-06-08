@@ -45,6 +45,15 @@
   .toast-host,
   .personas-showcase,
   .alt-grid,
+  .search-controls-bar,
+  #category-browser,
+  #filters-browser,
+  .category-browser,
+  .filters-browser,
+  #comparison-tray,
+  .comparison-tray,
+  .telemetry-banner,
+  #focused .card-compare-action,
   #focused .section__subtitle {
     display: none !important;
   }
@@ -108,14 +117,31 @@
     content: "Printed " attr(data-printed-at) " · openfoodfacts.org · A FoodLens / UIB tear-sheet";
   }
 
-  /* ─── Card header (title + brand) ────────────────────────────── */
+  /* ─── Card header (image + title + brand) ────────────────────── */
   #focused .card__header {
-    display: block !important;
+    display: flex !important;
+    align-items: flex-start;
+    gap: 5mm;
     margin-bottom: 6mm;
+    page-break-inside: avoid;
   }
 
-  #focused .card__image,
-  #focused .card__image-wrap,
+  /* Show the real product photo; the placeholder box stays hidden so a
+     product with no image never prints an empty square. */
+  #focused .card__image {
+    display: block !important;
+    flex: 0 0 auto;
+    width: 35mm;
+    height: 35mm;
+    object-fit: contain;
+    border: 1px solid #1a1a18;
+    background: #fff;
+    padding: 1mm;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    page-break-inside: avoid;
+  }
+
   #focused .card__image--placeholder,
   #focused .card__source-tag,
   #focused .card__meta,
@@ -125,6 +151,7 @@
 
   #focused .card__title-block {
     display: block;
+    flex: 1 1 auto;
   }
 
   #focused .card__title {
@@ -326,6 +353,59 @@
     border-bottom: 0.5pt solid #c9c2b0;
     color: #1a1a18;
     font-variant-numeric: tabular-nums;
+  }
+
+  /* ─── Advanced explanation (SHAP) — drill-down, force-open ──────
+     The <details> is force-opened by JS and the Chart.js canvas is
+     awaited before window.print(). When no backend is present the block
+     resolves to .card__advanced-unavailable, which we suppress so the
+     sheet never prints an error or loading state. */
+  #focused .card__advanced {
+    display: block !important;
+    margin: 0 0 6mm;
+    page-break-inside: avoid;
+  }
+
+  #focused .card__advanced-summary {
+    list-style: none;
+    display: block;
+    font-family: var(--font-body, sans-serif);
+    font-size: 9pt;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: #5a574f;
+    border-bottom: 1px solid #1a1a18;
+    padding-bottom: 2mm;
+    margin-bottom: 3mm;
+  }
+
+  #focused .card__advanced-summary::-webkit-details-marker {
+    display: none;
+  }
+
+  #focused .card__advanced-caption {
+    font-family: var(--font-body, sans-serif);
+    font-size: 8.5pt;
+    line-height: 1.35;
+    color: #5a574f;
+    margin: 0 0 3mm;
+  }
+
+  #focused .card__shap-canvas {
+    display: block !important;
+    width: 100% !important;
+    max-width: 165mm;
+    height: auto !important;
+    max-height: 80mm;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+    page-break-inside: avoid;
+  }
+
+  #focused .card__advanced-unavailable,
+  #focused .card__advanced-loading {
+    display: none !important;
   }
 
   /* ─── Action buttons (always hidden in print) ────────────────── */

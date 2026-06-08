@@ -45,8 +45,6 @@
         </div>
         <div class="site-header__meta">
           <span class="small-caps">UIB · HCI 11755 · WA4</span>
-          
-          <span class="small-caps">Issue Nº 001 · 2026</span>
 
           <span class="small-caps">Open Food Facts</span>
 
@@ -204,7 +202,7 @@
       <section id="results" class="results" aria-labelledby="results-title">
         <div class="section-head">
           <h2 id="results-title" data-i18n="ui.results">Results</h2>
-          <p id="results-count" class="results-count">Loading…</p>
+          <p id="results-count" class="results-count" aria-live="polite">Loading…</p>
         </div>
 
         <div id="empty-state" class="empty-state" hidden>
@@ -218,6 +216,7 @@
         </div>
 
         <div id="results-list" class="results-list" aria-live="polite"></div>
+        <div id="results-more" class="results-more"></div>
       </section>
 
     </main>

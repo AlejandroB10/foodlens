@@ -5,6 +5,7 @@ import {
   getProductByBarcode,
   searchProducts,
   getAllSampleProducts,
+  getCatalogProducts,
   getAlternativesFromBackend,
   getExplainFromBackend,
   getCategoryScatter,
@@ -28,6 +29,10 @@ import { initI18n, setLang, t } from './views/i18n.js';
 
 const STORAGE_KEY = 'foodlens.state';
 const SEASONAL_HINT_KEY = 'foodlens.seasonalHint';
+// Render cap for the catalogue listing: fetch (and draw) at most this many cards
+// so 862 products don't tank the DOM. The full catalogue stays reachable via
+// search / category chips.
+const CATALOG_RENDER_CAP = 80;
 const ZXING_BROWSER_URL = 'https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/+esm';
 const CHART_JS_URL = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js';
 const DEFAULT_STATE = {
@@ -77,6 +82,26 @@ let lastResults = [];
 let focusedProduct = null;
 let currentFilters = [];
 
+// ─── listing pagination (universal "Load more") ───────────────────────
+// Source-aware model so EVERY paginable listing can offer "Load more", not
+// only the catalogue. The active `listingSource` decides how the next page is
+// fetched and when the button hides:
+//   'catalogue' → getCatalogProducts({ offset })            (exact total)
+//   'category'  → getCatalogProducts({ category, offset })  (exact total)
+//   'search'    → searchProducts(query, { page })           (no total; infer)
+//   null/barcode → never paginates (single or sample result set).
+const OFF_PAGE_SIZE = 20; // mirrors searchProducts default pageSize
+let listingSource = null; // null | 'catalogue' | 'category' | 'search'
+let listingOffset = 0; // products already loaded (index sources)
+let listingTotal = 0; // exact total for index sources
+let listingCategory = null; // the en:* tag when source === 'category'
+let listingQuery = ''; // free-text query when source === 'search'
+let listingIngredient = ''; // ingredient filter carried into 'search' paging
+let listingCategoryTag = ''; // category tag carried into 'search' paging (OFF fallback)
+let listingPage = 1; // OFF page number for source === 'search'
+let listingHasMore = false; // authoritative "show button?" flag for 'search'
+let loadingMore = false; // re-entrancy guard while a page is in flight
+
 // ─── telemetry (F-45) ──────────────────────────────────────────────────
 
 const TELEMETRY_KEY = 'foodlens.telemetry_opt_in';
@@ -100,6 +125,13 @@ const telemetry = {
 // Timestamp set when search completes — used to compute decision_time.
 let _searchCompletedAt = null;
 
+// Monotonic request token. Each runSearch call claims the next epoch; only the
+// latest claimant is allowed to commit results. This makes concurrent searches
+// last-CALL-wins (the user's most recent action) instead of last-RESOLVE-wins,
+// so a slow initial catalogue load can never clobber a freshly clicked category
+// shelf (or vice versa).
+let _searchEpoch = 0;
+
 // ─── DOM lookups ──────────────────────────────────────────────────────
 
 const els = {
@@ -109,6 +141,7 @@ const els = {
   resultsRegion: document.querySelector('#results'),
   resultsList: document.querySelector('#results-list'),
   resultsCount: document.querySelector('#results-count'),
+  loadMore: document.querySelector('#results-more'),
   sourceBadge: document.querySelector('#source-badge'),
   seasonalHint: document.querySelector('#seasonal-hint'),
   seasonalHintText: document.querySelector('#seasonal-hint-text'),
@@ -308,7 +341,7 @@ function renderNutrientTable(nutrients) {
 // programmatically expand them, take the snapshot, then restore the state
 // the user actually had. Without this the nutrient table is missing from
 // every printout — which is what the F-30 user complained about.
-function printFocusedCard() {
+async function printFocusedCard() {
   const focused = document.getElementById('focused');
   if (!focused) {
     window.print();
@@ -318,6 +351,8 @@ function printFocusedCard() {
   const wasOpen = new Map();
   detailsList.forEach((d) => {
     wasOpen.set(d, d.hasAttribute('open'));
+    // Setting the `open` attribute fires the native `toggle` event, which
+    // for the SHAP `<details>` kicks off its on-demand fetch + chart render.
     d.setAttribute('open', '');
   });
 
@@ -338,9 +373,58 @@ function printFocusedCard() {
   };
   window.addEventListener('afterprint', restore);
 
-  // Give the browser one frame to flush the open state into layout
+  // Wait for the on-demand SHAP chart to finish painting before printing.
+  // Opening the `.card__advanced` <details> above already triggered its
+  // toggle handler (fetch + renderShapChart). We poll for the rendered
+  // canvas; if the backend is absent or SHAP is unavailable the poll
+  // resolves on the "unavailable" message or the timeout, so the
+  // no-backend path is never blocked — printing still proceeds.
+  await waitForShapReady(focused, 2500);
+
+  // The product photo is loading="lazy"; img.complete can read true before the
+  // bitmap is decoded, which captures an empty image box in the printout.
+  // Force-decode it first so the photo actually paints into the tear-sheet.
+  await waitForFocusedImage(focused, 1500);
+
+  // One extra frame so the just-painted canvas is flushed into print layout
   // before opening the print dialog.
   requestAnimationFrame(() => window.print());
+}
+
+// Force-decode the focused product photo so it is painted in the print
+// snapshot. Never rejects: a missing/broken image or the timeout resolves it.
+function waitForFocusedImage(focused, timeoutMs) {
+  const img = focused.querySelector('.card__image');
+  if (!img) return Promise.resolve();
+  const decoded = typeof img.decode === 'function'
+    ? img.decode().catch(() => {})
+    : Promise.resolve();
+  const timeout = new Promise((resolve) => { setTimeout(resolve, timeoutMs); });
+  return Promise.race([decoded, timeout]);
+}
+
+// Resolve as soon as the SHAP canvas exists AND has been painted, OR the
+// advanced block reported "unavailable", OR the timeout elapses. This
+// promise NEVER rejects, so a missing/slow backend cannot block printing.
+function waitForShapReady(focused, timeoutMs) {
+  const advanced = focused.querySelector('.card__advanced');
+  if (!advanced) return Promise.resolve(); // alternatives have no SHAP block
+  return new Promise((resolve) => {
+    const start = performance.now();
+    const tick = () => {
+      const canvas = advanced.querySelector('.card__shap-canvas');
+      const unavailable = advanced.querySelector('.card__advanced-unavailable');
+      // Chart.js registers the instance on the canvas once it has rendered;
+      // a painted canvas also reports a positive intrinsic width.
+      const painted = canvas && ((window.Chart && window.Chart.getChart && window.Chart.getChart(canvas)) || canvas.width > 0);
+      if (painted || unavailable || performance.now() - start > timeoutMs) {
+        resolve();
+        return;
+      }
+      requestAnimationFrame(tick);
+    };
+    tick();
+  });
 }
 
 // ─── share product ─────────────────────────────────────────────────────
@@ -401,6 +485,9 @@ async function renderShapChart(canvas, shapData) {
       }],
     },
     options: {
+      // Paint synchronously (no animation) so the chart is fully rendered on
+      // the first frame — required for the print snapshot in printFocusedCard.
+      animation: false,
       indexAxis: 'y',
       responsive: true,
       plugins: {
@@ -567,7 +654,7 @@ function pickReference(product, products) {
   // contrastive sentence re-anchors on that usual instead of the category
   // average. A usual from a different category is never used here.
   const usual = getUsualProduct(product);
-  if (usual && usual.code !== product.code && usual.category === product.category) {
+  if (usual && usual.code !== product.code && usualCategoryKey(usual) === usualCategoryKey(product)) {
     return { kind: 'usual', ...usual };
   }
   const sameCategory = products.filter((p) => p.code !== product.code && p.category === product.category);
@@ -706,19 +793,9 @@ function renderProductCard(product, reference, isAlternative = false) {
           ),
           el(
             'button',
-            { type: 'button', class: 'btn btn--ghost', dataset: { i18n: 'card.recipe' }, onClick: () => toast('Recipe view coming soon (F-17).') },
-            t('card.recipe', 'See recipe'),
-          ),
-          el(
-            'button',
-            { type: 'button', class: 'btn btn--ghost', dataset: { i18n: 'card.add_list' }, onClick: () => toast('Shopping list coming soon (F-17).') },
-            t('card.add_list', 'Add to list'),
-          ),
-          el(
-            'button',
-            { 
-              type: 'button', 
-              class: 'btn btn--primary', 
+            {
+              type: 'button',
+              class: 'btn btn--primary',
               onClick: async () => {
                 // Pull the usual for THIS product's category so we never compare
                 // across shelves (e.g. a usual cola against a yoghurt).
@@ -841,12 +918,13 @@ async function rerenderFocused() {
   els.focusedView.appendChild(renderProductCard(focusedProduct, reference, false));
 
   // 2. F-18: Renderizado del Producto Habitual (Comparación Real).
-  // Guard by CATEGORY (not just code) so a usual from one shelf is never
-  // compared against a product from another.
+  // Guard by SHELF KEY (not just code, and not the over-granular leaf tag) so a
+  // usual from one shelf is never compared against a product from another, while
+  // same-shelf products with different leaf tags still match.
   if (
     usualProduct &&
     usualProduct.code !== focusedProduct.code &&
-    usualProduct.category === focusedProduct.category
+    usualCategoryKey(usualProduct) === usualCategoryKey(focusedProduct)
   ) {
     els.focusedView.appendChild(
       el('h3', { id: 'usual-comparison-section', class: 'section__subtitle' }, t('compare.usual_title', 'Compared to your usual choice')),
@@ -997,6 +1075,85 @@ async function computeAlternatives(product, pool) {
   return computeAlternativesJS(product, pool);
 }
 
+// True while the active source still has a next page to offer.
+function listingHasNextPage() {
+  if (listingSource === 'catalogue' || listingSource === 'category') {
+    return listingOffset < listingTotal;
+  }
+  if (listingSource === 'search') return listingHasMore;
+  return false; // null / barcode → never paginates
+}
+
+// Fetch the next page for the ACTIVE source and APPEND it to lastResults, then
+// re-render so the new cards re-enter the active filter/sort order and keep both
+// badges (H1). Each source knows how to fetch its own next page and when to stop.
+async function loadMoreListing() {
+  if (loadingMore || !listingSource) return;
+  if (!listingHasNextPage()) return;
+  loadingMore = true;
+  renderLoadMore(); // reflect the loading state (disabled button)
+  try {
+    if (listingSource === 'catalogue' || listingSource === 'category') {
+      const page = await getCatalogProducts({
+        limit: CATALOG_RENDER_CAP,
+        offset: listingOffset,
+        category: listingSource === 'category' ? listingCategory : null,
+      });
+      if (page && page.products.length > 0) {
+        lastResults = lastResults.concat(page.products);
+        listingOffset += page.products.length;
+        listingTotal = page.total; // trust the latest reported total
+        rerenderResults(); // respects filters/sort and re-renders both badges
+      } else {
+        // No more products (or backend dropped): stop offering "Load more".
+        listingTotal = listingOffset;
+      }
+    } else if (listingSource === 'search') {
+      // OFF /search gives no reliable total, so we page until a short/empty
+      // page comes back. A full page (>= page_size) means probably more.
+      listingPage += 1;
+      const next = await searchProducts(listingQuery, {
+        ingredient: listingIngredient,
+        categoryTag: listingCategoryTag,
+        page: listingPage,
+      });
+      if (next && next.length > 0) {
+        lastResults = lastResults.concat(next);
+        listingHasMore = next.length >= OFF_PAGE_SIZE;
+        rerenderResults();
+      } else {
+        listingHasMore = false;
+      }
+    }
+  } finally {
+    loadingMore = false;
+    renderLoadMore();
+  }
+}
+
+// Single source of truth for the "Load more" control. Renders a real <button>
+// only while the active source has another page remaining.
+function renderLoadMore() {
+  if (!els.loadMore) return;
+  clear(els.loadMore);
+  if (!listingHasNextPage()) return;
+  const label = loadingMore
+    ? t('ui.loading_more', 'Loading…')
+    : t('ui.load_more', 'Load more');
+  const button = el(
+    'button',
+    {
+      type: 'button',
+      class: 'btn btn--ghost',
+      'aria-label': label,
+      disabled: loadingMore,
+      onClick: loadMoreListing,
+    },
+    label
+  );
+  els.loadMore.appendChild(button);
+}
+
 function rerenderResults() {
   if (!els.resultsList) return;
   clear(els.resultsList);
@@ -1023,9 +1180,23 @@ function rerenderResults() {
   }
   if (els.resultsCount) {
     // Report the FILTERED count so the number is truthful when filters hide rows.
-    els.resultsCount.textContent = filteredResults.length === 0
-      ? 'No results'
-      : `${filteredResults.length} ${filteredResults.length === 1 ? 'result' : 'results'}`;
+    if (filteredResults.length === 0) {
+      els.resultsCount.textContent = 'No results';
+    } else {
+      const noun = filteredResults.length === 1 ? 'result' : 'results';
+      // On an index-backed listing (catalogue or category) with no filter hiding
+      // rows, show "X of N" so the user sees how much of the scope is loaded
+      // (announced via aria-live). Search has no exact total → plain count only.
+      const indexBacked =
+        listingSource === 'catalogue' || listingSource === 'category';
+      const showProgress =
+        indexBacked && filteredResults.length === lastResults.length;
+      els.resultsCount.textContent = showProgress
+        ? t('catalogue.showing', '{loaded} of {total}')
+            .replace('{loaded}', String(lastResults.length))
+            .replace('{total}', String(listingTotal))
+        : `${filteredResults.length} ${noun}`;
+    }
   }
   setHidden(els.emptyState, filteredResults.length > 0);
   if (els.sourceBadge) {
@@ -1037,9 +1208,26 @@ function rerenderResults() {
 // ─── search ────────────────────────────────────────────────────────────
 
 async function runSearch(query, opts = {}) {
+  const myEpoch = ++_searchEpoch;
   const ingredient = (opts.ingredient || '').trim();
   const categoryTag = (opts.categoryTag || '').trim();
   setHidden(els.loading, false);
+  // Reset listing pagination so a new search never inherits a stale offset, a
+  // stale source, or a lingering "Load more" button from a previous listing.
+  listingSource = null;
+  listingOffset = 0;
+  listingTotal = 0;
+  listingCategory = null;
+  listingQuery = '';
+  listingIngredient = '';
+  listingCategoryTag = '';
+  listingPage = 1;
+  listingHasMore = false;
+  loadingMore = false;
+  renderLoadMore();
+  // A pure category listing is a chip click: a category tag with no free-text
+  // query and no ingredient. Those are served from the index, not OFF.
+  const isPureCategory = Boolean(categoryTag) && !query && !ingredient;
   try {
     let results;
     if (/^\d{8,13}$/.test(query)) {
@@ -1049,14 +1237,65 @@ async function runSearch(query, opts = {}) {
         trackView(single.code, single);
         renderRecentlyViewed(els.recentlyViewed, (code) => runSearch(code));
       }
+      // Single result: listingSource stays null → never shows "Load more".
+    } else if (isPureCategory) {
+      // Category chip: serve the shelf FROM THE INDEX (reliable, has a real
+      // total) instead of OFF /search, which 503s and falls back to the
+      // 10-sample set that lacks cheese/bread/chocolate.
+      const idxPage = await getCatalogProducts({
+        category: categoryTag,
+        limit: CATALOG_RENDER_CAP,
+        offset: 0,
+      });
+      if (idxPage && idxPage.products.length > 0) {
+        results = idxPage.products;
+        listingSource = 'category';
+        listingCategory = categoryTag;
+        listingTotal = idxPage.total; // exact → precise hide via offset>=total
+        listingOffset = idxPage.products.length;
+      } else {
+        // Index empty for this tag (or backend absent): fall back to OFF.
+        results = await searchProducts(query, { ingredient, categoryTag });
+        listingSource = 'search';
+        listingQuery = query;
+        listingIngredient = ingredient;
+        listingCategoryTag = categoryTag;
+        listingPage = 1;
+        listingHasMore = (results?.length || 0) >= OFF_PAGE_SIZE;
+      }
     } else if (query || ingredient || categoryTag) {
+      // Keyword / ingredient search (OFF). No reliable total, so infer "more"
+      // from whether the first page came back full.
       results = await searchProducts(query, { ingredient, categoryTag });
+      listingSource = 'search';
+      listingQuery = query;
+      listingIngredient = ingredient;
+      listingCategoryTag = categoryTag;
+      listingPage = 1;
+      listingHasMore = (results?.length || 0) >= OFF_PAGE_SIZE;
     } else {
-      results = await getAllSampleProducts();
+      // Empty query / "All categories": pull the real index catalogue when the
+      // backend is reachable, otherwise fall back to the 10-sample dataset.
+      const firstPage = await getCatalogProducts({ limit: CATALOG_RENDER_CAP, offset: 0 });
+      if (firstPage && firstPage.products.length > 0) {
+        results = firstPage.products;
+        // Enable incremental "Load more" only for this catalogue path.
+        listingSource = 'catalogue';
+        listingTotal = firstPage.total;
+        listingOffset = firstPage.products.length;
+      } else {
+        // Backend absent: 10-sample fallback, no pagination / no button.
+        results = await getAllSampleProducts();
+      }
     }
+    // A newer search was started while this one was awaiting its fetch. Bail out
+    // before committing so a stale in-flight call can never overwrite the grid,
+    // steal focus, or rebuild "Load more" for results the user no longer wants.
+    if (myEpoch !== _searchEpoch) return;
     lastResults = results || [];
     _searchCompletedAt = Date.now();
     rerenderResults();
+    renderLoadMore();
     if (lastResults.length > 0) {
       // Auto-focus the top-ranked product so reasoning is visible (H2).
       focusProduct(lastResults[0]);
@@ -1065,7 +1304,11 @@ async function runSearch(query, opts = {}) {
       setHidden(els.focusedView, true);
     }
   } finally {
-    setHidden(els.loading, true);
+    // Only the latest search owns the loader. A superseded call must not hide it
+    // while the winning call is still fetching.
+    if (myEpoch === _searchEpoch) {
+      setHidden(els.loading, true);
+    }
   }
 }
 
@@ -1434,12 +1677,35 @@ function initProductFilters() {
 
 // --- F-18: usual products stored per category inside foodlens.profile ---
 
-// Normalise a product category into a stable map key. Missing category data is
-// never invented: such products fall back to a shared "uncategorised" bucket so
-// the feature still works without claiming a category the API did not provide.
+// Canonical shelves, ordered most-specific-first so the right shelf wins when a
+// product belongs to several (e.g. soft-drinks vs fruit-juices). These match the
+// category chips served from the prebuilt index plus a few common neighbours.
+const CANONICAL_SHELVES = [
+  'en:yogurts',
+  'en:cheeses',
+  'en:breads',
+  'en:fruit-juices',
+  'en:chocolates',
+  'en:breakfast-cereals',
+  'en:soft-drinks',
+  'en:biscuits-and-cakes',
+  'en:chips-and-fries',
+];
+
+// Normalise a product into a STABLE shelf key so two products on the same shelf
+// (e.g. en:emmental and en:cheese-spreads, both under en:cheeses) compare as the
+// same "usual" bucket. We scan the product's full categories list for a canonical
+// shelf; only when none is present do we fall back to the leaf tag. Missing
+// category data is never invented: such products land in a shared "uncategorised"
+// bucket so the feature still works without claiming a category the API did not
+// provide.
 function usualCategoryKey(product) {
-  const cat = product?.category;
-  return typeof cat === 'string' && cat.length > 0 ? cat : '__uncategorised__';
+  const cats = Array.isArray(product?.categories) ? product.categories : [];
+  for (const shelf of CANONICAL_SHELVES) {
+    if (cats.includes(shelf)) return shelf;
+  }
+  const leaf = product?.category;
+  return typeof leaf === 'string' && leaf.length > 0 ? leaf : '__uncategorised__';
 }
 
 function loadProfileObject() {

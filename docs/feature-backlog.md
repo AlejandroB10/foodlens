@@ -305,9 +305,9 @@ These features unblock everyone else. Anyone can start with them.
 - **Owner**: _available_
 - **Phases**: `[ ] R [ ] D [ ] C [ ] T`
 
-**What.** Three buttons at the bottom of every product card: *"See recipe"*, *"Add to shopping list"*, *"Compare with my usual"*. The first two are stubs (toast "coming soon"); the third is wired to F-18.
+**What.** Every product card terminates in action (H7). The *"See recipe"* and *"Add to shopping list"* stubs were removed as unimplemented (they only fired a "coming soon" toast). The close-the-loop action is now the favourite heart plus *"Compare with my usual"* (wired to F-18), alongside *Share product* and *Print card*.
 
-**Acceptance.** Buttons never disappear — they are part of the card terminator (H7 explicit).
+**Acceptance.** The action row never disappears — it is part of the card terminator (H7 explicit), satisfied by the heart toggle and *Compare with my usual*.
 
 ---
 

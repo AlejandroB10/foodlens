@@ -72,7 +72,7 @@
 
 ## F-29 · Share product
 
-1. Open any product (click a card or search a barcode). The focused card shows three action buttons: *See recipe*, *Add to list*, *Share product* (and *Compare with my usual*).
+1. Open any product (click a card or search a barcode). The focused card shows the action row: favourite heart, *Print card*, *Set/Compare with my usual*, and *Share product*.
 2. Click **Share product**.
 3. A toast appears at the bottom: **"Link copied to clipboard"**.
 4. Paste anywhere (Ctrl+V) → you should get `https://world.openfoodfacts.org/product/<barcode>`.
@@ -95,7 +95,7 @@
    - Site header (FoodLens title + tagline)
    - Search bar and weighting slider
    - Other product cards in the results
-   - Action buttons (Share / Add to list / etc.)
+   - Action buttons (heart / Share / Compare with my usual / etc.)
    - Footer
    - Personas showcase block
    - Recently-viewed strip

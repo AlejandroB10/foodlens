@@ -3,14 +3,27 @@
    Search Controls Bar (Categorías y Filtros Desplegables)
    ========================================================================== */
 
-/* Contenedor principal que abraza ambas secciones */
+/* Contenedor principal que abraza ambas secciones.
+   Mobile-first: the category chip row and the filters dropdown stack so a
+   non-wrapping flex row can no longer push the dropdown trigger off-screen and
+   scroll the page sideways. The space-between row layout returns at >=720px. */
 .search-controls-bar {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--space-3);
   padding: var(--space-4) 0;
   border-bottom: var(--rule-w, 1px) solid var(--color-paper-3);
   margin-bottom: var(--space-4);
+}
+
+@media (min-width: 720px) {
+  .search-controls-bar {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+  }
 }
 
 /* Anulamos el padding que tenía el category-browser antes para que encaje */
@@ -22,6 +35,7 @@
 /* --- Controles del Desplegable --- */
 .filters-dropdown-wrapper {
   display: flex;
+  flex-wrap: wrap;
   gap: var(--space-4);
 }
 

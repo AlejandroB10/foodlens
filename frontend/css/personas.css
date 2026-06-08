@@ -9,8 +9,8 @@
 
 .personas-showcase {
   padding: 3.5rem 1.5rem 3rem;
-  border-top: 2px solid var(--color-border, #e0d8cc);
-  background-color: var(--color-bg-subtle, #f5f0e8);
+  border-top: 2px solid var(--color-paper-3);
+  background-color: var(--color-paper-2);
 }
 
 .personas-showcase__header {
@@ -23,7 +23,7 @@
   font-size: 0.7rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--color-text-muted, #6b6560);
+  color: var(--color-ink-mute);
   margin: 0 0 0.75rem;
 }
 
@@ -32,7 +32,7 @@
   font-size: clamp(1.4rem, 3vw, 2rem);
   font-weight: 500;
   line-height: 1.25;
-  color: var(--color-text, #1a1714);
+  color: var(--color-ink);
   margin: 0 0 0.75rem;
 }
 
@@ -44,7 +44,7 @@
   font-family: var(--font-body, 'Bricolage Grotesque', system-ui, sans-serif);
   font-size: 0.95rem;
   line-height: 1.6;
-  color: var(--color-text-secondary, #4a4540);
+  color: var(--color-ink-soft);
   margin: 0 auto;
   max-width: 52ch;
 }
@@ -59,24 +59,37 @@
   margin: 0 auto;
 }
 
+/* Two columns on tablet — three columns squeezed the cards below their
+   content width and pushed them past the viewport. Three only from 960px up. */
 @media (min-width: 641px) {
   .personas-showcase__grid {
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(2, 1fr);
     gap: 1.75rem;
+  }
+}
+
+@media (min-width: 960px) {
+  .personas-showcase__grid {
+    grid-template-columns: repeat(3, 1fr);
   }
 }
 
 /* ─── Persona card ─────────────────────────────────────────────────────────── */
 
 .persona-card {
-  background-color: var(--color-bg-card, #ffffff);
-  border: 1px solid var(--color-border, #e0d8cc);
+  background-color: var(--color-paper);
+  border: 1px solid var(--color-paper-3);
   border-radius: 6px;
   padding: 1.5rem 1.4rem 1.4rem;
   display: flex;
   flex-direction: column;
   gap: 0.75rem;
+  /* Allow the card to shrink inside its 1fr grid cell instead of forcing the
+     track to its min-content width (which overflowed the row). */
+  min-width: 0;
 }
+
+.persona-card__name { overflow-wrap: anywhere; }
 
 .persona-card__meta {
   display: flex;
@@ -89,7 +102,7 @@
   font-family: var(--font-display, 'Newsreader', Georgia, serif);
   font-size: 1.1rem;
   font-weight: 600;
-  color: var(--color-text, #1a1714);
+  color: var(--color-ink);
   margin: 0;
   line-height: 1.2;
 }
@@ -99,9 +112,9 @@
   font-size: 0.65rem;
   font-weight: 600;
   letter-spacing: 0.05em;
-  color: var(--color-text-muted, #6b6560);
-  background-color: var(--color-bg-subtle, #f5f0e8);
-  border: 1px solid var(--color-border, #e0d8cc);
+  color: var(--color-ink-mute);
+  background-color: var(--color-paper-2);
+  border: 1px solid var(--color-paper-3);
   border-radius: 3px;
   padding: 0.2em 0.5em;
   white-space: nowrap;
@@ -111,7 +124,7 @@
   font-family: var(--font-body, 'Bricolage Grotesque', system-ui, sans-serif);
   font-size: 0.78rem;
   line-height: 1.4;
-  color: var(--color-text-muted, #6b6560);
+  color: var(--color-ink-mute);
   margin: 0;
   /* Single-line role text — ellipsis overflow */
   white-space: nowrap;
@@ -124,17 +137,17 @@
   font-size: 0.85rem;
   font-style: italic;
   line-height: 1.55;
-  color: var(--color-text-secondary, #4a4540);
+  color: var(--color-ink-soft);
   margin: 0;
   padding-left: 1rem;
-  border-left: 2px solid var(--color-accent, #c8a96e);
+  border-left: 2px solid var(--color-accent);
 }
 
 .persona-card__description {
   font-family: var(--font-body, 'Bricolage Grotesque', system-ui, sans-serif);
   font-size: 0.8rem;
   line-height: 1.65;
-  color: var(--color-text-secondary, #4a4540);
+  color: var(--color-ink-soft);
   margin: 0;
 }
 

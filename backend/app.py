@@ -408,6 +408,67 @@ def create_app(config: Config | None = None, index_store: IndexStore | None = No
 
         return jsonify({"category": cat, "count": len(points), "products": points}), 200
 
+    # --- /api/products (full catalogue listing) ---
+
+    @app.get("/api/products")
+    def products_route():
+        """Return a paginated slice of the prebuilt catalogue, or one category.
+
+        Backs the frontend "All categories" / empty-search listing and the
+        category-chip listings so they can show the index products instead of
+        the 10-sample fallback (or an intermittently-503 OFF /search). Products
+        are already in the normalised frontend shape — no re-normalisation.
+
+        Query params:
+            category str  OFF tag (e.g. "en:cheeses"); slugified server-side.
+                          When present, paging is scoped to that category and
+                          count is the category total. Absent/empty => full
+                          catalogue mode (unchanged). Unknown tag => 200 with
+                          count:0, products:[] (NOT an error).
+            limit    int  1..<scope size>  (default 100)
+            offset   int  >= 0             (default 0)
+
+        Response shape:
+            { category, count, returned, offset, limit, products: [...] }
+        where count is the active scope total (category size, else index size).
+        """
+        idx: IndexStore = app.extensions["index_store"]
+        if not idx.is_loaded():
+            return _make_error("index_not_loaded", "Index not loaded — run build_knn_index.py first.", 503)
+
+        category = request.args.get("category", "").strip()
+        total = idx.category_count(category) if category else idx.size()
+
+        try:
+            limit = int(request.args.get("limit", "100"))
+        except ValueError:
+            return _make_error("invalid_param", "Parameter limit must be an integer.", 400)
+        limit = max(1, min(limit, total)) if total else 0
+
+        try:
+            offset = int(request.args.get("offset", "0"))
+        except ValueError:
+            return _make_error("invalid_param", "Parameter offset must be an integer.", 400)
+        offset = max(0, offset)
+
+        if category:
+            page = idx.category_products(category, offset, limit)
+        else:
+            page = idx.all_products(offset, limit)
+
+        body = {
+            "category": category or None,
+            "count": total,
+            "returned": len(page),
+            "offset": offset,
+            "limit": limit,
+            "products": page,
+        }
+        resp = jsonify(body)
+        if idx.built_at():
+            resp.headers["X-Index-Built-At"] = idx.built_at()
+        return resp, 200
+
     # --- /api/explain/<barcode> ---
 
     @app.get("/api/explain/<barcode>")

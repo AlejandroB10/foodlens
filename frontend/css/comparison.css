@@ -33,13 +33,34 @@
   gap: 1rem;
 }
 
+/* Mobile: the count text + Clear + View Comparison buttons overflow the
+   2rem-padded fixed bar at 360px. Reduce padding and let the row wrap. */
+@media (max-width: 560px) {
+  .comparison-tray {
+    padding: 0.75rem 1rem;
+  }
+
+  .tray-content {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .tray-actions {
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+}
+
 /* --- MODAL Y TABLA --- */
 .editorial-modal {
   border: 2px solid #1a1a1a;
   background-color: #FAF6EF;
   color: #1a1a1a;
   padding: 0;
-  width: 90vw;
+  width: min(94vw, 1000px);
   max-width: 1000px;
   max-height: 85vh;
   box-shadow: 8px 8px 0px rgba(0,0,0,1);
@@ -63,6 +84,40 @@
   font-family: 'Newsreader', serif;
   font-style: italic;
   font-size: 2rem;
+}
+
+/* Mobile: the 2rem title plus the Export CSV + close buttons overflow the
+   header at 360px. Let the header wrap, shrink the title and tighten padding.
+   `.modal-header > div` is the inline-styled button group in index.html. */
+@media (max-width: 560px) {
+  .modal-header {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 1rem 1.25rem;
+  }
+
+  .modal-header h2 {
+    font-size: 1.4rem;
+  }
+
+  .modal-header > div {
+    flex-wrap: wrap;
+  }
+
+  .table-responsive {
+    padding: 1rem;
+  }
+
+  .editorial-table th,
+  .editorial-table td {
+    padding: 0.6rem;
+  }
+
+  /* Soften the hard 8px offset shadow on small screens so it does not push the
+     modal toward the viewport edge. */
+  .editorial-modal {
+    box-shadow: 4px 4px 0px rgba(0, 0, 0, 1);
+  }
 }
 
 .icon-btn {

@@ -126,6 +126,58 @@ class IndexStore:
         indices = self._category_index.get(slugify_tag(category), [])
         return [self._products[i] for i in indices]
 
+    def category_count(self, category: str) -> int:
+        """Return the number of products in a category (0 when category missing)."""
+        return len(self._category_index.get(slugify_tag(category), []))
+
+    def category_products(self, category: str, offset: int = 0, limit: int | None = None) -> list[dict]:
+        """Return a (paginated) slice of a single category's products.
+
+        Mirrors ``all_products`` but scoped to one OFF category tag. The tag is
+        slugified internally (e.g. ``en:cheeses`` -> ``en:cheeses``), so the
+        route can pass the raw chip tag. Products are already in the
+        frontend-normalised camelCase shape — read-only references.
+
+        Parameters
+        ----------
+        category:
+            OFF category tag (slugified internally via ``slugify_tag``).
+        offset:
+            Start index into the category list (clamped to >= 0).
+        limit:
+            Maximum number of products to return; None returns the remainder.
+        """
+        if not self._loaded:
+            return []
+        indices = self._category_index.get(slugify_tag(category), [])
+        start = max(offset, 0)
+        if limit is None:
+            sliced = indices[start:]
+        else:
+            sliced = indices[start : start + max(limit, 0)]
+        return [self._products[i] for i in sliced]
+
+    def all_products(self, offset: int = 0, limit: int | None = None) -> list[dict]:
+        """Return a (paginated) slice of the full catalogue.
+
+        Products are already in the frontend-normalised camelCase shape, so the
+        route can hand them straight to the client. The slice references the
+        stored dicts (read-only) — callers must not mutate them.
+
+        Parameters
+        ----------
+        offset:
+            Start index into the catalogue (clamped to >= 0 by the caller).
+        limit:
+            Maximum number of products to return; None returns the remainder.
+        """
+        if not self._loaded:
+            return []
+        start = max(offset, 0)
+        if limit is None:
+            return self._products[start:]
+        return self._products[start : start + max(limit, 0)]
+
     # ------------------------------------------------------------------
     # Scaler helpers (manual application — no sklearn object in memory)
     # ------------------------------------------------------------------

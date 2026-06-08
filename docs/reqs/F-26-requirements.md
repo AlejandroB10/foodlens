@@ -107,7 +107,7 @@ Each card has working heart toggle
 ## 5. Relationship with other features
 
 - **F-25 (Recently Viewed)**: independent data store (`foodlens.recentlyViewed`), no sharing
-- **F-17 (Close-the-loop action buttons)**: the heart toggle IS the H7 action on cards. F-17 stubs ("See recipe", "Add to shopping list") remain available on focused cards
+- **F-17 (Close-the-loop action buttons)**: the heart toggle IS the H7 action on cards. The old "See recipe" / "Add to shopping list" stubs were removed as unimplemented; the close-the-loop action on cards is the heart toggle plus *Compare with my usual* (and *Share product* / *Print card*)
 - **F-29 (Share product)**: separate action button — do not conflate
 
 ---

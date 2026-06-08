@@ -17,9 +17,6 @@
   --color-accent-2: #B05A1A;
   --focus-ring: #005FCC;
   --color-heart: #e63946;
-  /* Text colour for light-background badges (B/C). Always dark — these badges
-     stay bright in dark mode, so it must NOT follow --color-ink, which inverts. */
-  --color-badge-on-light: #1A1A18;
 
   /* Nutri-Score (official palette, slightly desaturated for paper) */
   --color-nutri-a: #1F8A3F;
@@ -112,6 +109,7 @@ html {
      stability — without it badge positions move when the onboarding opens. */
   scrollbar-gutter: stable;
 }
+
 body, h1, h2, h3, h4, p, ul, ol, figure, blockquote, table { margin: 0; }
 ul, ol { padding: 0; list-style: none; }
 img { max-width: 100%; display: block; }
@@ -235,6 +233,16 @@ h4 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; letter-sp
 
 .site-header__meta .small-caps:last-child { border-right: none; }
 
+/* On narrow viewports the meta items wrap to multiple lines, leaving the
+   per-item vertical rules dangling mid-row. Drop the separators below the
+   first breakpoint and lean on the flex gap instead. */
+@media (max-width: 767px) {
+  .site-header__meta .small-caps {
+    border-right: none;
+    padding-right: 0;
+  }
+}
+
 /* ─── search ─────────────────────────────────────────────────────────── */
 .search {
   display: grid;
@@ -250,7 +258,10 @@ h4 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; letter-sp
 
 @media (min-width: 780px) {
   .search__form {
-    grid-template-columns: minmax(0, 1.5fr) minmax(18rem, 0.75fr);
+    /* Drop the hard 18rem (288px) floor on the ingredient column: between
+       780–860px the two columns plus gap exceeded the content width and
+       forced horizontal overflow. minmax(0, …) lets both columns shrink. */
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 0.75fr);
     align-items: stretch;
   }
 }
@@ -259,12 +270,17 @@ h4 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; letter-sp
   position: relative;
   display: flex;
   align-items: stretch;
+  /* min-width:0 lets this grid/flex item shrink below its children's
+     min-content width, so the form fits a 360px viewport instead of being
+     clipped at the right edge (the scan button + ingredient input were cut off). */
+  min-width: 0;
   border: var(--rule-w-bold) solid var(--color-rule);
   background: var(--color-paper);
 }
 
 .search__input {
   flex: 1;
+  min-width: 0;
   border: 0;
   background: transparent;
   font-family: var(--font-display);
@@ -315,6 +331,7 @@ h4 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; letter-sp
 .search__ingredient-wrap {
   display: flex;
   align-items: stretch;
+  min-width: 0;
   border: var(--rule-w) solid var(--color-rule);
   background: var(--color-paper-2);
 }
@@ -540,10 +557,15 @@ h4 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; letter-sp
 
 .site-nav__list {
   display: flex;
-  gap: var(--space-4);
+  flex-wrap: wrap;
+  gap: var(--space-2) var(--space-3);
   list-style: none;
   padding: 0;
   margin: 0;
+}
+
+@media (min-width: 560px) {
+  .site-nav__list { gap: var(--space-4); }
 }
 
 .site-nav__link {
@@ -650,6 +672,21 @@ h4 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; letter-sp
   .results-list { grid-template-columns: repeat(3, 1fr); }
 }
 
+/* Catalogue pagination: centered "Load more" control under the grid. */
+.results-more {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-6);
+}
+
+.results-more:empty {
+  display: none;
+}
+
+.results-more .btn {
+  min-width: 12rem;
+}
+
 /* ─── card ──────────────────────────────────────────────────────────── */
 .card {
   border: var(--rule-w) solid var(--color-rule);
@@ -675,15 +712,18 @@ h4 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; letter-sp
   gap: var(--space-5);
 }
 
+/* Single editorial column on every breakpoint: badge row, image+title header,
+   chips, reasoning and actions stack coherently. The compare toggle hugs its
+   content and sits left-anchored instead of stretching into an empty box. */
+#focused .card-compare-action {
+  justify-content: flex-start;
+  width: auto;
+  margin-bottom: 0;
+}
+
 @media (min-width: 900px) {
   #focused .card {
-    grid-template-columns: 1fr 1.4fr;
-    gap: var(--space-8);
-  }
-  #focused .card__sentence,
-  #focused .card__drilldown,
-  #focused .card__actions {
-    grid-column: 1 / -1;
+    gap: var(--space-6);
   }
 }
 
@@ -694,8 +734,16 @@ h4 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; letter-sp
   align-items: start;
 }
 
-#focused .card__header {
-  grid-template-columns: 120px 1fr auto;
+/* Let the 1fr title column actually shrink so long unbroken product names
+   wrap instead of pushing the heart button off the card edge. */
+.card__header > * { min-width: 0; }
+
+/* Focused card uses a larger 120px image only once there is room; below 560px
+   it falls back to the base 72px column so the title column keeps real width. */
+@media (min-width: 560px) {
+  #focused .card__header {
+    grid-template-columns: 120px 1fr auto;
+  }
 }
 
 .card__image {
@@ -716,7 +764,9 @@ h4 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; letter-sp
   text-transform: uppercase;
 }
 
-#focused .card__image { width: 120px; }
+@media (min-width: 560px) {
+  #focused .card__image { width: 120px; }
+}
 
 .card__title {
   font-style: italic;
@@ -724,6 +774,8 @@ h4 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; letter-sp
   font-size: 1.25rem;
   margin: 0;
   line-height: var(--leading-snug);
+  /* Long unbroken names (URLs, run-on brand strings) must wrap, not overflow. */
+  overflow-wrap: anywhere;
 }
 
 #focused .card__title { font-size: clamp(1.5rem, 3vw, 2.25rem); }
@@ -733,6 +785,7 @@ h4 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; letter-sp
   font-size: 0.8rem;
   color: var(--color-ink-soft);
   margin-top: var(--space-1);
+  overflow-wrap: anywhere;
 }
 
 .card__source-tag {
@@ -809,7 +862,10 @@ h4 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; letter-sp
   gap: var(--space-2);
   padding: var(--space-2) var(--space-3);
   background: var(--badge-color);
-  color: var(--color-paper);
+  /* Fixed white on every grade — a subtle dark text-shadow on the per-element
+     rules keeps it legible on the light B/C fills. Must NOT follow
+     --color-paper, which inverts to near-black in dark mode. */
+  color: #FFFFFF;
   border: var(--rule-w) solid var(--color-rule);
   min-height: 4.5rem;
   position: relative;
@@ -834,8 +890,10 @@ h4 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; letter-sp
   font-weight: 700;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--color-paper);
-  opacity: 0.92;
+  color: #FFFFFF;
+  /* Keeps white legible on the light B/C fills (no per-grade override needed). */
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);
+  opacity: 0.95;
   position: relative;
   z-index: 1;
 }
@@ -846,8 +904,9 @@ h4 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; letter-sp
   font-weight: 700;
   font-size: clamp(2rem, 5vw, 3.25rem);
   line-height: 1;
-  color: var(--color-paper);
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.18);
+  color: #FFFFFF;
+  /* Stronger shadow: the large italic letter on amber/green is the worst case. */
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
   position: relative;
   z-index: 1;
 }
@@ -855,40 +914,12 @@ h4 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; letter-sp
 .badge__caption {
   font-family: var(--font-body);
   font-size: 0.72rem;
-  color: var(--color-paper);
-  opacity: 0.88;
+  color: #FFFFFF;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  opacity: 0.92;
   line-height: var(--leading-snug);
   position: relative;
   z-index: 1;
-}
-
-/* Light-grade badges (B light green, C yellow, olive eco-c) need ink text,
-   not paper, because their background is bright enough to wash out white. */
-.badge--grade-b,
-.badge--grade-c,
-.badge--eco.badge--grade-c {
-  color: var(--color-badge-on-light);
-}
-
-.badge--grade-b .badge__axis,
-.badge--grade-c .badge__axis,
-.badge--eco.badge--grade-c .badge__axis {
-  color: var(--color-badge-on-light);
-  opacity: 0.78;
-}
-
-.badge--grade-b .badge__letter,
-.badge--grade-c .badge__letter,
-.badge--eco.badge--grade-c .badge__letter {
-  color: var(--color-badge-on-light);
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
-}
-
-.badge--grade-b .badge__caption,
-.badge--grade-c .badge__caption,
-.badge--eco.badge--grade-c .badge__caption {
-  color: var(--color-badge-on-light);
-  opacity: 0.78;
 }
 
 /* Unknown / not-applicable badges: use a paper background with grey ink so
@@ -902,6 +933,7 @@ h4 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; letter-sp
 .badge--grade-unknown .badge__axis,
 .badge--grade-not-applicable .badge__axis {
   color: var(--color-ink-soft);
+  text-shadow: none;
   opacity: 1;
 }
 
@@ -914,6 +946,7 @@ h4 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; letter-sp
 .badge--grade-unknown .badge__caption,
 .badge--grade-not-applicable .badge__caption {
   color: var(--color-ink-soft);
+  text-shadow: none;
   opacity: 1;
 }
 
@@ -1062,6 +1095,18 @@ h4 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; letter-sp
   border: var(--rule-w) solid var(--color-rule);
   color: var(--color-ink);
   transition: background-color 120ms ease, color 120ms ease;
+  /* The longest uppercase labels (e.g. "Advanced explanation (SHAP)") must
+     never exceed the card width on a phone. */
+  overflow-wrap: anywhere;
+}
+
+/* Narrowest phones: tighten button padding so a single button cannot overflow
+   its card column. Keeps tap targets usable while the row wraps. */
+@media (max-width: 400px) {
+  .card__actions .btn {
+    padding: var(--space-3) var(--space-3);
+    font-size: 0.78rem;
+  }
 }
 
 .btn--ghost:hover, .btn--ghost:focus-visible {

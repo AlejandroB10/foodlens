@@ -323,6 +323,53 @@ export function postTelemetryEvent(payload) {
   }).catch(() => { /* silently ignore */ });
 }
 
+/**
+ * Fetch a slice of the full catalogue (862-product index) from the backend.
+ *
+ * Backs the "All categories" / empty-search listing so it shows the real index
+ * instead of the 10-sample fallback. Products arrive already normalised in the
+ * frontend shape; each is stamped source: 'index'.
+ *
+ * Returns null when BACKEND_URL is unset/unreachable, on any non-ok response,
+ * or on a JSON parse error — NEVER throws. A null return lets the caller fall
+ * back to the 10-sample dataset, preserving the backend-optional design.
+ *
+ * When `category` is set, the backend pages over that OFF category tag inside
+ * the prebuilt index (count = that category's total) instead of the full
+ * catalogue, so chip listings come from the index rather than OFF /search.
+ *
+ * @param {object} opts
+ * @param {number} [opts.limit=100]    - Max products to fetch (1..scope total).
+ * @param {number} [opts.offset=0]     - Pagination offset.
+ * @param {string|null} [opts.category=null] - OFF category tag, e.g. "en:cheeses".
+ * @param {number} [opts.timeoutMs=2500]
+ * @returns {Promise<{products: Array<object>, total: number, offset: number, limit: number}|null>}
+ */
+export async function getCatalogProducts(opts = {}) {
+  const { limit = 100, offset = 0, category = null, timeoutMs = 2500 } = opts;
+  if (!BACKEND_URL) return null;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    let url = `${BACKEND_URL}/api/products?limit=${limit}&offset=${offset}`;
+    if (category) url += `&category=${encodeURIComponent(category)}`;
+    const res = await fetch(url, { signal: controller.signal });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!Array.isArray(data.products)) return null;
+    return {
+      products: data.products.map((p) => ({ ...p, source: 'index' })),
+      total: data.count,
+      offset: data.offset,
+      limit: data.limit,
+    };
+  } catch {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function getCategoryScatter(category, timeoutMs = 2000) {
   if (!BACKEND_URL || !category) return null;
   const controller = new AbortController();
