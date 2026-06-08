@@ -7,11 +7,60 @@ Key mapping quirks to preserve:
 - OFF key "saturated-fat" in nutrient_levels -> our key "saturatedFat"
 - OFF key "energy-kcal_100g" in nutriments   -> our key "energyKcal_100g"
 - OFF key "saturated-fat_100g" in nutriments -> our key "saturatedFat_100g"
-- pick_category takes the LAST element of categories_tags (most specific per OFF hierarchy)
+- pick_category takes the LAST element of categories_tags (most specific per OFF hierarchy),
+  slugified via slugify_tag for case/whitespace stability
+- "categories" holds the full slugified categories_tags list (mirrored in api.js)
 """
 from __future__ import annotations
 
+import re
+
 from backend.services.nutriscore import normalise_grade, read_eco_score
+
+
+def slugify_tag(tag: str | None) -> str | None:
+    """Canonicalise an OFF category tag into a stable slug.
+
+    Splits once on the first ':' into an optional language prefix and a
+    remainder. Lowercases everything. The remainder is slugified by replacing
+    every run of non-alphanumeric characters with a single '-' and trimming
+    leading/trailing '-'. Rejoined as '{prefix}:{slug}' when a prefix existed,
+    otherwise just '{slug}'.
+
+    Idempotent: slugify_tag(slugify_tag(x)) == slugify_tag(x).
+    Collapses case/whitespace variants:
+        slugify_tag('en:Soft Drinks') == slugify_tag('en:soft-drinks')
+        == 'en:soft-drinks'.
+
+    Returns None for falsy/empty input or when the slug resolves to empty.
+    """
+    if not tag or not isinstance(tag, str):
+        return None
+    text = tag.strip().lower()
+    if not text:
+        return None
+    if ":" in text:
+        prefix, _, remainder = text.partition(":")
+        slug = re.sub(r"[^a-z0-9]+", "-", remainder).strip("-")
+        if not slug:
+            return prefix or None
+        return f"{prefix}:{slug}" if prefix else slug
+    slug = re.sub(r"[^a-z0-9]+", "-", text).strip("-")
+    return slug or None
+
+
+def slugify_categories(categories_tags: list[str] | None) -> list[str]:
+    """Return a de-duplicated, order-preserving list of slugified tags."""
+    if not isinstance(categories_tags, list):
+        return []
+    seen: set[str] = set()
+    result: list[str] = []
+    for tag in categories_tags:
+        slug = slugify_tag(tag)
+        if slug and slug not in seen:
+            seen.add(slug)
+            result.append(slug)
+    return result
 
 # Mirrors frontend/js/api.js NUTRIENT_LEVEL_KEY_MAP
 _NUTRIENT_LEVEL_KEY_MAP: dict[str, str] = {
@@ -37,7 +86,7 @@ def pick_category(categories_tags: list[str] | None) -> str | None:
     """Return the most specific category tag (last element in OFF's hierarchical array)."""
     if not isinstance(categories_tags, list) or len(categories_tags) == 0:
         return None
-    return categories_tags[-1]
+    return slugify_tag(categories_tags[-1])
 
 
 # Mirrors frontend/js/api.js#readNutrientLevels
@@ -102,6 +151,10 @@ def normalise_product(raw: dict | None) -> dict | None:
         "brands": split_brands(raw.get("brands")),
         "image": raw.get("image_front_url") or None,
         "category": pick_category(raw.get("categories_tags")),
+        # Backend-index-only: full slugified category hierarchy, used by the
+        # KNN index builder to make every product reachable by coarse tags.
+        # Mirrored in frontend/js/api.js#normaliseProduct for parity.
+        "categories": slugify_categories(raw.get("categories_tags")),
         "nutriScore": normalise_grade(raw.get("nutriscore_grade")),
         "ecoScore": read_eco_score(raw),
         "nutrientLevels": read_nutrient_levels(raw.get("nutrient_levels")),

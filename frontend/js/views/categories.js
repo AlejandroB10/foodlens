@@ -2,12 +2,17 @@
 import { t } from './i18n.js';
 
 let currentCategory = null;
+// Chip ids are coarse OFF tags that the rebuilt KNN index now covers
+// (DEFAULT_CATEGORIES in build_knn_index.py). index_store slugifies the
+// lookup, so these resolve to real indexed products via /api/scatter.
 const categories = [
     { id: 'all', labelKey: 'cat.all', label: 'All Products' },
-    { id: 'en:plant-based-milks', labelKey: 'cat.plant_milks', label: 'Plant Milks' },
-    { id: 'en:cereals', labelKey: 'cat.cereals', label: 'Cereals' },
-    { id: 'en:snacks', labelKey: 'cat.snacks', label: 'Snacks' },
-    { id: 'en:beverages', labelKey: 'cat.drinks', label: 'Drinks' }
+    { id: 'en:yogurts', labelKey: 'cat.yogurts', label: 'Yogurts' },
+    { id: 'en:cheeses', labelKey: 'cat.cheeses', label: 'Cheeses' },
+    { id: 'en:breads', labelKey: 'cat.breads', label: 'Breads' },
+    { id: 'en:fruit-juices', labelKey: 'cat.fruit_juices', label: 'Fruit Juices' },
+    { id: 'en:chocolates', labelKey: 'cat.chocolates', label: 'Chocolates' },
+    { id: 'en:breakfast-cereals', labelKey: 'cat.breakfast_cereals', label: 'Breakfast Cereals' }
 ];
 
 let onCategoryChangeCallback = null;

@@ -122,15 +122,34 @@ def compute_shap_waterfall(nutrients: dict[str, Any]) -> dict[str, Any] | None:
         logger.warning("SHAP computation failed: %s", exc)
         return None
 
-    # shap_values is list[ndarray] of length n_classes.
-    # Each element has shape (n_samples, n_features).
-    raw = shap_values[class_idx]
-    sv = raw[0] if (hasattr(raw, "ndim") and raw.ndim == 2) else raw
+    # shap_values shape varies by SHAP/model version:
+    #  - list[ndarray] of length n_classes, each (n_samples, n_features)
+    #  - ndarray (n_samples, n_features, n_classes)        [3-D]
+    #  - ndarray (n_samples, n_features)                   [2-D, binary collapse]
+    # Out-of-index barcodes can drive class_idx past the available axis, which
+    # previously raised IndexError -> HTTP 500. Bound-check every access and
+    # fall back to None so /api/explain degrades gracefully instead of crashing.
+    try:
+        if isinstance(shap_values, list):
+            idx = class_idx if class_idx < len(shap_values) else 0
+            raw = shap_values[idx]
+            sv = raw[0] if (hasattr(raw, "ndim") and raw.ndim == 2) else raw
+        elif hasattr(shap_values, "ndim") and shap_values.ndim == 3:
+            cidx = class_idx if class_idx < shap_values.shape[2] else 0
+            sv = shap_values[0, :, cidx]
+        elif hasattr(shap_values, "ndim") and shap_values.ndim == 2:
+            sv = shap_values[0]
+        else:
+            sv = shap_values
 
-    if hasattr(base_values, "__len__"):
-        base = float(base_values[class_idx])
-    else:
-        base = float(base_values)
+        if hasattr(base_values, "__len__"):
+            bidx = class_idx if class_idx < len(base_values) else 0
+            base = float(base_values[bidx])
+        else:
+            base = float(base_values)
+    except (IndexError, TypeError, ValueError) as exc:
+        logger.warning("SHAP value extraction failed (class_idx=%s): %s", class_idx, exc)
+        return None
 
     features: list[dict[str, Any]] = [
         {

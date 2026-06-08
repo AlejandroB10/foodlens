@@ -16,6 +16,8 @@ from pathlib import Path
 
 import numpy as np
 
+from backend.services.normaliser import slugify_tag
+
 logger = logging.getLogger("foodlens.backend")
 
 SUPPORTED_VERSION = 1
@@ -121,7 +123,7 @@ class IndexStore:
 
     def filter_by_category(self, category: str) -> list[dict]:
         """Return all products in a category. Empty list (not an error) when category missing."""
-        indices = self._category_index.get(category, [])
+        indices = self._category_index.get(slugify_tag(category), [])
         return [self._products[i] for i in indices]
 
     # ------------------------------------------------------------------
@@ -170,7 +172,7 @@ class IndexStore:
             matrix has shape (N, n_features); products is the corresponding list.
             Both are empty when the category is not in the index.
         """
-        indices = self._category_index.get(category, [])
+        indices = self._category_index.get(slugify_tag(category), [])
         if not indices or self._feature_matrix is None:
             return np.empty((0, len(self._nutrient_keys))), []
 

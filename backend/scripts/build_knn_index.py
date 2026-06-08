@@ -33,7 +33,7 @@ _REPO_ROOT = Path(__file__).parent.parent.parent
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from backend.services.normaliser import normalise_product
+from backend.services.normaliser import normalise_product, slugify_tag
 
 logger = logging.getLogger("foodlens.backend.build_index")
 
@@ -60,7 +60,6 @@ DEFAULT_CATEGORIES: list[str] = [
     "en:chips-and-fries",
     "en:chocolates",
     "en:fruit-juices",
-    "en:pasta",
 ]
 
 OFF_BASE_URL = "https://world.openfoodfacts.org/api/v2"
@@ -204,6 +203,7 @@ def _generate_synthetic_pool() -> list[dict]:
                 "brands": ["SyntheticBrand"],
                 "image": None,
                 "category": category,
+                "categories": [category],
                 "nutriScore": {"grade": grade, "numeric": {"a": 5, "b": 4, "c": 3, "d": 2, "e": 1}[grade]},
                 "ecoScore": {
                     "grade": eco_grade,
@@ -455,9 +455,17 @@ def main(argv: list[str] | None = None) -> int:
         if code:
             barcode_index[str(code)] = i
 
-        cat = p.get("category")
-        if cat:
-            category_index.setdefault(cat, []).append(i)
+        # Index each product under EVERY slugified category tag (not just the
+        # leaf) so coarse queries like "en:chocolates" reach products tagged
+        # with finer leaves like "en:dark-chocolates". Falls back to the
+        # slugified leaf when 'categories' is absent (e.g. synthetic pool).
+        tags = p.get("categories") or []
+        if not tags:
+            leaf = slugify_tag(p.get("category"))
+            tags = [leaf] if leaf else []
+        for tag in tags:
+            if tag:
+                category_index.setdefault(tag, []).append(i)
 
     logger.info(
         "Index built: %d products, %d categories, %d barcodes",

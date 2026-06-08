@@ -66,6 +66,13 @@ export const translations = {
     'cat.snacks': 'Snacks',
     'cat.drinks': 'Drinks',
 
+    'cat.yogurts': 'Yogurts',
+    'cat.cheeses': 'Cheeses',
+    'cat.breads': 'Breads',
+    'cat.fruit_juices': 'Fruit Juices',
+    'cat.chocolates': 'Chocolates',
+    'cat.breakfast_cereals': 'Breakfast Cereals',
+
     // --- Filters & Categories ---
     'cat.all': 'All categories',
 
@@ -185,6 +192,13 @@ export const translations = {
     'cat.snacks': 'Snacks',
     'cat.drinks': 'Bebidas',
 
+    'cat.yogurts': 'Yogures',
+    'cat.cheeses': 'Quesos',
+    'cat.breads': 'Panes',
+    'cat.fruit_juices': 'Zumos de fruta',
+    'cat.chocolates': 'Chocolates',
+    'cat.breakfast_cereals': 'Cereales de desayuno',
+
     'filter.group.criteria': 'Dieta y Ética',
     'filter.group.allergens': 'Alérgenos',
     'filter.high_protein': 'Alto en proteína',
@@ -300,6 +314,13 @@ export const translations = {
     'cat.cereals': 'Cereals',
     'cat.snacks': 'Snacks',
     'cat.drinks': 'Begudes',
+
+    'cat.yogurts': 'Iogurts',
+    'cat.cheeses': 'Formatges',
+    'cat.breads': 'Pans',
+    'cat.fruit_juices': 'Sucs de fruita',
+    'cat.chocolates': 'Xocolates',
+    'cat.breakfast_cereals': 'Cereals d\'esmorzar',
 
     'filter.group.criteria': 'Dieta i Ètica',
     'filter.group.allergens': 'Al·lèrgens',

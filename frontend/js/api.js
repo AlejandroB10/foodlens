@@ -104,10 +104,44 @@ function readNutrients(raw) {
   };
 }
 
+// Mirrors backend/services/normaliser.py#slugify_tag. Canonicalises an OFF
+// category tag: split once on ':' into an optional lang prefix + remainder,
+// lowercase, replace runs of non-alphanumerics with '-', trim '-'. Idempotent.
+function slugifyTag(tag) {
+  if (!tag || typeof tag !== 'string') return null;
+  const text = tag.trim().toLowerCase();
+  if (!text) return null;
+  const colon = text.indexOf(':');
+  if (colon !== -1) {
+    const prefix = text.slice(0, colon);
+    const remainder = text.slice(colon + 1);
+    const slug = remainder.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+    if (!slug) return prefix || null;
+    return prefix ? `${prefix}:${slug}` : slug;
+  }
+  const slug = text.replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  return slug || null;
+}
+
+// Mirrors backend/services/normaliser.py#slugify_categories.
+function slugifyCategories(categoriesTags) {
+  if (!Array.isArray(categoriesTags)) return [];
+  const seen = new Set();
+  const result = [];
+  for (const tag of categoriesTags) {
+    const slug = slugifyTag(tag);
+    if (slug && !seen.has(slug)) {
+      seen.add(slug);
+      result.push(slug);
+    }
+  }
+  return result;
+}
+
 function pickCategory(categoriesTags) {
   if (!Array.isArray(categoriesTags) || categoriesTags.length === 0) return null;
   // The most specific tag is the last one in OFF's hierarchical array.
-  return categoriesTags[categoriesTags.length - 1];
+  return slugifyTag(categoriesTags[categoriesTags.length - 1]);
 }
 
 function splitBrands(brands) {
@@ -132,6 +166,8 @@ export function normaliseProduct(raw) {
     brands: splitBrands(raw.brands),
     image: raw.image_front_url || null,
     category: pickCategory(raw.categories_tags),
+    // Backend-index parity: full slugified category hierarchy.
+    categories: slugifyCategories(raw.categories_tags),
     nutriScore: normaliseGrade(raw.nutriscore_grade),
     ecoScore: readEcoScore(raw),
     nutrientLevels: readNutrientLevels(raw.nutrient_levels),
