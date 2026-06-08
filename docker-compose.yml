@@ -20,8 +20,12 @@
 services:
   redis:
     image: redis:7-alpine
+    # Host port 6380 (not the default 6379) to avoid clashing with other
+    # local Redis containers. The backend reaches Redis over the internal
+    # compose network (redis://redis:6379), so this host mapping is only for
+    # external debugging and does not affect the app.
     ports:
-      - "6379:6379"
+      - "6380:6379"
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 10s
@@ -44,11 +48,16 @@ services:
       - FLASK_ENV=${FLASK_ENV:-development}
       - ALT_INDEX_PATH=/app/backend/data/alt_index.pkl
       - REDIS_URL=redis://redis:6379/0
+      # TELEMETRY_PATH points outside the read-only ./backend/data mount so
+      # POST /api/telemetry can persist (F-45). Default fell under the :ro mount.
+      - TELEMETRY_PATH=/tmp/telemetry.jsonl
     depends_on:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:5000/health || exit 1"]
+      # python:3.11-slim has no curl/wget; use the bundled Python instead, or
+      # the backend stays "unhealthy" forever and the frontend never starts.
+      test: ["CMD-SHELL", "python -c \"import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:5000/health').getcode()==200 else 1)\""]
       interval: 30s
       timeout: 5s
       retries: 3
