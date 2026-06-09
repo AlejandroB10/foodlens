@@ -2209,36 +2209,55 @@ summary:focus-visible {
   display: flex;
   gap: var(--space-4);
   overflow-x: auto;
-  padding-bottom: var(--space-3);
-  /* Keep tiles from being clipped on narrow viewports; the rail scrolls. */
+  padding: var(--space-1) var(--space-1) var(--space-4);
+  /* Editorial carousel: tiles snap to the left edge, and the chunky default
+     scrollbar is replaced by a slim, themed track that scales when items grow. */
+  scroll-snap-type: x proximity;
+  scroll-padding-left: var(--space-1);
   scrollbar-width: thin;
+  scrollbar-color: var(--color-ink-mute) transparent;
+  overscroll-behavior-x: contain;
 }
 
+.home__recent-rail::-webkit-scrollbar { height: 7px; }
+.home__recent-rail::-webkit-scrollbar-track {
+  background: var(--color-paper-2);
+  border-top: var(--rule-w) solid var(--color-rule);
+}
+.home__recent-rail::-webkit-scrollbar-thumb { background: var(--color-ink-mute); }
+.home__recent-rail::-webkit-scrollbar-thumb:hover { background: var(--color-ink-soft); }
+
 .home-tile {
-  flex: 0 0 13rem;
+  flex: 0 0 10.5rem;
+  scroll-snap-align: start;
   display: flex;
   flex-direction: column;
   gap: var(--space-3);
-  padding: var(--space-4);
+  padding: var(--space-3);
   text-align: left;
   background: var(--color-paper-2);
   border: var(--rule-w) solid var(--color-rule);
   color: var(--color-ink);
   cursor: pointer;
-  transition: background-color 120ms ease;
+  transition: background-color 120ms ease, transform 160ms ease, box-shadow 160ms ease;
 }
 
 .home-tile:hover,
 .home-tile:focus-visible {
   background: var(--color-paper-3);
+  transform: translateY(-2px);
+  box-shadow: 4px 4px 0 var(--color-rule);
   outline: 0;
 }
 
 .home-tile__thumb {
   width: 100%;
-  height: 6rem;
-  object-fit: contain;
-  background: var(--color-paper);
+  aspect-ratio: 4 / 3;
+  height: auto;
+  /* cover, not contain: fills the frame so portrait product photos no longer
+     leave a dark letterbox box around them. */
+  object-fit: cover;
+  background: var(--color-paper-3);
   border: var(--rule-w) solid var(--color-rule);
 }
 
@@ -2246,31 +2265,38 @@ summary:focus-visible {
   display: flex;
   align-items: center;
   justify-content: center;
+  aspect-ratio: 4 / 3;
   font-family: var(--font-display);
   font-style: italic;
-  font-size: 1.6rem;
+  font-size: 1.8rem;
   color: var(--color-ink-mute);
 }
 
 .home-tile__name {
   font-family: var(--font-body);
   font-weight: 600;
-  font-size: 0.9rem;
-  line-height: 1.25;
+  font-size: 0.82rem;
+  line-height: 1.3;
   color: var(--color-ink);
-  /* Two-line clamp so long product names never blow the tile height. */
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  /* Single line, ellipsis — every tile keeps the same height. */
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .home-tile__badges {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: var(--space-2);
   margin-top: auto;
 }
+
+/* Shrink the full dual-axis badge to a compact rail chip. H1 holds: both axes
+   stay visible; only the caption is dropped at this size (mirrors .alt-card). */
+.home-tile__badges .badge { min-height: 2.75rem; padding: var(--space-1) var(--space-2); gap: 0; }
+.home-tile__badges .badge__axis { font-size: 0.48rem; letter-spacing: 0.06em; }
+.home-tile__badges .badge__letter { font-size: 1.4rem; line-height: 1; }
+.home-tile__badges .badge__caption { display: none; }
 
 /* --- ABOUT MODAL --- */
 .modal {
