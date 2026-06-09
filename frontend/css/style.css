@@ -2234,3 +2234,46 @@ summary:focus-visible {
   gap: var(--space-2);
   margin-top: auto;
 }
+
+/* --- ABOUT MODAL --- */
+.modal {
+  padding: 0;
+  border: none;
+  border-radius: 8px;
+  background-color: var(--color-paper-2, #F2ECDE);
+  color: var(--color-ink, #1A1A18);
+  max-width: 1000px; /* <--- Doblamos el límite de ancho para pantallas grandes */
+  width: 90%;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* El fondo oscuro que bloquea la página detrás del modal */
+.modal::backdrop {
+  background-color: rgba(26, 26, 24, 0.6);
+  backdrop-filter: blur(3px);
+}
+
+.modal__dialog {
+  padding: 2rem;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+
+.modal__header {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 1rem;
+}
+
+.btn-close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: var(--color-ink-mute, #8c8779);
+  padding: 0.5rem;
+  transition: color 0.15s ease;
+}
+
+.btn-close:hover {
+  color: var(--color-ink, #1A1A18);
+}

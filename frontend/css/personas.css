@@ -47,7 +47,7 @@
   font-size: 0.9rem;
   line-height: 1.7;
   color: var(--color-ink-soft);
-  max-width: 72ch;
+  max-width: 92ch;
 }
 
 .about-view__project a { color: var(--color-accent); }

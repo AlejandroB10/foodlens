@@ -65,6 +65,10 @@
             <span class="visually-hidden" data-i18n="header.theme">Switch theme</span>
           </button>
 
+          <button type="button" class="lang-btn about-trigger" id="about-trigger" aria-haspopup="dialog" aria-controls="about-modal" data-i18n="header.about">
+            About us
+          </button>
+
           <button type="button" class="settings-trigger" data-action="settings" aria-label="Open settings">
             <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="3"/>
@@ -254,114 +258,6 @@
         <div id="results-more" class="results-more"></div>
       </section>
 
-      <section id="about" class="about-view" aria-labelledby="about-title" hidden>
-        <header class="about-view__intro">
-          <h2 id="about-title" tabindex="-1" class="about-view__title" data-i18n="about.title">About FoodLens</h2>
-          <p class="about-view__lead" data-i18n="about.intro">
-            FoodLens is a course prototype that scores food on two axes — Health and Eco — and explains its reasoning in one verifiable sentence, never a lecture.
-          </p>
-        </header>
-
-        <section class="personas-showcase" aria-labelledby="personas-title">
-          <header class="personas-showcase__header">
-            <p class="personas-showcase__eyebrow" data-i18n="personas.eyebrow">Meet the team</p>
-            <h3 id="personas-title" class="personas-showcase__title" data-i18n-html="personas.title">
-              Four ways FoodLens <em>thinks</em> about food
-            </h3>
-            <p class="personas-showcase__subtitle" data-i18n="personas.subtitle">
-              Every feature is tested against four real people — not abstractions. See who we built this for.
-            </p>
-          </header>
-
-          <div class="personas-showcase__grid">
-
-            <article class="persona-card">
-              <div class="persona-card__meta">
-                <h4 class="persona-card__name">Marc Vidal</h4>
-                <span class="persona-card__badge">P01</span>
-              </div>
-              <p class="persona-card__role">27 · software engineer · Palma</p>
-              <blockquote class="persona-card__quote" data-i18n="persona.p1.quote">
-                "I can live with a score I disagree with if I can see why it was given and decide for myself."
-              </blockquote>
-              <p class="persona-card__description" data-i18n="persona.p1.desc">
-                Time-poor. Cooks weeknights. Trusts algorithms only when the reasoning is visible. Configures once if it saves repeated decision effort. FoodLens shows him the contrastive sentence upfront — top card in under 15 seconds.
-              </p>
-            </article>
-
-            <article class="persona-card">
-              <div class="persona-card__meta">
-                <h4 class="persona-card__name">Pau Estarellas</h4>
-                <span class="persona-card__badge">P02</span>
-              </div>
-              <p class="persona-card__role">22 · maths undergrad · Barcelona</p>
-              <blockquote class="persona-card__quote" data-i18n="persona.p2.quote">
-                "Tell me: compared to what you usually buy, this one has thirty percent less sugar and almost the same saturated fat."
-              </blockquote>
-              <p class="persona-card__description" data-i18n="persona.p2.desc">
-                Tight budget, minimal cooking routine. Sceptical of marketing. Demands a number he can verify. Every claim in the contrastive sentence is one tap away from the drill-down nutrient table.
-              </p>
-            </article>
-
-            <article class="persona-card">
-              <div class="persona-card__meta">
-                <h4 class="persona-card__name">Lluís Tomàs</h4>
-                <span class="persona-card__badge">P03</span>
-              </div>
-              <p class="persona-card__role">26 · marketing professional · Madrid</p>
-              <blockquote class="persona-card__quote" data-i18n="persona.p3.quote">
-                "What convinces me is a sharp sentence with a data point in it."
-              </blockquote>
-              <p class="persona-card__description" data-i18n="persona.p3.desc">
-                Knows greenwashing from the inside. Wants a sharp contrastive sentence with a datum. Resists moralising. The system never claims authority — every comparison is grounded in data, never in "our recommendation."
-              </p>
-            </article>
-
-            <article class="persona-card">
-              <div class="persona-card__meta">
-                <h4 class="persona-card__name">Aina Servera</h4>
-                <span class="persona-card__badge">P04</span>
-              </div>
-              <p class="persona-card__role" data-i18n="persona.p4.role">24 · convenience-led shopper · Palma</p>
-              <blockquote class="persona-card__quote" data-i18n="persona.p4.quote">
-                "Just tell me which one is the honest choice in ten seconds — I don't have time for a lecture."
-              </blockquote>
-              <p class="persona-card__description" data-i18n="persona.p4.desc">
-                Shops fast on a tight budget between school runs. Wants a quick, honest call between two options without being judged for it. FoodLens gives her both badges and one sentence at a glance — no guilt, no friction.
-              </p>
-            </article>
-
-          </div>
-        </section>
-
-        <section class="about-view__project">
-          <p data-i18n="about.methodology">
-            The design is grounded in six WA3 interviews and a thematic analysis: five key insights and seven design hooks. Every screen is checked against the four personas above.
-          </p>
-          <p data-i18n-html="footer.p1">
-            <span class="small-caps">FoodLens</span> is the WA4 prototype of the
-            <em>Transparent Multi-Objective Food Recommendations</em> project at
-            UIB — Master in Intelligent Systems, course 11755 Human-Computer
-            Interaction.
-          </p>
-          <p data-i18n-html="footer.p2">
-            Data sourced from <a href="https://world.openfoodfacts.org" rel="noopener" target="_blank">Open Food Facts</a>,
-            an open, collaborative database of food products from around the
-            world. Scores reflect the official Nutri-Score (French public health
-            authority) and Environmental Score (ADEME) methodologies — we
-            consume them, we do not recompute them.
-          </p>
-          <p data-i18n-html="footer.p3">
-            Built with vanilla HTML, CSS and JavaScript. No build step. Open
-            <code>index.html</code> to run.
-          </p>
-          <div class="about-view__links">
-            <a href="/evaluation" id="about-eval-link" class="about-view__link" data-i18n="about.eval_link">Evaluate the prototype</a>
-            <span class="about-view__link-hint" data-i18n="about.eval_hint">Optional research instrument for the WA5 study — not part of the shopping flow.</span>
-          </div>
-        </section>
-      </section>
-
       <section id="compare" class="compare-view" aria-labelledby="compare-title" hidden>
         <header class="compare-view__head">
           <div class="compare-view__head-text">
@@ -406,6 +302,130 @@
     </footer>
 
   </div>
+
+  <dialog id="about-modal" class="modal" aria-labelledby="about-title">
+    <div class="modal__dialog">
+      <header class="modal__header">
+        <button type="button" id="close-about-modal" class="btn-close" aria-label="Close dialog">
+          <svg viewBox="0 0 24 24" width="24" height="24" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+          <span class="visually-hidden" data-i18n="ui.close">Close</span>
+        </button>
+      </header>
+      <div class="modal__body">
+        <section id="about" class="about-view" aria-labelledby="about-title">
+          <header class="about-view__intro">
+            <h2 id="about-title" tabindex="-1" class="about-view__title" data-i18n="about.title">About FoodLens</h2>
+            <p class="about-view__lead" data-i18n="about.intro">
+              FoodLens is a course prototype that scores food on two axes — Health and Eco — and explains its reasoning in one verifiable sentence, never a lecture.
+            </p>
+          </header>
+
+          <section class="personas-showcase" aria-labelledby="personas-title">
+            <header class="personas-showcase__header">
+              <p class="personas-showcase__eyebrow" data-i18n="personas.eyebrow">Meet the team</p>
+              <h3 id="personas-title" class="personas-showcase__title" data-i18n-html="personas.title">
+                Four ways FoodLens <em>thinks</em> about food
+              </h3>
+              <p class="personas-showcase__subtitle" data-i18n="personas.subtitle">
+                Every feature is tested against four real people — not abstractions. See who we built this for.
+              </p>
+            </header>
+
+            <div class="personas-showcase__grid">
+
+              <article class="persona-card">
+                <div class="persona-card__meta">
+                  <h4 class="persona-card__name">Marc Vidal</h4>
+                  <span class="persona-card__badge">P01</span>
+                </div>
+                <p class="persona-card__role">27 · software engineer · Palma</p>
+                <blockquote class="persona-card__quote" data-i18n="persona.p1.quote">
+                  "I can live with a score I disagree with if I can see why it was given and decide for myself."
+                </blockquote>
+                <p class="persona-card__description" data-i18n="persona.p1.desc">
+                  Time-poor. Cooks weeknights. Trusts algorithms only when the reasoning is visible. Configures once if it saves repeated decision effort. FoodLens shows him the contrastive sentence upfront — top card in under 15 seconds.
+                </p>
+              </article>
+
+              <article class="persona-card">
+                <div class="persona-card__meta">
+                  <h4 class="persona-card__name">Pau Estarellas</h4>
+                  <span class="persona-card__badge">P02</span>
+                </div>
+                <p class="persona-card__role">22 · maths undergrad · Barcelona</p>
+                <blockquote class="persona-card__quote" data-i18n="persona.p2.quote">
+                  "Tell me: compared to what you usually buy, this one has thirty percent less sugar and almost the same saturated fat."
+                </blockquote>
+                <p class="persona-card__description" data-i18n="persona.p2.desc">
+                  Tight budget, minimal cooking routine. Sceptical of marketing. Demands a number he can verify. Every claim in the contrastive sentence is one tap away from the drill-down nutrient table.
+                </p>
+              </article>
+
+              <article class="persona-card">
+                <div class="persona-card__meta">
+                  <h4 class="persona-card__name">Lluís Tomàs</h4>
+                  <span class="persona-card__badge">P03</span>
+                </div>
+                <p class="persona-card__role">26 · marketing professional · Madrid</p>
+                <blockquote class="persona-card__quote" data-i18n="persona.p3.quote">
+                  "What convinces me is a sharp sentence with a data point in it."
+                </blockquote>
+                <p class="persona-card__description" data-i18n="persona.p3.desc">
+                  Knows greenwashing from the inside. Wants a sharp contrastive sentence with a datum. Resists moralising. The system never claims authority — every comparison is grounded in data, never in "our recommendation."
+                </p>
+              </article>
+
+              <article class="persona-card">
+                <div class="persona-card__meta">
+                  <h4 class="persona-card__name">Aina Servera</h4>
+                  <span class="persona-card__badge">P04</span>
+                </div>
+                <p class="persona-card__role" data-i18n="persona.p4.role">24 · convenience-led shopper · Palma</p>
+                <blockquote class="persona-card__quote" data-i18n="persona.p4.quote">
+                  "Just tell me which one is the honest choice in ten seconds — I don't have time for a lecture."
+                </blockquote>
+                <p class="persona-card__description" data-i18n="persona.p4.desc">
+                  Shops fast on a tight budget between school runs. Wants a quick, honest call between two options without being judged for it. FoodLens gives her both badges and one sentence at a glance — no guilt, no friction.
+                </p>
+              </article>
+
+            </div>
+          </section>
+
+        <section class="about-view__project">
+          <p data-i18n="about.methodology">
+            The design is grounded in six WA3 interviews and a thematic analysis: five key insights and seven design hooks. Every screen is checked against the four personas above.
+          </p>
+          <p data-i18n-html="footer.p1">
+            <span class="small-caps">FoodLens</span> is the WA4 prototype of the
+            <em>Transparent Multi-Objective Food Recommendations</em> project at
+            UIB — Master in Intelligent Systems, course 11755 Human-Computer
+            Interaction.
+          </p>
+          <p data-i18n-html="footer.p2">
+            Data sourced from <a href="https://world.openfoodfacts.org" rel="noopener" target="_blank">Open Food Facts</a>,
+            an open, collaborative database of food products from around the
+            world. Scores reflect the official Nutri-Score (French public health
+            authority) and Environmental Score (ADEME) methodologies — we
+            consume them, we do not recompute them.
+          </p>
+          <p data-i18n-html="footer.p3">
+            Built with vanilla HTML, CSS and JavaScript. No build step. Open
+            <code>index.html</code> to run.
+          </p>
+          <div class="about-view__links">
+            <a href="/evaluation" id="about-eval-link" class="about-view__link" data-i18n="about.eval_link">Evaluate the prototype</a>
+            <span class="about-view__link-hint" data-i18n="about.eval_hint">Optional research instrument for the WA5 study — not part of the shopping flow.</span>
+          </div>
+        </section>
+      </section>
+
+      </div>
+    </div>
+  </dialog>
 
   <style>
     .visually-hidden {

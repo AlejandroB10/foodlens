@@ -166,8 +166,10 @@ const els = {
   favouritesSection: document.querySelector('#favourites'),
   evaluationSection: document.querySelector('#evaluation'),
   homeView: document.querySelector('#home'),
-  aboutView: document.querySelector('#about'),
   compareView: document.querySelector('#compare'),
+  aboutTrigger: document.querySelector('#about-trigger'),
+  aboutModal: document.querySelector('#about-modal'),
+  closeAboutModal: document.querySelector('#close-about-modal'),
   homeRecent: document.querySelector('#home-recent'),
   homeRecentRail: document.querySelector('#home-recent-rail'),
   homeCtaInspect: document.querySelector('#home-cta-inspect'),
@@ -1374,7 +1376,7 @@ function rerenderResults() {
     const card = renderProductCard(product, ref, false);
     card.addEventListener('click', (e) => {
       // Only focus when clicking outside interactive elements.
-      if (e.target.closest('button, a, summary, details, input, [role="button"]')) return;
+      if (e.target.closest('button, a, summary, details, input, label, [role="button"]')) return;
       focusProduct(product);
     });
     els.resultsList.appendChild(card);
@@ -2358,7 +2360,6 @@ function showView(view, opts = {}) {
 
   // The routed /about and /compare regions are <main> siblings: hide them by
   // default for EVERY view, then the matching branch below re-shows its own.
-  setHidden(els.aboutView, true);
   setHidden(els.compareView, true);
 
   // Show/hide sections
@@ -2403,16 +2404,6 @@ function showView(view, opts = {}) {
     // focusProduct already awaited the render; restore/popstate/saved paths did
     // not, so render here unless the caller signals it is already painted.
     if (!skipFocusedRender) rerenderFocused();
-  } else if (view === 'about') {
-    // Routed About: personas (incl. Aina P04) + project/attribution/methodology.
-    // No catalogue load — it is a static informational view.
-    setHidden(els.homeView, true);
-    setHidden(els.favouritesSection, true);
-    setHidden(els.evaluationSection, true);
-    setHidden(els.focusedView, true);
-    setHidden(els.sourceBadge, true);
-    setDiscoverRegionsHidden(true);
-    setHidden(els.aboutView, false);
   } else if (view === 'compare') {
     // Routed Compare: the promoted comparison render (ranked summary + transposed
     // table + Export CSV). The tray on /discover still accumulates selections.
@@ -2623,8 +2614,17 @@ function wireEvents() {
   interceptNav(els.navCompare, () => showView('compare'));
 
   // About + Evaluate entry points (home link, footer links, in-about link).
-  interceptNav(els.homeAboutLink, () => showView('about'));
-  interceptNav(els.footerAboutLink, () => showView('about'));
+  const openAboutModal = () => { els.aboutModal?.showModal(); };
+  interceptNav(els.homeAboutLink, openAboutModal);
+  interceptNav(els.footerAboutLink, openAboutModal);
+  els.aboutTrigger?.addEventListener('click', openAboutModal);
+  
+  els.closeAboutModal?.addEventListener('click', () => { els.aboutModal?.close(); });
+  els.aboutModal?.addEventListener('click', (e) => {
+    const dim = els.aboutModal.getBoundingClientRect();
+    if (e.clientX < dim.left || e.clientX > dim.right || e.clientY < dim.top || e.clientY > dim.bottom) els.aboutModal.close();
+  });
+
   interceptNav(els.footerEvalLink, () => showView('evaluation'));
   interceptNav(els.aboutEvalLink, () => showView('evaluation'));
   els.compareBackBtn?.addEventListener('click', () => { showView('discover'); ensureCatalogueLoaded(); });
@@ -2758,10 +2758,14 @@ async function bootstrap() {
     // Deep link to /discover: load the shelf, then show the listing.
     await ensureCatalogueLoaded();
     showView('discover', { replace: true });
-  } else if (initialView === 'saved' || initialView === 'evaluation' || initialView === 'about' || initialView === 'compare') {
-    // Saved / Evaluation / About / Compare: no catalogue load needed. Compare
-    // renders from the (initially empty) tray selection; About is static.
+  } else if (initialView === 'saved' || initialView === 'evaluation' || initialView === 'compare') {
+    // Saved / Evaluation / Compare: no catalogue load needed. Compare
+    // renders from the (initially empty) tray selection.
     showView(initialView, { replace: true });
+  } else if (initialView === 'about') {
+    // Redirige enlaces directos a /about mostrando la Home y abriendo el modal
+    showView('home', { replace: true });
+    els.aboutModal?.showModal();
   } else {
     // "/" and unknown paths → Home. No catalogue load.
     showView('home', { replace: true });
