@@ -2,6 +2,9 @@
 // One sentence, one verifiable number. Never moralises. Never invents.
 // See WA3 hooks H2 (reasoning is the recommendation) and H3 (one sentence + one number).
 
+import { t } from './views/i18n.js';
+
+// English display names double as the fallback when an i18n key is missing.
 const NUTRIENT_DISPLAY_NAMES = {
   sugars_100g: 'sugar',
   fat_100g: 'fat',
@@ -65,18 +68,33 @@ function formatGrams(value) {
   return `${Math.round(value)}g`;
 }
 
+// Translate the nutrient key for the current UI language; English name = fallback.
+function nutrientName(key) {
+  return t('xai.nutrient.' + key, NUTRIENT_DISPLAY_NAMES[key] || key);
+}
+
+// Fill a translated template by replacing {placeholder} tokens. The template is
+// pulled from i18n for the current language; `fallback` is the English string.
+function fillTemplate(key, vars, fallback) {
+  let s = t(key, fallback);
+  for (const name in vars) {
+    s = s.split('{' + name + '}').join(String(vars[name]));
+  }
+  return s;
+}
+
 function referenceLabel(reference, fallbackName) {
   if (reference.kind === 'category-average') {
-    return 'the category average';
+    return t('xai.ref.category_average', 'the category average');
   }
   if (reference.kind === 'usual') {
     // KI-4 / user-flows.md (Lluís): the on-card contrastive sentence must NAME
     // the usual ("...18% less added sugar than Alpro"), not anonymise it.
     // pickReference spreads the usual product into the reference, so its name
     // is available here; fall back to the generic phrase only when nameless.
-    return reference.name || 'your usual choice';
+    return reference.name || t('xai.ref.usual_generic', 'your usual choice');
   }
-  return reference.name || fallbackName || 'an alternative';
+  return reference.name || fallbackName || t('xai.ref.alternative', 'an alternative');
 }
 
 /**
@@ -91,12 +109,12 @@ function referenceLabel(reference, fallbackName) {
  */
 export function generateContrastiveSentence(product, reference) {
   if (!product) {
-    return { sentence: 'No product to explain.', hasComparison: false };
+    return { sentence: t('xai.no_product', 'No product to explain.'), hasComparison: false };
   }
 
   if (!reference) {
     return {
-      sentence: 'Insufficient data to compare this product against a reference.',
+      sentence: t('xai.insufficient_data', 'Insufficient data to compare this product against a reference.'),
       hasComparison: false,
     };
   }
@@ -113,22 +131,33 @@ export function generateContrastiveSentence(product, reference) {
 
   // Preferred shape: one nutrient delta + one score comparison.
   if (nutrientDelta) {
-    const direction = nutrientDelta.deltaPct < 0 ? 'less' : 'more';
-    const nutrientName = NUTRIENT_DISPLAY_NAMES[nutrientDelta.key] || nutrientDelta.key;
+    const dir = t(nutrientDelta.deltaPct < 0 ? 'xai.dir.less' : 'xai.dir.more', nutrientDelta.deltaPct < 0 ? 'less' : 'more');
     const pct = formatPct(nutrientDelta.deltaPct);
-    const base = `This product has ${pct} ${direction} ${nutrientName} per 100g than ${refLabel}`;
+    const base = fillTemplate(
+      'xai.s.base',
+      { pct, dir, nutrient: nutrientName(nutrientDelta.key), ref: refLabel },
+      'This product has {pct} {dir} {nutrient} per 100g than {ref}',
+    );
 
     if (nutriDiff !== null && nutriDiff !== 0) {
-      const compare = nutriDiff > 0 ? 'better' : 'worse';
+      const cmp = t(nutriDiff > 0 ? 'xai.cmp.better' : 'xai.cmp.worse', nutriDiff > 0 ? 'better' : 'worse');
       return {
-        sentence: `${base}, with a ${compare} Nutri-Score (${productGradeNutri.toUpperCase()} vs ${refGradeNutri.toUpperCase()}).`,
+        sentence: base + fillTemplate(
+          'xai.s.suffix_nutri',
+          { cmp, a: productGradeNutri.toUpperCase(), b: refGradeNutri.toUpperCase() },
+          ', with a {cmp} Nutri-Score ({a} vs {b}).',
+        ),
         hasComparison: true,
       };
     }
     if (ecoDiff !== null && ecoDiff !== 0) {
-      const compare = ecoDiff > 0 ? 'better' : 'worse';
+      const cmp = t(ecoDiff > 0 ? 'xai.cmp.better' : 'xai.cmp.worse', ecoDiff > 0 ? 'better' : 'worse');
       return {
-        sentence: `${base}, with a ${compare} Environmental Score (${productGradeEco.toUpperCase()} vs ${refGradeEco.toUpperCase()}).`,
+        sentence: base + fillTemplate(
+          'xai.s.suffix_eco',
+          { cmp, a: productGradeEco.toUpperCase(), b: refGradeEco.toUpperCase() },
+          ', with a {cmp} Environmental Score ({a} vs {b}).',
+        ),
         hasComparison: true,
       };
     }
@@ -137,23 +166,31 @@ export function generateContrastiveSentence(product, reference) {
 
   // Fallback 1: grades differ but no nutrient delta.
   if (nutriDiff !== null && nutriDiff !== 0) {
-    const compare = nutriDiff > 0 ? 'better' : 'worse';
+    const cmp = t(nutriDiff > 0 ? 'xai.cmp.better' : 'xai.cmp.worse', nutriDiff > 0 ? 'better' : 'worse');
     return {
-      sentence: `This product has a ${compare} Nutri-Score than ${refLabel} (${productGradeNutri.toUpperCase()} vs ${refGradeNutri.toUpperCase()}).`,
+      sentence: fillTemplate(
+        'xai.s.nutri_only',
+        { cmp, ref: refLabel, a: productGradeNutri.toUpperCase(), b: refGradeNutri.toUpperCase() },
+        'This product has a {cmp} Nutri-Score than {ref} ({a} vs {b}).',
+      ),
       hasComparison: true,
     };
   }
   if (ecoDiff !== null && ecoDiff !== 0) {
-    const compare = ecoDiff > 0 ? 'better' : 'worse';
+    const cmp = t(ecoDiff > 0 ? 'xai.cmp.better' : 'xai.cmp.worse', ecoDiff > 0 ? 'better' : 'worse');
     return {
-      sentence: `This product has a ${compare} Environmental Score than ${refLabel} (${productGradeEco.toUpperCase()} vs ${refGradeEco.toUpperCase()}).`,
+      sentence: fillTemplate(
+        'xai.s.eco_only',
+        { cmp, ref: refLabel, a: productGradeEco.toUpperCase(), b: refGradeEco.toUpperCase() },
+        'This product has a {cmp} Environmental Score than {ref} ({a} vs {b}).',
+      ),
       hasComparison: true,
     };
   }
 
   // Fallback 2: nothing comparable.
   return {
-    sentence: `Insufficient comparable data between this product and ${refLabel}.`,
+    sentence: fillTemplate('xai.insufficient_comparable', { ref: refLabel }, 'Insufficient comparable data between this product and {ref}.'),
     hasComparison: false,
   };
 }
@@ -195,7 +232,7 @@ export function buildCategoryAverageReference(products, category) {
 
   return {
     kind: 'category-average',
-    name: 'the category average',
+    name: t('xai.ref.category_average', 'the category average'),
     nutrients: averaged,
     nutriScore: { grade: null, numeric: null },
     ecoScore: { grade: null, numeric: null, sourceField: null },
@@ -243,15 +280,14 @@ export function formatAlternativeDelta(product, alternative) {
     if (typeof p !== 'number' || typeof a !== 'number') continue;
     const delta = a - p;
     if (Math.abs(delta) < 0.2) continue;
-    const direction = delta < 0 ? 'less' : 'more';
+    const dir = t(delta < 0 ? 'xai.dir.less' : 'xai.dir.more', delta < 0 ? 'less' : 'more');
     const formatted = formatGrams(Math.abs(delta));
     if (!formatted) continue;
-    parts.push(`${formatted} ${direction} ${NUTRIENT_DISPLAY_NAMES[key] || key}`);
+    parts.push(fillTemplate('xai.delta.item', { grams: formatted, dir, nutrient: nutrientName(key) }, '{grams} {dir} {nutrient}'));
     if (parts.length >= 2) break;
   }
   // Return an empty string (falsy) when there is no nutrient delta to report so
-  // callers can fall back to their own TRANSLATED "similar profile" copy instead
-  // of leaking this English sentence. See app.js rerenderFocused (`if (deltaText)`).
+  // callers can fall back to their own "similar profile" copy.
   if (parts.length === 0) return '';
-  return `${parts.join(', ')} per 100g.`;
+  return parts.join(', ') + t('xai.delta.per100g', ' per 100g.');
 }

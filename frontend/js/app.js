@@ -2633,7 +2633,11 @@ function wireEvents() {
   // categories.js / filters.js. The hero/CTAs use data-i18n(-html) so updateDOM
   // handles them automatically.
   window.addEventListener('languageChanged', () => {
+    // Re-render the views whose generated text (contrastive sentence, deltas) is
+    // built in JS rather than via data-i18n, so it follows the new language.
     if (currentView === 'home') renderHomeRecentRail();
+    else if (currentView === 'discover') rerenderResults();
+    else if (currentView === 'product' && focusedProduct) rerenderFocused();
   });
 
   // Back/forward buttons: read the URL and switch view without pushing again.

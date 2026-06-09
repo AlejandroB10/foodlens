@@ -171,7 +171,6 @@
   display: inline-block;
   padding: 0.15rem 0.5rem;
   border: var(--rule-w, 1px) solid var(--color-rule);
-  border-radius: 999px;
   font-size: 0.72rem;
   white-space: nowrap;
 }
