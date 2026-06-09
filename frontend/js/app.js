@@ -10,6 +10,7 @@ import {
   getExplainFromBackend,
   getCategoryScatter,
   postTelemetryEvent,
+  getProductIngredients,
 } from './api.js';
 import {
   generateContrastiveSentence,
@@ -29,10 +30,10 @@ import { initI18n, setLang, t } from './views/i18n.js';
 
 const STORAGE_KEY = 'foodlens.state';
 const SEASONAL_HINT_KEY = 'foodlens.seasonalHint';
-// Render cap for the catalogue listing: fetch (and draw) at most this many cards
-// so 862 products don't tank the DOM. The full catalogue stays reachable via
-// search / category chips.
-const CATALOG_RENDER_CAP = 80;
+// Page size for the catalogue/category listing: fetch (and draw) this many cards
+// per page; "Load more" appends another page. Kept small (20) so the listing is
+// digestible; the full catalogue stays reachable via Load more / search / chips.
+const CATALOG_RENDER_CAP = 20;
 const ZXING_BROWSER_URL = 'https://cdn.jsdelivr.net/npm/@zxing/browser@0.1.5/+esm';
 const CHART_JS_URL = 'https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js';
 const DEFAULT_STATE = {
@@ -683,7 +684,89 @@ function usualButtonLabel(product) {
   return t('card.set_usual_category', 'Set as my usual {category}').replace('{category}', name);
 }
 
-function renderProductCard(product, reference, isAlternative = false) {
+// Editorial line-icon (share node), stroke=currentColor so it inverts in dark
+// mode. aria-hidden because the surrounding button carries the accessible name.
+const ICON_SHARE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+  <circle cx="18" cy="5" r="3"/>
+  <circle cx="6" cy="12" r="3"/>
+  <circle cx="18" cy="19" r="3"/>
+  <line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/>
+  <line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/>
+</svg>`;
+
+/**
+ * Render a product card.
+ *
+ * Two contexts diverge here:
+ * - LISTING (isFocused=false): compact single-line icon-button action row
+ *   (favourite + share). The add-to-compare checkbox stays as the first child.
+ *   Print / set-as-usual / compare-with-usual are intentionally NOT rendered —
+ *   they only make sense once a product is actually selected.
+ * - FOCUSED (isFocused=true): the full text-label action row (heart, print,
+ *   set-as-usual, share, compare-with-usual). No capability is removed here.
+ *
+ * H7 stays satisfied in both contexts (the card always closes into an action).
+ *
+ * @param {object} product
+ * @param {object} reference   — comparison anchor for the contrastive sentence
+ * @param {boolean} isAlternative — alternatives grid uses renderAlternativeCard;
+ *   when true the action row / compare toggle / SHAP toggle are suppressed.
+ * @param {boolean} isFocused  — true only for the "Selected product" detail card.
+ */
+// Number of main ingredients shown on the focused card before "+N more".
+const INGREDIENTS_TOP_N = 6;
+
+/**
+ * "Main ingredients" section — FOCUSED card only.
+ *
+ * The backend index carries no ingredient data, so we fetch them lazily for the
+ * single focused barcode via getProductIngredients (OFF /product, on demand). The
+ * section renders synchronously in a loading state and fills itself async, mirroring
+ * renderAdvancedToggle. Shows the localised "no data" copy when OFF has nothing —
+ * never invents ingredient names.
+ *
+ * Returns null for listing / alternative cards so it appears on the focused card only.
+ */
+function renderIngredientsSection(product, isFocused) {
+  if (!isFocused || !product?.code) return null;
+
+  const body = el('div', { class: 'card__ingredients-body' },
+    el('span', { class: 'card__ingredients-loading' }, t('card.ingredients_loading', 'Loading ingredients…')),
+  );
+
+  const section = el('section', { class: 'card__ingredients' },
+    el('h4', { class: 'card__ingredients-title', dataset: { i18n: 'card.ingredients_title' } },
+      t('card.ingredients_title', 'Main ingredients')),
+    body,
+  );
+
+  getProductIngredients(product.code).then(({ ingredients }) => {
+    clear(body);
+    if (!ingredients || ingredients.length === 0) {
+      body.appendChild(
+        el('span', { class: 'card__ingredients-empty card__no-data' }, t('card.no_data', 'no data')),
+      );
+      return;
+    }
+    const shown = ingredients.slice(0, INGREDIENTS_TOP_N);
+    const list = el('ul', { class: 'card__ingredients-list', 'aria-label': t('card.ingredients_title', 'Main ingredients') });
+    for (const name of shown) {
+      list.appendChild(el('li', { class: 'card__ingredients-chip' }, name));
+    }
+    const remaining = ingredients.length - shown.length;
+    if (remaining > 0) {
+      list.appendChild(
+        el('li', { class: 'card__ingredients-more' },
+          t('card.ingredients_more', '+{n} more').replace('{n}', String(remaining))),
+      );
+    }
+    body.appendChild(list);
+  });
+
+  return section;
+}
+
+function renderProductCard(product, reference, isAlternative = false, isFocused = false) {
   const { sentence } = generateContrastiveSentence(product, reference);
 
   const figure = product.image
@@ -713,7 +796,10 @@ function renderProductCard(product, reference, isAlternative = false) {
 
   return el(
     'article',
-    { class: `card${isAlternative ? ' card--alt' : ''}`, dataset: { code: product.code } },
+    {
+      class: `card${isAlternative ? ' card--alt' : ''}${!isAlternative ? (isFocused ? ' card--focused' : ' card--listing') : ''}`,
+      dataset: { code: product.code },
+    },
     compareAction,
     el(
       'header',
@@ -743,6 +829,7 @@ function renderProductCard(product, reference, isAlternative = false) {
       { class: 'card__sentence' },
       sentence,
     ),
+    renderIngredientsSection(product, isFocused),
     el(
       'details',
       { class: 'card__drilldown' },
@@ -750,81 +837,115 @@ function renderProductCard(product, reference, isAlternative = false) {
       renderNutrientTable(product.nutrients),
     ),
     !isAlternative ? renderAdvancedToggle(product) : null,
-    !isAlternative
-      ? el(
-          'div',
-          { class: 'card__actions' },
-          buildHeartButton(product.code, product, () => {
-            document.querySelectorAll('.heart-btn').forEach((btn) => {
-              const card = btn.closest('[data-code]');
-              if (card && card.dataset.code) {
-                const saved = isFavourite(card.dataset.code);
-                btn.classList.toggle('is-saved', saved);
-                btn.setAttribute('aria-pressed', saved ? 'true' : 'false');
-                btn.setAttribute('aria-label', saved ? 'Remove from saved' : 'Save product');
-              }
-            });
-            updateSavedBadge();
-          }),
-          el(
-            'button',
-            { type: 'button', class: 'btn btn--print', dataset: { i18n: 'card.print' }, onClick: () => printFocusedCard() },
-            t('card.print', 'Print card'),
-          ),
-          el(
-            'button',
-            { 
-              type: 'button', 
-              class: 'btn btn--ghost', 
-              onClick: async () => {
-                // Si hacemos clic desde la lista izquierda, lo enfocamos primero
-                if (focusedProduct?.code !== product.code) {
-                  await focusProduct(product);
-                }
-                setUsualProduct(product);
-              }
-            },
-            usualButtonLabel(product)
-          ),
-          el(
-            'button',
-            { type: 'button', class: 'btn btn--share', dataset: { i18n: 'card.share' }, onClick: () => shareProduct(product) },
-            t('card.share', 'Share product'),
-          ),
-          el(
-            'button',
-            {
-              type: 'button',
-              class: 'btn btn--primary',
-              onClick: async () => {
-                // Pull the usual for THIS product's category so we never compare
-                // across shelves (e.g. a usual cola against a yoghurt).
-                const usual = getUsualProduct(product);
+    !isAlternative ? renderCardActions(product, isFocused) : null,
+  );
+}
 
-                if (!usual) {
-                  toast(t('compare.no_usual_saved', 'You haven\'t set a usual product yet. Click "Set as usual" on any product first!'));
-                  return;
-                }
-                if (usual.code === product.code) {
-                  toast(t('compare.same_usual', 'This is already your usual product! Inspect a different one to compare.'));
-                  return;
-                } 
-                
-                // Si el usuario clicó en la lista lateral, esperamos a que el producto cargue
-                if (focusedProduct?.code !== product.code) {
-                  await focusProduct(product);
-                }
+// Heart toggle reused by both action rows: re-syncs every heart on the page so
+// the same product's favourite state stays consistent across listing + focused.
+function buildCardHeartButton(product) {
+  return buildHeartButton(product.code, product, () => {
+    document.querySelectorAll('.heart-btn').forEach((btn) => {
+      const card = btn.closest('[data-code]');
+      if (card && card.dataset.code) {
+        const saved = isFavourite(card.dataset.code);
+        btn.classList.toggle('is-saved', saved);
+        btn.setAttribute('aria-pressed', saved ? 'true' : 'false');
+        btn.setAttribute('aria-label', saved ? 'Remove from saved' : 'Save product');
+      }
+    });
+    updateSavedBadge();
+  });
+}
 
-                toast(t('compare.scrolling', 'Showing comparison below…'));
-                // Ahora es seguro hacer scroll porque sabemos que la sección existe
-                const sectionTitle = document.getElementById('usual-comparison-section');
-                if (sectionTitle) sectionTitle.scrollIntoView({ behavior: 'smooth', block: 'start' });
-              } 
-            },
-            t('card.compare_usual', 'Compare with usual'),
-          ),
-        )
-      : null,
+/**
+ * Action row for a product card.
+ *
+ * Listing context → compact icon-button row (favourite + share) that stays on a
+ * single line. Focused context → the full text-label row including Print,
+ * Set-as-usual and Compare-with-usual, which only operate on a selected product.
+ */
+function renderCardActions(product, isFocused) {
+  if (!isFocused) {
+    return el(
+      'div',
+      { class: 'card__actions card__actions--compact' },
+      buildCardHeartButton(product),
+      el(
+        'button',
+        {
+          type: 'button',
+          class: 'icon-btn',
+          'aria-label': t('aria.share', 'Share product'),
+          title: t('aria.share', 'Share product'),
+          html: ICON_SHARE,
+          onClick: () => shareProduct(product),
+        },
+      ),
+    );
+  }
+
+  return el(
+    'div',
+    { class: 'card__actions' },
+    buildCardHeartButton(product),
+    el(
+      'button',
+      { type: 'button', class: 'btn btn--print', dataset: { i18n: 'card.print' }, onClick: () => printFocusedCard() },
+      t('card.print', 'Print card'),
+    ),
+    el(
+      'button',
+      {
+        type: 'button',
+        class: 'btn btn--ghost',
+        onClick: async () => {
+          // Si hacemos clic desde la lista izquierda, lo enfocamos primero
+          if (focusedProduct?.code !== product.code) {
+            await focusProduct(product);
+          }
+          setUsualProduct(product);
+        },
+      },
+      usualButtonLabel(product),
+    ),
+    el(
+      'button',
+      { type: 'button', class: 'btn btn--share', dataset: { i18n: 'card.share' }, onClick: () => shareProduct(product) },
+      t('card.share', 'Share product'),
+    ),
+    el(
+      'button',
+      {
+        type: 'button',
+        class: 'btn btn--primary',
+        onClick: async () => {
+          // Pull the usual for THIS product's category so we never compare
+          // across shelves (e.g. a usual cola against a yoghurt).
+          const usual = getUsualProduct(product);
+
+          if (!usual) {
+            toast(t('compare.no_usual_saved', 'You haven\'t set a usual product yet. Click "Set as usual" on any product first!'));
+            return;
+          }
+          if (usual.code === product.code) {
+            toast(t('compare.same_usual', 'This is already your usual product! Inspect a different one to compare.'));
+            return;
+          }
+
+          // Si el usuario clicó en la lista lateral, esperamos a que el producto cargue
+          if (focusedProduct?.code !== product.code) {
+            await focusProduct(product);
+          }
+
+          toast(t('compare.scrolling', 'Showing comparison below…'));
+          // Ahora es seguro hacer scroll porque sabemos que la sección existe
+          const sectionTitle = document.getElementById('usual-comparison-section');
+          if (sectionTitle) sectionTitle.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        },
+      },
+      t('card.compare_usual', 'Compare with usual'),
+    ),
   );
 }
 
@@ -915,7 +1036,7 @@ async function rerenderFocused() {
   els.focusedView.appendChild(
     el('h2', { class: 'section__title' }, t('ui.selected_product', 'Selected product')),
   );
-  els.focusedView.appendChild(renderProductCard(focusedProduct, reference, false));
+  els.focusedView.appendChild(renderProductCard(focusedProduct, reference, false, /* isFocused */ true));
 
   // 2. F-18: Renderizado del Producto Habitual (Comparación Real).
   // Guard by SHELF KEY (not just code, and not the over-granular leaf tag) so a
@@ -930,19 +1051,22 @@ async function rerenderFocused() {
       el('h3', { id: 'usual-comparison-section', class: 'section__subtitle' }, t('compare.usual_title', 'Compared to your usual choice')),
     );
 
-    // 1. Traducimos los deltas básicos
+    // 1. Translate the structured delta string. formatAlternativeDelta emits an
+    // English form "<grams> <less|more> <nutrient>, ... per 100g." where nutrient
+    // is one of the NUTRIENT_DISPLAY_NAMES (sugar|fat|saturated fat|salt|protein|
+    // fibre). Translating direction + nutrient as separate tokens covers BOTH
+    // directions for every nutrient (so "more sugar"/"less fibre" no longer leak
+    // English into ES/CA), and is order-safe — unlike the previous .replace chain
+    // which only handled the favourable direction and could partially match
+    // "fat" inside "saturated fat".
     let deltaText = formatAlternativeDelta(usualProduct, focusedProduct);
     if (deltaText) {
-      deltaText = deltaText
-        .replace('less sugar', t('compare.less_sugar', 'less sugar'))
-        .replace('less fat', t('compare.less_fat', 'less fat'))
-        .replace('less saturated fat', t('compare.less_satfat', 'less saturated fat'))
-        .replace('less salt', t('compare.less_salt', 'less salt'))
-        .replace('more protein', t('compare.more_protein', 'more protein'))
-        .replace('more fiber', t('compare.more_fiber', 'more fiber'))
-        .replace('per 100g', t('compare.per_100g', 'per 100g'))
-        .replace('better Nutri-Score', t('compare.better_nutri', 'better Nutri-Score'))
-        .replace('better Eco-Score', t('compare.better_eco', 'better Eco-Score'));
+      deltaText = deltaText.replace(
+        /\b(less|more) (saturated fat|sugar|fat|salt|protein|fibre)\b/g,
+        (_, dir, nut) =>
+          `${t(`compare.dir_${dir}`, dir)} ${t(`compare.nut_${nut}`, nut)}`,
+      );
+      deltaText = deltaText.replace('per 100g', t('compare.per_100g', 'per 100g'));
     }
 
     const currentName = focusedProduct.name || 'Current product';
@@ -2126,6 +2250,9 @@ function wireEvents() {
   }
 
   els.settingsBtn?.addEventListener('click', showSettings);
+  // F-18: when a usual is cleared from the settings panel, refresh the focused
+  // card so its comparison disappears and it falls back to the category average.
+  document.addEventListener('foodlens:usuals-changed', () => { rerenderFocused(); });
   els.scanButton?.addEventListener('click', openBarcodeScanner);
   els.navSearch?.addEventListener('click', () => showView('search'));
   els.navSaved?.addEventListener('click', () => showView('saved'));

@@ -3,9 +3,32 @@
 // Editorial right-side drawer: numbered sections (01/02/03/04),
 // segmented tabs for units, weighting slider, danger button + confirm dialog.
 
-import { setLang, getCurrentLang } from './i18n.js';
+import { setLang, getCurrentLang, t } from './i18n.js';
 
 const SETTINGS_KEY = 'foodlens.settings';
+// F-18: usuals live inside the onboarding profile, keyed by shelf.
+const PROFILE_KEY = 'foodlens.profile';
+
+// Human-readable shelf labels for the canonical shelf keys used by F-18. Keeps
+// the settings list legible ("Yogurts") instead of raw tags ("en:yogurts").
+const SHELF_LABELS = {
+  'en:yogurts': 'Yogurts',
+  'en:cheeses': 'Cheeses',
+  'en:breads': 'Breads',
+  'en:fruit-juices': 'Fruit juices',
+  'en:chocolates': 'Chocolates',
+  'en:breakfast-cereals': 'Breakfast cereals',
+  'en:soft-drinks': 'Soft drinks',
+  'en:biscuits-and-cakes': 'Biscuits and cakes',
+  'en:chips-and-fries': 'Chips and fries',
+};
+
+function shelfLabel(key) {
+  if (key === '__uncategorised__') return 'Uncategorised';
+  if (SHELF_LABELS[key]) return SHELF_LABELS[key];
+  // Fall back to a tidied version of an arbitrary leaf tag.
+  return String(key).replace(/^[a-z]{2}:/, '').replace(/-/g, ' ').trim() || key;
+}
 
 const LANGUAGES = [
   { code: 'en', label: 'English' },
@@ -120,6 +143,93 @@ function clearProfile() {
     localStorage.removeItem(key);
   }
   window.location.reload();
+}
+
+// ─── F-18: usual choices (view + clear) ─────────────────────────────────────
+
+function loadProfile() {
+  try {
+    const raw = localStorage.getItem(PROFILE_KEY);
+    const parsed = raw ? JSON.parse(raw) : null;
+    return parsed && typeof parsed === 'object' ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function getUsualEntries() {
+  const profile = loadProfile();
+  const map = profile.usualByCategory && typeof profile.usualByCategory === 'object'
+    ? profile.usualByCategory
+    : {};
+  return Object.entries(map)
+    .filter(([, product]) => product && typeof product === 'object')
+    .map(([key, product]) => ({ key, product }));
+}
+
+// Remove one usual by its shelf key, persist, and re-render the list in place.
+// Spec (feature-backlog.md F-18): clearing falls the card silently back to the
+// category average — no error copy, no moralising (KI-2).
+function clearUsual(shelfKey) {
+  const profile = loadProfile();
+  if (profile.usualByCategory && typeof profile.usualByCategory === 'object') {
+    delete profile.usualByCategory[shelfKey];
+    try {
+      localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+    } catch {
+      /* storage disabled, ignore */
+    }
+  }
+  // Re-render just the usuals list so the change is visible without closing.
+  const list = document.getElementById('settings-usuals-list');
+  if (list) {
+    const fresh = buildUsualsList();
+    list.replaceWith(fresh);
+  }
+  // Let the rest of the app refresh the focused card if it is listening.
+  document.dispatchEvent(new CustomEvent('foodlens:usuals-changed'));
+}
+
+function buildUsualsList() {
+  const entries = getUsualEntries();
+  const wrap = el('div', { id: 'settings-usuals-list', class: 'settings__usuals settings__section-control' });
+
+  if (entries.length === 0) {
+    wrap.appendChild(
+      el('p', { class: 'settings__usuals-empty' },
+        t('settings.usuals_empty', 'No usual products saved yet.'),
+      ),
+    );
+    return wrap;
+  }
+
+  for (const { key, product } of entries) {
+    const name = product.name || product.code || t('settings.usual_unnamed', 'Saved product');
+    wrap.appendChild(
+      el('div', { class: 'settings__usual-row' },
+        el('div', { class: 'settings__usual-text' },
+          el('span', { class: 'settings__usual-shelf' }, shelfLabel(key)),
+          el('span', { class: 'settings__usual-name' }, name),
+        ),
+        el('button', {
+          type: 'button',
+          class: 'settings__usual-clear',
+          'aria-label': `${t('settings.usual_clear', 'Clear')} ${shelfLabel(key)}`,
+          onClick: () => clearUsual(key),
+        }, t('settings.usual_clear', 'Clear')),
+      ),
+    );
+  }
+  return wrap;
+}
+
+function buildUsualsSection() {
+  return buildSection(
+    '05',
+    t('settings.usuals_title', 'Your usual choices'),
+    buildUsualsList(),
+    t('settings.usuals_hint', 'One usual per shelf. Clearing one falls back to the category average.'),
+  );
 }
 
 // ─── markup ────────────────────────────────────────────────────────────────
@@ -323,7 +433,7 @@ function buildClearSection() {
     onClick: showConfirmation,
   }, 'Clear my profile');
   const section = buildSection(
-    '05',
+    '06',
     'Reset profile',
     button,
     'Wipes onboarding answers, saved products, history and weighting preferences.',
@@ -423,6 +533,7 @@ function show() {
     buildLanguageSection(settings),
     buildSliderSection(settings),
     buildThemeSection(settings),
+    buildUsualsSection(),
     buildClearSection(),
   );
   panel.appendChild(body);

@@ -52,9 +52,14 @@ export const translations = {
     
     // --- NUEVOS: Card actions (JS dinámico) ---
     'card.see_numbers': 'See numbers',
+    'card.ingredients_title': 'Main ingredients',
+    'card.ingredients_loading': 'Loading ingredients…',
+    'card.ingredients_more': '+{n} more',
+    'card.no_data': 'no data',
     'card.adv_expl': 'Advanced explanation (SHAP)',
     'card.print': 'Print card',
     'card.share': 'Share product',
+    'aria.share': 'Share product',
     'card.compare_usual': 'Compare with usual',
     'card.compare_add': '+ Add to comparison',
     'card.compare_sel': '☑ Selected',
@@ -94,8 +99,8 @@ export const translations = {
     'filter.organic': 'Organic',
     'compare.usual_title': 'Compared to your usual choice',
 
-    'compare.no_usual_saved': 'You haven\'t set a usual product yet. Click "Set as usual" on any product first!',
-    'compare.same_usual': 'This is already your usual product! Inspect a different one to compare.',
+    'compare.no_usual_saved': 'Set a usual on any product first to compare against it.',
+    'compare.same_usual': 'This is already your usual on this shelf. Open a different product to compare.',
     'compare.scrolling': 'Showing comparison below…',
 
     'compare.current_has': 'Current product has:',
@@ -107,6 +112,14 @@ export const translations = {
     'compare.less_salt': 'less salt',
     'compare.more_protein': 'more protein',
     'compare.more_fiber': 'more fiber',
+    'compare.dir_less': 'less',
+    'compare.dir_more': 'more',
+    'compare.nut_sugar': 'sugar',
+    'compare.nut_fat': 'fat',
+    'compare.nut_saturated fat': 'saturated fat',
+    'compare.nut_salt': 'salt',
+    'compare.nut_protein': 'protein',
+    'compare.nut_fibre': 'fibre',
     'compare.per_100g': 'per 100g',
     'compare.better_nutri': 'better Nutri-Score',
     'compare.better_eco': 'better Eco-Score',
@@ -128,6 +141,13 @@ export const translations = {
     'ui.health_vs_eco': 'Health vs Eco in this category',
     'ui.scatter_hint': 'Top-right corner = best on both axes. The orange star is this product.',
     'ui.chart_error': 'Chart library could not load, but the product scores above are still available.',
+
+    // --- F-18: usual choices in the settings panel ---
+    'settings.usuals_title': 'Your usual choices',
+    'settings.usuals_hint': 'One usual per shelf. Clearing one falls back to the category average.',
+    'settings.usuals_empty': 'No usual products saved yet.',
+    'settings.usual_clear': 'Clear',
+    'settings.usual_unnamed': 'Saved product',
   },
   es: {
     // ... (Mantén aquí todos los que ya teníamos de es)
@@ -178,9 +198,14 @@ export const translations = {
 
     // --- NUEVOS: Card actions (JS dinámico) ---
     'card.see_numbers': 'Ver números',
+    'card.ingredients_title': 'Ingredientes principales',
+    'card.ingredients_loading': 'Cargando ingredientes…',
+    'card.ingredients_more': '+{n} más',
+    'card.no_data': 'sin datos',
     'card.adv_expl': 'Explicación avanzada (SHAP)',
     'card.print': 'Imprimir tarjeta',
     'card.share': 'Compartir producto',
+    'aria.share': 'Compartir producto',
     'card.compare_usual': 'Comparar con el habitual',
     'card.compare_add': '+ Añadir a comparar',
     'card.compare_sel': '☑ Seleccionado',
@@ -220,8 +245,8 @@ export const translations = {
     'filter.organic': 'Ecológico',
     'compare.usual_title': 'Comparado con tu elección habitual',
 
-    'compare.no_usual_saved': 'Aún no has fijado un producto habitual. ¡Pulsa primero "Set as usual" en cualquier producto!',
-    'compare.same_usual': '¡Este ya es tu producto habitual! Inspecciona uno diferente para comparar.',
+    'compare.no_usual_saved': 'Marca un habitual en cualquier producto para poder compararlo.',
+    'compare.same_usual': 'Este ya es tu habitual en esta categoría. Abre otro producto para comparar.',
     'compare.scrolling': 'Mostrando la comparación abajo…',
 
     'compare.current_has': 'El producto actual tiene:',
@@ -233,6 +258,14 @@ export const translations = {
     'compare.less_salt': 'menos sal',
     'compare.more_protein': 'más proteína',
     'compare.more_fiber': 'más fibra',
+    'compare.dir_less': 'menos',
+    'compare.dir_more': 'más',
+    'compare.nut_sugar': 'azúcar',
+    'compare.nut_fat': 'grasa',
+    'compare.nut_saturated fat': 'grasas saturadas',
+    'compare.nut_salt': 'sal',
+    'compare.nut_protein': 'proteína',
+    'compare.nut_fibre': 'fibra',
     'compare.per_100g': 'por 100g',
     'compare.better_nutri': 'mejor Nutri-Score',
     'compare.better_eco': 'mejor Eco-Score',
@@ -253,6 +286,13 @@ export const translations = {
     'ui.health_vs_eco': 'Salud frente a Eco en esta categoría',
     'ui.scatter_hint': 'Esquina superior derecha = mejor en ambos ejes. La estrella naranja es este producto.',
     'ui.chart_error': 'No se pudo cargar la librería de gráficos, pero las puntuaciones del producto siguen disponibles arriba.',
+
+    // --- F-18: producto habitual en el panel de ajustes ---
+    'settings.usuals_title': 'Tus productos habituales',
+    'settings.usuals_hint': 'Un habitual por categoría. Al borrarlo, vuelve a la media de la categoría.',
+    'settings.usuals_empty': 'Aún no has guardado ningún producto habitual.',
+    'settings.usual_clear': 'Borrar',
+    'settings.usual_unnamed': 'Producto guardado',
 
   },
   ca: {
@@ -304,9 +344,14 @@ export const translations = {
 
     // --- NUEVOS: Card actions (JS dinámico) ---
     'card.see_numbers': 'Veure números',
+    'card.ingredients_title': 'Ingredients principals',
+    'card.ingredients_loading': 'Carregant ingredients…',
+    'card.ingredients_more': '+{n} més',
+    'card.no_data': 'sense dades',
     'card.adv_expl': 'Explicació avançada (SHAP)',
     'card.print': 'Imprimir targeta',
     'card.share': 'Compartir producte',
+    'aria.share': 'Compartir producte',
     'card.compare_usual': 'Comparar amb l\'habitual',
     'card.compare_add': '+ Afegir a comparar',
     'card.compare_sel': '☑ Seleccionat',
@@ -346,8 +391,8 @@ export const translations = {
     'filter.organic': 'Ecològic',
     'compare.usual_title': 'Comparat amb la teva elecció habitual',
 
-    'compare.no_usual_saved': 'Encara no has fixat un producte habitual. Prem primer "Set as usual" en qualsevol producte!',
-    'compare.same_usual': 'Aquest ja és el teu producte habitual! Inspecciona un de diferent per comparar.',
+    'compare.no_usual_saved': 'Marca un habitual en qualsevol producte per poder comparar-lo.',
+    'compare.same_usual': 'Aquest ja és el teu habitual en aquesta categoria. Obre un altre producte per comparar.',
     'compare.scrolling': 'Mostrant la comparació a baix…',
 
     'compare.current_has': 'Aquest producte té:',
@@ -359,6 +404,14 @@ export const translations = {
     'compare.less_salt': 'menys sal',
     'compare.more_protein': 'més proteïna',
     'compare.more_fiber': 'més fibra',
+    'compare.dir_less': 'menys',
+    'compare.dir_more': 'més',
+    'compare.nut_sugar': 'sucre',
+    'compare.nut_fat': 'greix',
+    'compare.nut_saturated fat': 'greixos saturats',
+    'compare.nut_salt': 'sal',
+    'compare.nut_protein': 'proteïna',
+    'compare.nut_fibre': 'fibra',
     'compare.per_100g': 'per 100g',
     'compare.better_nutri': 'millor Nutri-Score',
     'compare.better_eco': 'millor Eco-Score',
@@ -380,6 +433,13 @@ export const translations = {
     'ui.health_vs_eco': 'Salut enfront d\'Eco en aquesta categoria',
     'ui.scatter_hint': 'Cantonada superior dreta = millor en tots dos eixos. L\'estrella taronja és aquest producte.',
     'ui.chart_error': 'No s\'ha pogut carregar la llibreria de gràfics, però les puntuacions del producte continuen disponibles a dalt.',
+
+    // --- F-18: producte habitual al tauler de configuració ---
+    'settings.usuals_title': 'Els teus productes habituals',
+    'settings.usuals_hint': 'Un habitual per categoria. En esborrar-lo, torna a la mitjana de la categoria.',
+    'settings.usuals_empty': 'Encara no has desat cap producte habitual.',
+    'settings.usual_clear': 'Esborra',
+    'settings.usual_unnamed': 'Producte desat',
   }
 };
 

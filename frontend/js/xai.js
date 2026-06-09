@@ -70,7 +70,11 @@ function referenceLabel(reference, fallbackName) {
     return 'the category average';
   }
   if (reference.kind === 'usual') {
-    return 'your usual choice';
+    // KI-4 / user-flows.md (Lluís): the on-card contrastive sentence must NAME
+    // the usual ("...18% less added sugar than Alpro"), not anonymise it.
+    // pickReference spreads the usual product into the reference, so its name
+    // is available here; fall back to the generic phrase only when nameless.
+    return reference.name || 'your usual choice';
   }
   return reference.name || fallbackName || 'an alternative';
 }

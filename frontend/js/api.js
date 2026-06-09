@@ -236,6 +236,98 @@ export async function getProductByBarcode(barcode) {
   }
 }
 
+// ─── focused-card ingredients (lazy, per-product) ───────────────────────────
+//
+// The 862-product backend index carries NO ingredient data (normaliser.py drops
+// ingredients_tags / ingredients_text), and re-crawling OFF for all of them is an
+// ~80-minute job we explicitly avoid. Instead we fetch ingredients ON DEMAND for
+// the single focused barcode only, straight from the OFF CDN (open CORS), exactly
+// like getProductByBarcode. OFF /product is the stable 100 req/min endpoint, far
+// safer than /search (10 req/min, intermittent 503).
+//
+// This never throws and never invents data: any failure (4xx/5xx/timeout/parse)
+// returns { ingredients: [], text: null } so the card shows "no data".
+
+const _ingredientsCache = new Map();
+
+// Turn an OFF ingredient tag ("en:skimmed-milk-powder") into a display string
+// ("skimmed milk powder"): drop the language prefix, de-slug dashes to spaces.
+function deSlugIngredient(tag) {
+  if (!tag || typeof tag !== 'string') return null;
+  const text = tag.trim().toLowerCase();
+  if (!text) return null;
+  const colon = text.indexOf(':');
+  const body = colon !== -1 ? text.slice(colon + 1) : text;
+  const display = body.replace(/-/g, ' ').trim();
+  return display || null;
+}
+
+/**
+ * Fetch the main ingredients for a single barcode from OFF, on demand.
+ *
+ * Prefers ingredients_tags (already slugified, language-prefixed) and falls back
+ * to a comma-split of ingredients_text. Results are cached per barcode so the
+ * focused-card re-renders (F-18 usuals, theme toggles) do not refetch.
+ *
+ * NEVER throws. Returns { ingredients: string[], text: string|null }; an empty
+ * ingredients array means "no data" — the caller must not invent values.
+ *
+ * @param {string} barcode
+ * @param {object} opts
+ * @param {number} [opts.timeoutMs=2000]
+ * @returns {Promise<{ingredients: string[], text: string|null}>}
+ */
+export async function getProductIngredients(barcode, opts = {}) {
+  const empty = { ingredients: [], text: null };
+  if (!isValidBarcode(barcode)) return empty;
+  if (_ingredientsCache.has(barcode)) return _ingredientsCache.get(barcode);
+
+  const { timeoutMs = 2000 } = opts;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const url = `${BASE_URL}/product/${barcode}?fields=ingredients_text,ingredients_tags`;
+    const res = await fetch(url, {
+      headers: { 'User-Agent': USER_AGENT },
+      signal: controller.signal,
+    });
+    if (!res.ok) return empty;
+    const data = await res.json();
+    const product = data?.product;
+    if (data?.status === 0 || !product) return empty;
+
+    const text = typeof product.ingredients_text === 'string' && product.ingredients_text.trim()
+      ? product.ingredients_text.trim()
+      : null;
+
+    let ingredients = [];
+    if (Array.isArray(product.ingredients_tags)) {
+      const seen = new Set();
+      for (const tag of product.ingredients_tags) {
+        const display = deSlugIngredient(tag);
+        if (display && !seen.has(display)) {
+          seen.add(display);
+          ingredients.push(display);
+        }
+      }
+    }
+    if (ingredients.length === 0 && text) {
+      ingredients = text
+        .split(',')
+        .map((part) => part.trim())
+        .filter(Boolean);
+    }
+
+    const result = { ingredients, text };
+    _ingredientsCache.set(barcode, result);
+    return result;
+  } catch {
+    return empty;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export async function searchProducts(query, opts = {}) {
   const { categoryTag = null, ingredient = null, pageSize = 20, page = 1 } = opts;
   const ingredientTag = normaliseIngredientTag(ingredient);

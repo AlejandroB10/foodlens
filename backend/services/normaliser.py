@@ -81,6 +81,20 @@ def split_brands(brands: str | None) -> list[str]:
     return [b.strip() for b in brands.split(",") if b.strip()]
 
 
+# Mirrors frontend/js/api.js#joinTags
+def join_tags(tags: list[str] | None) -> str:
+    """Flatten an OFF *_tags list into a single lowercase, space-separated string.
+
+    Mirrors frontend/js/api.js#joinTags so the index carries the same allergen /
+    label / packaging signal the OFF-direct path produces. Returns '' when the
+    field is absent ('' = "unknown"), never a guessed value — passesFilters
+    treats '' as "do not hide", preserving H1 and the no-data rule.
+    """
+    if not isinstance(tags, list):
+        return ""
+    return " ".join(str(tag).strip().lower() for tag in tags if str(tag).strip())
+
+
 # Mirrors frontend/js/api.js#pickCategory
 def pick_category(categories_tags: list[str] | None) -> str | None:
     """Return the most specific category tag (last element in OFF's hierarchical array)."""
@@ -138,7 +152,10 @@ def normalise_product(raw: dict | None) -> dict | None:
         "nutriScore": {"grade": str, "numeric": int | None},
         "ecoScore": {"grade": str, "numeric": int | None, "sourceField": str | None},
         "nutrientLevels": {"fat": str|None, "salt": str|None, "saturatedFat": str|None, "sugars": str|None},
-        "nutrients": {"energyKcal_100g": float|None, "fat_100g": float|None, ...}
+        "nutrients": {"energyKcal_100g": float|None, "fat_100g": float|None, ...},
+        "allergens": str,  # '' = unknown
+        "packaging": str,  # '' = unknown
+        "labels": str,     # '' = unknown
     }
     """
     if raw is None:
@@ -159,4 +176,10 @@ def normalise_product(raw: dict | None) -> dict | None:
         "ecoScore": read_eco_score(raw),
         "nutrientLevels": read_nutrient_levels(raw.get("nutrient_levels")),
         "nutrients": read_nutrients(raw.get("nutriments")),
+        # Lowercase, space-separated tag strings. '' means "unknown" (field
+        # absent), which passesFilters must treat as "do not hide", never as a
+        # value. Mirrors frontend/js/api.js#normaliseProduct for parity.
+        "allergens": join_tags(raw.get("allergens_tags")),
+        "packaging": join_tags(raw.get("packaging_tags")),
+        "labels": join_tags(raw.get("labels_tags")),
     }

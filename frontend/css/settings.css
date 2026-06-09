@@ -540,3 +540,72 @@
   background: var(--color-ink);
   border-color: var(--color-ink);
 }
+
+/* ─── F-18: usual choices list ──────────────────────────────────────────── */
+.settings__usuals {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.settings__usuals-empty {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  color: var(--color-ink-soft);
+  margin: 0;
+}
+
+.settings__usual-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding-bottom: 0.5rem;
+  border-bottom: var(--rule-w) solid var(--color-rule);
+}
+
+.settings__usual-row:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.settings__usual-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.settings__usual-shelf {
+  font-family: var(--font-body);
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-ink-soft);
+}
+
+.settings__usual-name {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--color-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.settings__usual-clear {
+  flex-shrink: 0;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  background: transparent;
+  border: var(--rule-w) solid var(--color-rule);
+  color: var(--color-ink);
+  padding: 0.25rem 0.6rem;
+  cursor: pointer;
+}
+
+.settings__usual-clear:hover,
+.settings__usual-clear:focus-visible {
+  background: var(--color-ink);
+  color: var(--color-paper);
+}

@@ -76,6 +76,12 @@ OFF_PRODUCT_FIELDS = ",".join([
     "nutrient_levels",
     "nutriments",
     "categories_tags",
+    # Allergen / label / packaging signal the diet-ethics and allergen filters
+    # need. normalise_product flattens these into allergens/labels/packaging
+    # strings; without them the index products cannot be filtered.
+    "allergens_tags",
+    "labels_tags",
+    "packaging_tags",
 ])
 
 
@@ -217,6 +223,12 @@ def _generate_synthetic_pool() -> list[dict]:
                     "sugars": _level(nutrients.get("sugars_100g", 0)),
                 },
                 "nutrients": nutrients,
+                # Synthetic products carry no OFF tag data; '' = unknown so
+                # passesFilters reads the same shape as OFF-sourced products
+                # and never hides them on absence.
+                "allergens": "",
+                "packaging": "",
+                "labels": "",
             }
             products.append(product)
 

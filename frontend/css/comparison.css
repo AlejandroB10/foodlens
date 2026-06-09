@@ -120,14 +120,6 @@
   }
 }
 
-.icon-btn {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  color: #1a1a1a;
-}
-
 .table-responsive {
   padding: 2rem;
   overflow-x: auto;
