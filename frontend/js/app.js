@@ -786,10 +786,22 @@ function renderIngredientsSection(product, isFocused) {
     }
     const remaining = ingredients.length - shown.length;
     if (remaining > 0) {
-      list.appendChild(
-        el('li', { class: 'card__ingredients-more' },
-          t('card.ingredients_more', '+{n} more').replace('{n}', String(remaining))),
-      );
+      // "+N more" is a real button: clicking it reveals the rest of the
+      // ingredients in place and removes itself.
+      const moreLi = el('li', { class: 'card__ingredients-more-wrap' });
+      const moreBtn = el('button', {
+        type: 'button',
+        class: 'card__ingredients-more',
+        'aria-expanded': 'false',
+      }, t('card.ingredients_more', '+{n} more').replace('{n}', String(remaining)));
+      moreBtn.addEventListener('click', () => {
+        for (const name of ingredients.slice(INGREDIENTS_TOP_N)) {
+          list.insertBefore(el('li', { class: 'card__ingredients-chip' }, name), moreLi);
+        }
+        moreLi.remove();
+      });
+      moreLi.appendChild(moreBtn);
+      list.appendChild(moreLi);
     }
     body.appendChild(list);
   });
@@ -861,13 +873,17 @@ function renderProductCard(product, reference, isAlternative = false, isFocused 
       sentence,
     ),
     renderIngredientsSection(product, isFocused),
-    el(
+    // "See numbers" + the SHAP advanced explanation are drill-downs (H3): they
+    // live on the focused product page only, not on every listing card. Clicking
+    // a listing card routes to /product, where the full detail is shown. Keeping
+    // them off the listing also keeps the grid cards aligned (no in-place expand).
+    isFocused ? el(
       'details',
       { class: 'card__drilldown' },
       el('summary', { dataset: { i18n: 'card.see_numbers' } }, t('card.see_numbers', 'See numbers')),
       renderNutrientTable(product.nutrients),
-    ),
-    !isAlternative ? renderAdvancedToggle(product) : null,
+    ) : null,
+    isFocused ? renderAdvancedToggle(product) : null,
     !isAlternative ? renderCardActions(product, isFocused) : null,
   );
 }

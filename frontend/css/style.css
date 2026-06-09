@@ -717,6 +717,12 @@ h4 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; letter-sp
 .card--alt { padding: var(--space-4); background: var(--color-paper-2); }
 .card--alt:hover { background: var(--color-paper-3); }
 
+/* Listing cards: flex column so the compact action row pins to the BOTTOM of
+   each (grid-stretched, equal-height) card. The rows then line up across the
+   grid even when the contrastive sentence wraps to a different line count. */
+.card--listing { display: flex; flex-direction: column; }
+.card--listing .card__actions--compact { margin-top: auto; }
+
 /* Back-to-results control — first focusable element on the product view.
    Ghost/link affordance: transparent, no border, ink text, small left chevron.
    Reuses existing tokens; auto-flips under [data-theme=dark] via var(--color-ink). */
@@ -1138,13 +1144,27 @@ h4 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; letter-sp
   color: var(--color-ink);
 }
 
+.card__ingredients-more-wrap { display: inline-flex; align-items: center; }
+
+/* Clickable "+N more": reveals the remaining ingredients in place. */
 .card__ingredients-more {
   font-family: var(--font-mono);
   font-size: 0.72rem;
   line-height: 1.3;
   padding: 0.15rem 0.5rem;
   color: var(--color-ink-mute);
-  align-self: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-decoration: underline dotted;
+  text-underline-offset: 2px;
+}
+
+.card__ingredients-more:hover,
+.card__ingredients-more:focus-visible {
+  color: var(--color-ink);
+  text-decoration-style: solid;
+  outline: none;
 }
 
 .card__ingredients-loading,
