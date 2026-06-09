@@ -744,6 +744,23 @@ h4 { font-family: var(--font-body); font-size: 1rem; font-weight: 600; letter-sp
   outline-offset: 2px;
 }
 
+/* View titles take programmatic focus on every client-side route change
+   (focusViewTitle) so screen-reader / keyboard users land on the new heading.
+   They are tabindex="-1" headings — not in the tab order — so the default focus
+   ring is unnecessary and was read as an unwanted box around "Results" /
+   "Evaluate FoodLens". Suppress it; the heading is still announced on focus. */
+#home-hero-title:focus,
+#results-title:focus,
+.saved__title:focus,
+#favourites h2:focus,
+.evaluation__title:focus,
+#focused .focused-title:focus,
+#focused h2:focus,
+#about-title:focus,
+#compare-title:focus {
+  outline: none;
+}
+
 /* The currently-focused card is bigger, more editorial. */
 #focused .card {
   padding: var(--space-6);
