@@ -22,7 +22,7 @@ Team: Alejandro Bordón · Soufyane Youbi · Alejandro Rodríguez · Pau Girón
 Course 11755 — Human-Computer Interaction · MUSI-IA, UIB · June 2026
 
 ::: notes
-**Alejandro Bordón:** Good morning. We are team FoodLens, and this is the final deliverable for the HCI course. The one-line version: most food apps give you a single score and ask you to trust it. We give you two axes — how healthy a product is, and how heavy its environmental footprint is — we never hide the tension between them, and we explain every recommendation with a single sentence anchored on a real number from Open Food Facts. Over the next twenty-five minutes the four of us will walk you through how we got here, the AI behind it, our evaluation plan, the hard problems we hit, a live demo of the working platform, and what we learned. Let me start with the design process.
+**Tuti:** Morning. We're team FoodLens, and this is our final project for the course. Here's the problem in one line: most food apps hand you a single score and expect you to trust it. We don't do that. We show two things at once, how healthy a product is and how heavy its footprint is, and when those two disagree we point straight at it instead of hiding it. Every recommendation comes with one plain sentence built on a real number from Open Food Facts. The four of us will take you through the next twenty-five minutes: how we got here, the AI under the hood, how we plan to test it, the problems that fought back, a live demo, and what we'd change. I'll start with the design.
 :::
 
 ## Outline
@@ -37,7 +37,7 @@ Course 11755 — Human-Computer Interaction · MUSI-IA, UIB · June 2026
 All four of us present; roughly eight minutes of the talk is a live demo of the working web platform, right before the conclusions.
 
 ::: notes
-**Alejandro Bordón:** Here is the map. Six points, all mandated by the rubric. I take the design process and, at the end, the lessons and future work. Sufi covers the explainable-AI methods and why we chose them. Alejandro Rodríguez presents our user-testing protocol and later drives the live demo. Pau covers the technical and design challenges. We deliberately put the live demonstration near the end, right before the conclusions, so by the time you see it working you already know what every part means. Let's begin with the design process.
+**Tuti:** Quick map of where we're going. Six points, all required by the rubric. I take the design process. Sufi does the explainable-AI side and why we picked those methods. Alex covers how we test it with real users. Pau takes the technical and design problems. Then we run the live demo together, each of us driving the bit we just talked about. And we close with the lessons, split between Alex and Pau, plus what's next. We left the demo for the end on purpose, right before the conclusions, so by the time you see it running you already know what every piece means. Let's start with the design.
 :::
 
 # 1. Design process & rationale
@@ -53,7 +53,7 @@ We ran **six semi-structured interviews** with people who make real grocery deci
 Every feature we shipped traces back to one of those insights. Nothing was designed by intuition alone.
 
 ::: notes
-**Alejandro Bordón:** We did not start by coding. We started by listening. Six semi-structured interviews with people who actually do the weekly shop, ranging from a twenty-year-old who barely cooks to a forty-one-year-old managing a near-vegetarian diet. We deliberately kept the contextual questions away from any AI talk so we would not lead them. Then we ran a thematic analysis — forty-seven initial codes collapsing into five Key Insights. The core problem we surfaced is an asymmetry: Nutri-Score is on the front of the pack, the Eco-Score basically never is, and nobody shows you when the two disagree. That asymmetry is the whole reason FoodLens exists.
+**Tuti:** We didn't start by writing code. We started by listening. Six interviews with people who actually do the weekly shop, from someone who barely cooks to someone running a near-vegetarian household. We kept the questions well away from anything about AI so we wouldn't lead them. Then we coded the transcripts, forty-seven codes that collapsed into five Key Insights. The thing that jumped out was an imbalance. Nutri-Score is right there on the front of the pack. The Eco-Score almost never is. And nobody tells you when the two disagree. That gap is the whole reason FoodLens exists.
 :::
 
 ## The five Key Insights
@@ -65,7 +65,7 @@ Every feature we shipped traces back to one of those insights. Nothing was desig
 - **KI-5 — Tolerance for configuration varies widely.** Sensible default, presets, advanced slider behind progressive disclosure.
 
 ::: notes
-**Alejandro Bordón:** These five insights are our north star. KI-1: people don't reject algorithms on principle, they reject ones whose reasoning is hidden — so we must always show the why. KI-2: the gap between what people want and what they buy is situational, driven by time and budget, so we never lecture. KI-3: single labels create false confidence — participants gave us real examples, a soda beating juice on Nutri-Score, almonds looking healthy while being ecologically expensive. KI-4: people reached for contrastive language on their own — a delta is processed faster than an absolute grade. And KI-5: everyone wanted to tune health-versus-eco, but their appetite for setup ranged from one button to a full slider panel.
+**Tuti:** These five insights are what we kept checking ourselves against. KI-1: people don't reject algorithms for being algorithms, they reject the ones whose reasoning is hidden. So always show the why. KI-2: the gap between what people want and what they actually buy is about time and money, not willpower, so we never lecture. KI-3: a single label gives false confidence. Our participants handed us real cases, a soda beating a juice on Nutri-Score, almonds that look healthy but cost a lot ecologically. KI-4: people reached for comparisons on their own. A difference lands faster than an absolute grade. And KI-5: everyone wanted to tune health against eco, but some wanted one button and others wanted the full slider.
 :::
 
 ## From insights to seven Design Hooks
@@ -81,7 +81,7 @@ Every feature we shipped traces back to one of those insights. Nothing was desig
 | **H7** | Close into action — every card ends in a real next step |
 
 ::: notes
-**Alejandro Bordón:** We translated those insights into seven concrete, testable Design Hooks — hard constraints on the interface. H1: both axes always visible, and even when Open Food Facts has no eco grade, the badge still renders with a "no data" caption instead of disappearing. H2: the explanation is not on a separate screen, it's open by default on the card. H3: one sentence, one number — charts are a drill-down, never the front door. H4: the slider is health-versus-eco, price hidden behind Advanced. H5: comparison takes N products in and returns a ranked list. H6: onboarding asks the minimum. H7: every card ends in an action. These hooks are what we test the build against.
+**Tuti:** We turned those insights into seven Design Hooks, hard rules for the interface. H1: both axes always on screen. Even when Open Food Facts has no eco grade, the badge still shows up with a "no data" caption instead of vanishing. H2: the explanation isn't on a separate page, it's open on the card by default. H3: one sentence, one number. Charts are a drill-down, not the front door. H4: the slider is health against eco, with price tucked behind an Advanced toggle. H5: comparison takes several products and gives back a ranked list. H6: onboarding asks the bare minimum. H7: every card ends in something you can do. These are what we test the build against.
 :::
 
 ## Personas: who we are designing for
@@ -100,7 +100,7 @@ Every feature we shipped traces back to one of those insights. Nothing was desig
 Four personas, four constraints. If a decision helps one and hurts another, we name the trade-off.
 
 ::: notes
-**Alejandro Bordón:** We synthesised the interviews into four personas, each carrying a constraint. Marc shops on autopilot — he proves the system has to work with zero configuration. Pau Estarellas distrusts any score he can't check — he's why the drill-down exists. Lluís despises greenwashing and moralising — he demands an opt-in, on-demand tool. And Aina is so time- and budget-pressed that any app lecturing her loses instantly — she's our hard boundary against judgmental copy. When two personas pull in opposite directions, we surface the trade-off rather than quietly picking a side. With that foundation set, I'll hand over to Sufi for the AI layer.
+**Tuti:** We pulled four personas out of the interviews, each one carrying a constraint. Marc shops on autopilot, so the system has to work with zero setup. Pau Estarellas won't trust a score he can't check, so he's why the drill-down exists. Lluís hates greenwashing and being preached at, so the tool has to be opt-in and on demand. And Aina is so short on time and money that any app that lectures her loses instantly, she's our hard line against judgy copy. When two of them pull in opposite directions, we show the trade-off instead of quietly picking a side. That's the foundation. Sufi, over to you for the AI.
 :::
 
 # 2. XAI methods selection
@@ -118,7 +118,7 @@ We chose each XAI component to satisfy a specific criterion:
 The literature gave us the test; our job was to make a vanilla-JS app pass it.
 
 ::: notes
-**Soufyane Youbi:** Thanks Alejandro. Our XAI choices are not arbitrary — they come straight out of the social-science account of explanation. Tim Miller's key finding is that good explanations are contrastive, they're selective, and they're grounded in what the person already understands. A raw model score fails all three. So we mapped each of our techniques to one of those properties. Contrastive: we answer "why this product, not the one you usually buy". Selective: we surface one number, not the full feature vector — that's our H3 discipline. Grounded and auditable: we use an interpretable model and we give the sceptic a way to check the math. The literature handed us the rubric; we engineered the app to pass it.
+**Sufi:** Thanks Tuti. Our XAI choices aren't random, they come straight out of the research on what an explanation actually is. Tim Miller's finding is that good explanations are contrastive, they're selective, and they connect to what the person already knows. A raw model score fails all three. So we matched each technique to one of those. Contrastive: we answer "why this product instead of the one you usually buy". Selective: we show one number, not the whole feature vector, that's our H3 rule. Grounded: we use a model you can actually interpret, and we give the sceptic a way to check the maths. The literature gave us the test; we built the app to pass it.
 :::
 
 ## An interpretable model: Random Forest for Nutri-Score
@@ -129,7 +129,7 @@ The literature gave us the test; our job was to make a vanilla-JS app pass it.
 - This is a **pipeline-verification model**: it proves the explanation path end-to-end, it does not replace the official grade.
 
 ::: notes
-**Soufyane Youbi:** First, the model. We deliberately do not recompute the Nutri-Score ourselves — the official algorithm has category nuances and we read the certified `nutriscore_grade` straight from the API. But for the explanation pipeline we trained a Random Forest on a real Open Food Facts dump, reaching about eighty percent five-fold cross-validation accuracy. Why a forest and not a neural net? Because feature importances come for free and they're readable — each of the seven per-hundred-gram nutrients carries an interpretable weight. I want to be honest about scope: this is a pipeline-verification model. It proves the explanation path works end-to-end; it is not pretending to replace the official grade.
+**Sufi:** First the model. We don't recompute the Nutri-Score ourselves. The official formula has category quirks, so we read the certified `nutriscore_grade` straight from the API. For the explanation pipeline, though, we trained a Random Forest on a real Open Food Facts dump, around eighty percent accuracy on five-fold cross-validation. Why a forest and not a neural net? Because the feature importances come for free and you can read them, each of the seven per-hundred-gram nutrients gets a weight that makes sense. I want to be honest about scope here. This is a model that verifies the pipeline. It proves the explanation path works end to end. It isn't trying to replace the official grade.
 :::
 
 ## SHAP -> one contrastive sentence, one number
@@ -141,7 +141,7 @@ The literature gave us the test; our job was to make a vanilla-JS app pass it.
 - The full SHAP detail is parked behind an **"Advanced explanation"** — selective by default, complete on demand
 
 ::: notes
-**Soufyane Youbi:** This is where Miller meets the screen. SHAP gives us local feature attribution — for this specific product, how much did sugar push the grade down, how much did fibre push it up. That's a vector. But a vector violates the selective principle and overloads the shopper. So we collapse it into a single contrastive sentence with exactly one number — that's Design Hook H3 in action. The full SHAP breakdown isn't thrown away; it's parked behind an "Advanced explanation" toggle, which is the waterfall you see here. Selective by default for Marc, complete on demand for anyone who wants the detail.
+**Sufi:** This is where Miller meets the screen. SHAP gives us local attribution: for this exact product, how much did sugar push the grade down, how much did fibre push it up. That's a vector. A vector breaks the selective rule and buries the shopper. So we squeeze it into one sentence with one number, which is H3 in practice. We don't throw the rest away. It sits behind an "Advanced explanation" toggle, the waterfall you're looking at. One sentence for Marc, the full thing on demand for anyone who wants it.
 :::
 
 ## The scatter drill-down: for the sceptic who verifies
@@ -155,7 +155,7 @@ The literature gave us the test; our job was to make a vanilla-JS app pass it.
 **How each method helps the user:** sentence = instant trust; SHAP advanced view = traceability; scatter = independent verification.
 
 ::: notes
-**Soufyane Youbi:** One sentence is enough for the time-poor pragmatist. It is not enough for the sceptical analyst. Pau Estarellas told us in discovery that he won't trust a grade he can't check. So the drill-down is this scatter plot, served from our scatter endpoint, that places the product on the health-versus-eco plane against the rest of its category — he can see with his own eyes whether the recommendation is defensible. Crucially it's opt-in: it only appears when he asks, which also satisfies Lluís, who wanted graphs over guilt. Three layers, three personas: the sentence gives Marc instant trust, the advanced SHAP view gives traceability, and the scatter gives Pau independent verification. Before I hand over, one slide on all the AI we used.
+**Sufi:** One sentence is plenty for someone in a hurry. It isn't enough for the sceptic. Pau Estarellas told us flat out he won't trust a grade he can't check. So the drill-down is this scatter plot, served from our scatter endpoint, that drops the product onto the health-versus-eco plane next to the rest of its category. He can see for himself whether the recommendation holds up. And it's opt-in, it only shows when he asks for it, which keeps Lluís happy too, he wanted graphs, not guilt. Three layers for three people: the sentence gives Marc instant trust, the advanced SHAP view gives traceability, and the scatter lets Pau check it himself. One more slide before I hand over, on the AI we used.
 :::
 
 ## The AI we used — in the product and in development
@@ -181,7 +181,7 @@ The literature gave us the test; our job was to make a vanilla-JS app pass it.
 We disclose both: the AI *inside* FoodLens, and the AI we used to *build* it.
 
 ::: notes
-**Soufyane Youbi:** One honest slide before I hand over, because we think you should declare both kinds of AI. Inside the product: a scikit-learn Random Forest drives the Nutri-Score explanation pipeline, SHAP gives the local attribution we compress into one sentence, a weighted KNN powers the Alternative Engine, and DuckDB lets us query the full Open Food Facts dump at scale. And in development: we used LLM coding assistants to speed up boilerplate, tests, and documentation — but every change was human-reviewed, adversarially audited (that is literally how we caught the dead allergen filter), and gated by tests. We direct the AI; the design decisions and the verification are ours. With that declared, Alejandro will take you through how we evaluate all of this with users.
+**Sufi:** One honest slide before I pass it on, because we think you should declare both kinds of AI. Inside the product: a scikit-learn Random Forest drives the Nutri-Score explanation, SHAP gives the local attribution we compress into a sentence, a weighted KNN powers the alternatives, and DuckDB lets us query the full Open Food Facts dump. In development: we used AI coding assistants for boilerplate, tests, and docs. But every change was reviewed by a human, picked apart in adversarial review, which is literally how we caught a dead allergen filter, and gated by tests. We steer the AI. The design calls and the checking are ours. With that out in the open, Alex will tell you how we evaluate all of this with users.
 :::
 
 # 3. Key insights from user testing
@@ -195,7 +195,7 @@ We disclose both: the AI *inside* FoodLens, and the AI we used to *build* it.
 - Both **wired into the prototype** — completed in the same browser session, no external survey tool
 
 ::: notes
-**Alejandro Rodríguez:** Evaluation. We measure two different things and we keep them apart on purpose, so a friendly usability score can't mask a weak explanation layer. The first is the System Usability Scale — Brooke, 1996 — ten items, measuring whether the dashboard is navigable. The second is explanation satisfaction, anchored to the XEQ construct from Wijekoon and colleagues, 2024: clarity, consistency, on-demand detail, perceived reliability and fairness, and improved understanding. Both instruments are not a Google Form — they are feature F-46, built into the app, so a participant finishes the tasks and fills them in the same browser, same session, no context switch.
+**Alex:** Evaluation. We measure two separate things and we keep them apart on purpose, so a nice usability number can't paper over a weak explanation layer. First is the System Usability Scale, Brooke, 1996, ten items, basically: can people get around the dashboard. Second is explanation satisfaction, anchored to the XEQ construct from Wijekoon and colleagues, 2024, so: is it clear, is it consistent, does it give detail when you ask, does it feel reliable and fair, does it actually help you understand. And neither of these is a Google Form. They're a feature in the app, so a participant finishes the tasks and fills them in right there, same browser, same session, no jumping out to another tool.
 :::
 
 ## Procedure & cohort
@@ -206,7 +206,7 @@ We disclose both: the AI *inside* FoodLens, and the AI we used to *build* it.
 - Scoring **pre-registered**: odd items raw minus 1, even items 5 minus raw, then x2.5 to 0-100; benchmark **68**, Sauro–Lewis grade bands
 
 ::: notes
-**Alejandro Rodríguez:** The procedure: six tasks that follow our documented user flows in order — onboarding and search first because it gates everything, then reading an explanation, finding an alternative, comparing a shelf, setting a usual product, and dragging the slider. After each task there's a Single Ease Question so we can localise friction to a specific flow; SUS is administered once at the very end. The cohort is the same six people we interviewed in WA3 — that's a Nielsen-style formative study at n equals six, not a powered experiment. Two of the six are team members; we declare that bias openly and weight their data as optimistic. And the scoring is pre-registered: the standard SUS formula, the benchmark of sixty-eight, and the Sauro-Lewis grade bands, all committed before any data exists.
+**Alex:** The procedure is six tasks that follow our documented flows in order. Onboarding and search first, because everything else depends on them, then reading an explanation, finding an alternative, comparing a shelf, setting a usual product, and dragging the slider. After each task there's a Single Ease Question so we can pin friction to a specific flow. SUS comes once, right at the end. The cohort is the same six people we interviewed back in WA3, so this is a small formative study, six users, not a powered experiment. Two of the six are on the team. We say that openly and treat their data as the optimistic case. And the scoring is locked in advance: the standard SUS formula, the sixty-eight benchmark, the Sauro-Lewis grade bands, all committed before any data exists.
 :::
 
 ## Honest status: instrument built, data pending
@@ -217,7 +217,7 @@ We disclose both: the AI *inside* FoodLens, and the AI we used to *build* it.
 - **Pre-registered hypotheses:** (H-a) contrastive + drill-down raises satisfaction for the sceptic; (H-b) zero-config default -> high SEQ for the pragmatist; (H-c) any moralising copy erodes trust for the convenience seeker.
 
 ::: notes
-**Alejandro Rodríguez:** Now the honest part, and I want to be very clear about it. The instrument is built and wired, the tasks and cohort are defined — but we have not yet collected participant data. So we are not going to stand here and quote a usability score we never measured. Inventing numbers would be the worst thing an HCI team could do. What we have done instead is pre-register everything: the scoring rules, the thresholds, the grade bands, and three falsifiable hypotheses — that the contrastive drill-down lifts satisfaction for the sceptic, that the zero-config path scores high for the pragmatist, and that any moralising phrase costs us trust with the convenience seeker. Committing to all of that before the data arrives is good method, not a gap. Pau will now take the technical and design challenges.
+**Alex:** Now the honest part, and I want to be really clear about it. The instrument is built and wired, the tasks and the cohort are set, but we haven't collected participant data yet. So we're not going to stand here and quote a usability score we never measured. Making up numbers would be about the worst thing an HCI team could do. What we did instead is pre-register everything: the scoring, the thresholds, the bands, and three hypotheses we could genuinely turn out to be wrong about. That the contrastive drill-down lifts satisfaction for the sceptic. That the zero-config path scores well for the pragmatist. And that any moralising phrase costs us trust with the convenience seeker. Committing to all that before the data lands is good method, not a hole in the work. Pau, the technical side is yours.
 :::
 
 # 4. Technical & design challenges
@@ -233,7 +233,7 @@ We disclose both: the AI *inside* FoodLens, and the AI we used to *build* it.
 Design discipline under pressure: keep the **eco badge visible** for "not-applicable" (H1); hold **one-sentence-one-number** even when SHAP hands us a rich vector (H3).
 
 ::: notes
-**Pau Girón:** Thank you. The single biggest source of pain was the Open Food Facts API. It throws intermittent 503s on search, so we built a silent fallback to a ten-product local sample with a non-blocking banner — the UI never dies. It returns a 403 if you forget the User-Agent header, so that header is mandatory on every call. The eco field was renamed, so we read the new `environmental_score_grade` first and fall back to the legacy `ecoscore_grade`. Search is rate-limited to ten requests a minute, so the backend budgets calls through a Redis cache. And the optional backend degrades gracefully — it times out at fifteen hundred milliseconds for recommendations, two thousand for explanations, then quietly uses the in-browser path. On the design side, the discipline was holding the line: keeping the eco badge visible even when the grade is not-applicable, and refusing to let a rich SHAP vector break our one-sentence-one-number rule.
+**Pau:** Thanks. The biggest single headache was the Open Food Facts API. Search throws random 503s, so we built a quiet fallback to a ten-product local sample with a banner that doesn't block anything, the UI never dies on you. Forget the User-Agent header and it returns a 403, so that header is on every call now. The eco field got renamed, so we read the new `environmental_score_grade` first and fall back to the old `ecoscore_grade`. Search is capped at ten requests a minute, so the backend budgets its calls through a Redis cache. And the backend is optional, it times out, fifteen hundred milliseconds for recommendations, two thousand for explanations, then quietly hands off to the in-browser path. On the design side, the hard part was holding the line: keeping the eco badge visible even when the grade is not-applicable, and not letting a fat SHAP vector break our one-sentence rule.
 :::
 
 ## Honest QA: defects we found and fixed before release
@@ -247,7 +247,7 @@ An adversarial review + engineering pass caught **three real defects** — none 
 We disclose these candidly. Finding them strengthens the build; hiding them would not.
 
 ::: notes
-**Pau Girón:** And here's the part we're actually proud of, even though it's about bugs. An adversarial review followed by an engineering pass found three real defects before release — and none of them is something a usability test would have caught. First, and most serious: the allergen filters were completely dead. `api.js` wasn't even requesting the allergens field, so the product objects had nothing to filter on — that's a safety issue, not a cosmetic one. We fixed it by requesting the field, normalising it to tokens, and matching exactly. Second, the category browser's search was commented out — genuinely dead code — so we wired the dropdown filters back to live rendering. Third, a falsy-zero bug: a real zero grams of sugar was showing as "no data" because of a truthiness check. We added explicit type and null guards. We're disclosing all three openly. In our field, finding and fixing your own defects honestly is worth more than a clean-looking slide. With everything now explained, Alejandro Rodríguez will show it all working live.
+**Pau:** And here's the part we're genuinely proud of, even though it's about bugs. An adversarial review and then an engineering pass turned up three real defects before release, and not one of them is something a usability test would have caught. First, and worst: the allergen filters were dead. The frontend wasn't even asking for the allergens field, so there was nothing to filter on. That's a safety problem, not a cosmetic one. We fixed it by pulling the field, normalising it to tokens, and matching exactly. Second, the category search was commented out, dead code, so we wired the filters back to live rendering. Third, a zero that read as missing: a real zero grams of sugar showed up as "no data" because of a truthiness check, so we added proper null guards. We're putting all three on the table. In our field, catching and fixing your own bugs honestly beats a slide that just looks clean. Right, time to show it working. We run the demo together, the four of us.
 :::
 
 # 5. Live demonstration
@@ -267,7 +267,7 @@ We disclose these candidly. Finding them strengthens the build; hiding them woul
 **Fallback:** if the live app fails, the next two slides are screenshot backups.
 
 ::: notes
-**Alejandro Rodríguez:** Now you have the full picture, so let me show it live. I start with onboarding — notice it asks only goals, age, and gender, nothing about income or family, that's Hook H6. Then a search returns the dual-axis cards: both badges, equal weight, the contrastive sentence already open. I'll expand the advanced explanation to show the SHAP breakdown and pop the scatter drill-down — exactly the pieces Sufi described. Then I drag the priority slider and you'll watch the ranking genuinely re-order — a sceptic should be able to confirm the slider does something. Then filters, including allergen and eco, the category browser, and finally compare-this-shelf: several products in, a ranked list out with a winner-highlight table, and a CSV export. If anything breaks, I have screenshot backups on the next two slides. Let me switch to the app.
+**Todos:** Right, you've got the full picture, so let's actually show it. We run this part as a team, each of us driving the bit we just presented. It opens on the home page, one clear thing to do, none of the wall of controls you usually get hit with. From there, Discover: a search and the dual-axis grid, both badges on every card, the sentence already open. Click any product and it gets its own page, the reasoning, the main ingredients, and the advanced SHAP view and the scatter Sufi showed you, all on one screen. Drag the priority slider and the ranking really does re-order, a sceptic can confirm it's doing something. Then the diet-and-ethics and allergen filters, and the category browser. And compare-this-shelf: a few products in, a ranked list out with a winner-highlight table and a CSV export. Onboarding still asks only goals, age, and gender, that's H6. If anything falls over, the next two slides are screenshot backups. Switching to the app now.
 :::
 
 ## Demo backup A — dashboard & dual-axis grid
@@ -277,7 +277,7 @@ We disclose these candidly. Finding them strengthens the build; hiding them woul
 Results grid: every card shows both badges. Missing data renders as **?** or **—** with a caption — never suppressed (H1).
 
 ::: notes
-**Alejandro Rodríguez:** This is the fallback in case the live app misbehaves. The dashboard: a focused product with its dual-axis badges and contrastive sentence, alongside the full results grid. Look at the cards where data is missing — the eco badge still renders, with a question mark or a dash and a caption, instead of vanishing. That's Hook H1 enforced in real markup: missing is shown, never hidden. Every card also exposes a per-card toggle to add the product to a comparison.
+**Todos:** This is the backup if the live app plays up, the Discover view. The results grid: every card carries both badges, the contrastive sentence open by default, and a little toggle to drop the product into a comparison. Look at the cards where data is missing, the eco badge still shows, with a question mark or a dash and a caption, instead of disappearing. That's H1 in the actual markup: missing gets shown, never hidden.
 :::
 
 ## Demo backup B — comparison view
@@ -287,7 +287,7 @@ Results grid: every card shows both badges. Missing data renders as **?** or **�
 Ranked summary + one-line contrastive justification per product + attribute table highlighting the winner per axis. Genuine **0 g** renders as "0", not "no data".
 
 ::: notes
-**Alejandro Rodríguez:** And the second backup: the comparison view. N products go in; out comes a ranked summary with a one-line contrastive justification for each, sitting above an attribute table that highlights the leading product on each axis — Nutri-Score, Eco-Score, energy, sugars, fat. Notice one detail that cost us a real bug fix: a genuine zero grams of sugar shows as "0", not "no data". Missing is not the same as zero, and the table now respects that. That's the platform. To close, Alejandro will pull together what we learned and where this goes next.
+**Todos:** And the second backup, the Compare view. A few products go in, and out comes a ranked summary with a one-line reason for each, sitting on top of a table that highlights whichever product leads on each axis, Nutri-Score, Eco-Score, energy, sugars, fat. Notice one small thing that cost us a real bug fix: a genuine zero grams of sugar shows as "0", not "no data". Missing and zero aren't the same, and the table respects that now. That's the platform. Alex will pull the lessons together, and then Pau closes on where this goes next.
 :::
 
 # 6. Lessons learned & future improvements
@@ -300,7 +300,7 @@ Ranked summary + one-line contrastive justification per product + attribute tabl
 - **XAI is an interaction problem, not a model problem.** The hard part was compressing SHAP into one trustworthy sentence, not training the forest.
 
 ::: notes
-**Alejandro Bordón:** Lessons. First, the upfront research paid for itself many times over — those five Key Insights became a spec we could point at, so we never argued about features from personal taste. Second, honesty turned out to be a feature: openly disclosing the dead filters and the fact that our data collection is still pending is far more credible than a polished fiction, and "missing is not zero" became a genuine engineering discipline. Third, our constraints helped us — no build step, no framework, the app opens with a double-click, and the graceful degradation we were forced to build kept it alive every time the API misbehaved. And fourth, the deepest lesson: explainable AI is an interaction problem before it's a modelling problem. Training the forest was the easy part; compressing SHAP into one sentence a sceptic would trust was the real work.
+**Alex:** Lessons, first half. One: the research up front paid for itself many times over. Those five Key Insights became something we could point at, so we argued from evidence instead of personal taste. Two: honesty turned out to be a feature. Owning the bugs we found, and saying out loud that our data collection isn't done yet, reads as far more credible than a polished story, and "missing is not zero" became a real engineering habit. Three, and this one's newer: information architecture is a design decision, not an afterthought. We started with everything crammed onto one endless page and it overwhelmed people, so we split it into a clear home plus separate views for discover, product, compare, and evaluation, each at the right level. Pau will take the rest of the lessons and where we're headed.
 :::
 
 ## Future work & close
@@ -308,7 +308,7 @@ Ranked summary + one-line contrastive justification per product + attribute tabl
 **Future improvements**
 
 - **Run the study** and populate the SUS / XEQ tables with real figures
-- **SHAP over DuckDB** in the backend; scale the index from ~500 to a large fraction of the full OFF catalogue
+- **SHAP over DuckDB** in the backend; scale the index from ~862 toward the full OFF catalogue
 - **Price as a first-class axis** behind Advanced (H4) — for Aina
 - **Playwright** regression suite; longitudinal in-the-wild study vs. a Yuka baseline
 
@@ -317,5 +317,5 @@ Ranked summary + one-line contrastive justification per product + attribute tabl
 ### Thank you — questions?
 
 ::: notes
-**Alejandro Bordón:** Finally, where this goes next. The immediate priority is running the study and filling those placeholder tables with real SUS and explanation-satisfaction numbers. On the engineering side: moving SHAP onto a DuckDB backend and scaling the recommendation index from roughly five hundred products toward the full Open Food Facts catalogue; completing the price axis behind the Advanced toggle, which is what Aina needs; adding a Playwright regression suite; and eventually a longitudinal, in-the-wild study against a Yuka baseline to see if dual-axis contrastive design changes real purchasing behaviour. That's FoodLens — dual-axis, contrastive, and honest about what it does and doesn't yet prove. The repo is on the slide. Thank you — we'd be glad to take your questions.
+**Pau:** Lessons, second half, then we close. Four, and this is the big one: explainable AI is an interaction problem before it's a modelling problem. Training the forest was the easy bit. Compressing SHAP into a sentence a sceptic would actually trust was the real work. Five: the limits we set ourselves helped. No build step, no framework, the app opens with a double-click, and the graceful degradation we were forced into kept it alive every time the API misbehaved. Where it goes next: run the study and fill those placeholder tables with real SUS and explanation numbers; finish the price axis behind the Advanced toggle, which is the thing Aina needs; grow the index, it already holds around eight hundred and sixty real products and we want the whole catalogue; and eventually a longer, in-the-wild study against something like Yuka, to see whether dual-axis contrastive design actually changes what people buy. That's FoodLens. Two scores, a real comparison, honest about what it does and doesn't prove yet. Repo's on the slide. Thanks, we're happy to take your questions.
 :::
