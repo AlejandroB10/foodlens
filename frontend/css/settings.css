@@ -38,6 +38,40 @@
   outline-offset: 3px;
 }
 
+/* ─── header theme toggle ─────────────────────────────────────────────────── */
+/* Matches the settings-trigger idiom: square frame, currentColor stroke icon.
+   One icon shows per theme — the moon in light mode (="switch to dark"), the
+   sun in dark mode. Tokens only, so it inverts correctly. */
+.theme-toggle {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  background: transparent;
+  border: var(--rule-w) solid var(--color-rule);
+  color: var(--color-ink);
+  cursor: pointer;
+  transition: background-color 140ms ease, color 140ms ease;
+}
+
+.theme-toggle:hover,
+.theme-toggle:focus-visible {
+  background: var(--color-ink);
+  color: var(--color-paper);
+  outline: 0;
+}
+
+.theme-toggle:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+.theme-toggle__icon { display: none; }
+/* Light mode: offer the moon (go dark). Dark mode: offer the sun (go light). */
+.theme-toggle__icon--moon { display: block; }
+[data-theme="dark"] .theme-toggle__icon--moon { display: none; }
+[data-theme="dark"] .theme-toggle__icon--sun { display: block; }
+
 /* ─── backdrop ─────────────────────────────────────────────────────────────── */
 #settings-backdrop,
 .settings-backdrop {

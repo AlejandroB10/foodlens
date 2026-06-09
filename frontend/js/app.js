@@ -19,13 +19,13 @@ import {
   formatAlternativeDelta,
 } from './xai.js';
 import { init as initOnboarding } from './views/onboarding.js';
-import { trackView, renderRecentlyViewed, startBootstrap, endBootstrap, RECENTLY_VIEWED_KEY } from './views/history.js';
-import { loadSettings as _loadSettings, show as showSettings } from './views/settings.js';
+import { trackView, renderRecentlyViewed, loadRecentlyViewed, startBootstrap, endBootstrap, RECENTLY_VIEWED_KEY } from './views/history.js';
+import { loadSettings as _loadSettings, show as showSettings, toggleTheme, getTheme } from './views/settings.js';
 import { init as initTooltips } from './views/tooltips.js';
 import { toggleFavourite, isFavourite, getFavourites, renderFavourites, buildHeartButton, clearFavourites } from './views/favourites.js';
 import { initCategoryBrowser } from './views/categories.js';
 import { initFilters } from './views/filters.js';
-import { toggleProductSelection } from './views/comparison.js';
+import { toggleProductSelection, renderComparisonView } from './views/comparison.js';
 import { initI18n, setLang, t } from './views/i18n.js';
 
 const STORAGE_KEY = 'foodlens.state';
@@ -126,6 +126,11 @@ const telemetry = {
 // Timestamp set when search completes — used to compute decision_time.
 let _searchCompletedAt = null;
 
+// True for ONE rerenderFocused pass triggered by a fresh in-app focusProduct
+// click — gates the scrollIntoView so it never yanks the viewport on a
+// deep-link/back-forward restore (where we want top-of-view instead).
+let _focusedShouldScroll = false;
+
 // Monotonic request token. Each runSearch call claims the next epoch; only the
 // latest claimant is allowed to commit results. This makes concurrent searches
 // last-CALL-wins (the user's most recent action) instead of last-RESOLVE-wins,
@@ -160,9 +165,26 @@ const els = {
   settingsBtn: document.querySelector('[data-action="settings"]'),
   favouritesSection: document.querySelector('#favourites'),
   evaluationSection: document.querySelector('#evaluation'),
-  navSearch: document.querySelector('#nav-search'),
+  homeView: document.querySelector('#home'),
+  aboutView: document.querySelector('#about'),
+  compareView: document.querySelector('#compare'),
+  homeRecent: document.querySelector('#home-recent'),
+  homeRecentRail: document.querySelector('#home-recent-rail'),
+  homeCtaInspect: document.querySelector('#home-cta-inspect'),
+  homeCtaBrowse: document.querySelector('#home-cta-browse'),
+  searchSection: document.querySelector('.search'),
+  controlsBar: document.querySelector('.search-controls-bar'),
+  weightingSection: document.querySelector('.weighting'),
+  navHome: document.querySelector('#nav-home'),
+  navDiscover: document.querySelector('#nav-discover'),
   navSaved: document.querySelector('#nav-saved'),
-  navEvaluation: document.querySelector('#nav-evaluation'),
+  navCompare: document.querySelector('#nav-compare'),
+  homeAboutLink: document.querySelector('#home-about-link'),
+  footerAboutLink: document.querySelector('#footer-about-link'),
+  footerEvalLink: document.querySelector('#footer-eval-link'),
+  aboutEvalLink: document.querySelector('#about-eval-link'),
+  compareBackBtn: document.querySelector('#compare-back-btn'),
+  themeToggle: document.querySelector('#theme-toggle'),
   savedBadge: document.querySelector('#saved-badge'),
   categoryBrowser: document.getElementById('category-browser'),
   filtersBrowser: document.getElementById('filters-browser'),
@@ -694,6 +716,13 @@ const ICON_SHARE = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" s
   <line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/>
 </svg>`;
 
+// Left-arrow used by the product view's "Back to results" control. Matches the
+// 16x16 stroke=currentColor icon style of the site-nav buttons.
+const ICON_BACK = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="16" height="16">
+  <path d="M19 12H5"/>
+  <path d="m12 19-7-7 7-7"/>
+</svg>`;
+
 /**
  * Render a product card.
  *
@@ -994,7 +1023,7 @@ function renderAlternativeCard(product, alternative) {
 
 // ─── rendering flows ───────────────────────────────────────────────────
 
-async function focusProduct(product, { skipTrack = false } = {}) {
+async function focusProduct(product, { skipTrack = false, route = true } = {}) {
   if (_searchCompletedAt && product?.code) {
     telemetry.send({
       event: 'decision_time',
@@ -1007,9 +1036,23 @@ async function focusProduct(product, { skipTrack = false } = {}) {
     trackView(product.code, product);
     renderRecentlyViewed(els.recentlyViewed, (code) => runSearch(code));
   }
-  
-  // AÑADIDO: await para que devuelva una promesa y podamos sincronizar los clicks
-  await rerenderFocused();
+
+  if (route) {
+    // Route to the product deep-dive: push /product?code=NNN, flip currentView,
+    // show #focused and hide the siblings. We render the assembly here and AWAIT
+    // it (so callers that scroll to #usual-comparison-section after the await
+    // find a painted DOM), then tell showView to skip its own re-render.
+    _focusedShouldScroll = true;
+    await rerenderFocused();
+    showView('product', { code: product?.code, skipFocusedRender: true });
+  } else {
+    // Bootstrap / pre-render path: prime focusedProduct WITHOUT routing or
+    // showing #focused, so the listing stays clean (no inline injection) while a
+    // later /product?code restore or click is instant. The assembly is rebuilt
+    // on demand by the product branch, so we don't paint it into a hidden node.
+    if (currentView !== 'product') setHidden(els.focusedView, true);
+    else await rerenderFocused();
+  }
 }
 
 async function rerenderFocused() {
@@ -1032,9 +1075,37 @@ async function rerenderFocused() {
   setHidden(els.focusedView, false);
   clear(els.focusedView);
 
+  // 0. Back-to-results control — appended FIRST so DOM order = tab order: it is
+  // the first focusable element on the product view. Returns to the listing
+  // (or wherever the user came from) without losing lastResults/pagination,
+  // which live in module scope and are repainted by rerenderResults.
+  const backLabel = t('nav.back_to_results', 'Back to results');
+  els.focusedView.appendChild(
+    el(
+      'button',
+      {
+        type: 'button',
+        class: 'focused__back',
+        'aria-label': backLabel,
+        // Icon (left chevron) + label, matching the site-nav icon style. Built
+        // as an innerHTML string so the SVG is parsed in the correct namespace
+        // (createElement does not namespace SVG); the label span carries
+        // data-i18n so a later setLang() pass re-translates it in place.
+        html: `${ICON_BACK}<span data-i18n="nav.back_to_results">${backLabel}</span>`,
+        onClick: () => {
+          // history.back() returns to the prior view (search/saved/evaluation)
+          // and replays the kept list. The fallback covers a deep-link entry
+          // where there is no back stack to pop.
+          if (window.history.length > 1) window.history.back();
+          else { showView('discover'); ensureCatalogueLoaded(); }
+        },
+      },
+    ),
+  );
+
   // 1. Tarjeta principal
   els.focusedView.appendChild(
-    el('h2', { class: 'section__title' }, t('ui.selected_product', 'Selected product')),
+    el('h2', { class: 'section__title focused-title', tabindex: '-1' }, t('ui.selected_product', 'Selected product')),
   );
   els.focusedView.appendChild(renderProductCard(focusedProduct, reference, false, /* isFocused */ true));
 
@@ -1163,7 +1234,13 @@ async function rerenderFocused() {
     }
   }
 
-  els.focusedView.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  // Only scroll on a fresh in-app focusProduct click. On a deep-link / back-
+  // forward restore we want top-of-view, and a forced scroll would fight the
+  // restore (and the compare/set-usual handlers that target #usual-comparison).
+  if (_focusedShouldScroll) {
+    els.focusedView.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    _focusedShouldScroll = false;
+  }
 }
 
 function computeAlternativesJS(product, pool) {
@@ -1420,10 +1497,12 @@ async function runSearch(query, opts = {}) {
     _searchCompletedAt = Date.now();
     rerenderResults();
     renderLoadMore();
-    if (lastResults.length > 0) {
-      // Auto-focus the top-ranked product so reasoning is visible (H2).
-      focusProduct(lastResults[0]);
-    } else {
+    // Phase 2: do NOT auto-focus the top product. Entering /discover must show
+    // the LIST; the user clicks a card to reach /product (Phase 1). The product
+    // deep-dive rebuilds focusedProduct on demand via restoreFocusedByCode, so
+    // dropping the pre-render keeps deep-links working. We only reset the focused
+    // state when the listing is empty so a stale deep-dive cannot linger.
+    if (lastResults.length === 0) {
       focusedProduct = null;
       setHidden(els.focusedView, true);
     }
@@ -1513,7 +1592,7 @@ function renderScannerDialog() {
     }
     closeDialog();
     if (els.searchInput) els.searchInput.value = code;
-    showView('search');
+    showView('discover');
     runSearch(code);
   };
 
@@ -2068,7 +2147,7 @@ function renderEvaluationView() {
         );
       },
     },
-    el('h2', { class: 'evaluation__title' }, 'Evaluate FoodLens'),
+    el('h2', { class: 'evaluation__title', tabindex: '-1' }, 'Evaluate FoodLens'),
     el('p', { class: 'evaluation__intro' },
       'Use these WA5 instruments after a participant completes the search, comparison or barcode flow.',
     ),
@@ -2104,69 +2183,197 @@ function updateSavedBadge() {
   }
 }
 
+// ─── Home landing: recently-viewed rail (Phase 2) ─────────────────
+// A compact, read-only rail that reuses the existing recently-viewed data
+// (loadRecentlyViewed). It is NOT the heavy collapsible widget — Home stays a
+// thin orienting screen. The whole rail hides when there is no history.
+
+function renderHomeRecentRail() {
+  if (!els.homeRecent || !els.homeRecentRail) return;
+  const items = loadRecentlyViewed();
+  if (!items || items.length === 0) {
+    setHidden(els.homeRecent, true);
+    clear(els.homeRecentRail);
+    return;
+  }
+  setHidden(els.homeRecent, false);
+  clear(els.homeRecentRail);
+  for (const item of items) {
+    const figure = item.image
+      ? el('img', { class: 'home-tile__thumb', src: item.image, alt: item.name || item.code, loading: 'lazy' })
+      : el('span', { class: 'home-tile__thumb home-tile__thumb--placeholder', 'aria-hidden': 'true' }, (item.name || '?')[0]);
+    const tile = el(
+      'button',
+      {
+        type: 'button',
+        class: 'home-tile',
+        'aria-label': `Open ${item.name || item.code}`,
+        onClick: () => openProductFromHome(item.code, item),
+      },
+      figure,
+      el('span', { class: 'home-tile__name' }, item.name || item.code),
+      // H1: both axes always shown, even unknown/not-applicable.
+      el('div', { class: 'home-tile__badges' },
+        renderBadge('nutri', { grade: item.healthGrade }),
+        renderBadge('eco', { grade: item.ecoGrade }),
+      ),
+    );
+    els.homeRecentRail.appendChild(tile);
+  }
+}
+
+// Open a product picked from the Home rail: enter /discover lazily (so the
+// listing exists behind the deep-dive), then focus the product — focusProduct
+// routes to /product (Phase 1). Resolves the product from the in-memory list
+// first, then the stored rail item, then a barcode fetch.
+async function openProductFromHome(code, item) {
+  showView('discover');
+  await ensureCatalogueLoaded();
+  let product = (lastResults || []).find((p) => p.code === code);
+  if (!product) product = await getProductByBarcode(code);
+  if (product) {
+    focusProduct(product);
+  } else if (item && item.code) {
+    // No live data for this code (offline / removed) — keep the user on the
+    // discover listing rather than a blank product view.
+    showView('discover');
+  }
+}
+
 // ─── view navigation ─────────────────────────────────────────────
 
-let currentView = 'search'; // 'search' | 'saved' | 'evaluation'
+let currentView = 'home'; // 'home' | 'discover' | 'saved' | 'evaluation' | 'product' | 'about' | 'compare'
+
+// ─── catalogue lazy-load (Phase 2) ─────────────────────────────────────────
+// The catalogue is no longer fetched eagerly on boot. It loads only when the
+// user ENTERS /discover (a CTA, the Discover nav, a search submit, a /discover
+// deep-link, or a popstate into discover). Idempotent: a guard flag plus a
+// "already have results" check prevent a double catalogue load when both a CTA
+// and the nav fire. A fresh real search simply replaces lastResults afterwards.
+let _catalogueLoaded = false;
+
+async function ensureCatalogueLoaded() {
+  if (_catalogueLoaded || lastResults.length > 0) {
+    _catalogueLoaded = true;
+    return;
+  }
+  _catalogueLoaded = true;
+  // The empty-query branch of runSearch carries the EXACT index/sample-fallback
+  // path, so the 503/offline behaviour is preserved.
+  await runSearch('');
+}
+
+// The discovery-only blocks (search, controls, weighting slider, seasonal hint,
+// source badge, recently-viewed, results listing) are toggled as a group so
+// Home and /discover own clearly separate regions.
+function setDiscoverRegionsHidden(hidden) {
+  setHidden(els.searchSection, hidden);
+  setHidden(els.controlsBar, hidden);
+  setHidden(els.weightingSection, hidden);
+  setHidden(els.recentlyViewed, hidden);
+  setHidden(els.seasonalHint, hidden);
+  setHidden(els.resultsRegion, hidden);
+}
 
 // ─── routing ───────────────────────────────────────────────────────────────
 // Map view name ↔ URL path. The app keeps a single HTML file (index.html)
 // but uses History API so URLs reflect the current view and back/forward work.
 const VIEW_PATHS = {
-  search: '/',
+  home: '/',
+  discover: '/discover',
   saved: '/saved',
   evaluation: '/evaluation',
+  about: '/about',
+  compare: '/compare',
+  // The product deep-dive is its own routed view. The product is identified by
+  // a ?code querystring (e.g. /product?code=NNN), NOT a path segment — this is
+  // the lowest-risk option given the served-from-sub-path base-prefix logic.
+  product: '/product',
 };
 
 function viewFromPath(path) {
-  if (!path) return 'search';
+  if (!path) return 'home';
   // Tolerate trailing slash and case differences.
   const clean = path.toLowerCase().replace(/\/+$/, '') || '/';
+  if (clean === '/discover') return 'discover';
   if (clean === '/saved') return 'saved';
   if (clean === '/evaluation') return 'evaluation';
-  return 'search';
+  if (clean === '/about') return 'about';
+  if (clean === '/compare') return 'compare';
+  if (clean === '/product') return 'product';
+  return 'home'; // "/" and unknown paths land on Home
 }
 
-function pushViewHistory(view, replace = false) {
+// The focused product's barcode is carried in the querystring, parsed
+// separately from viewFromPath (which only reads location.pathname).
+function codeFromSearch() {
+  return new URLSearchParams(window.location.search).get('code');
+}
+
+function pushViewHistory(view, replace = false, code = null) {
   const path = VIEW_PATHS[view] || '/';
   // Preserve the directory prefix if the app is served from a sub-path
   // (e.g. http://localhost:8090/foodlens/). We only override the final segment.
-  const base = window.location.pathname.replace(/\/((saved|evaluation)\/?)?$/i, '') || '';
+  // /product must be stripped too, otherwise leaving the product view would
+  // leave a stale /product in the computed base prefix.
+  const base = window.location.pathname.replace(/\/((discover|saved|evaluation|product|about|compare)\/?)?$/i, '') || '';
   const newPath = (base + path).replace(/\/{2,}/g, '/');
-  const url = newPath + window.location.search + window.location.hash;
-  // No-op if we already are on this URL — avoids polluting the history stack.
-  if (window.location.pathname.replace(/\/$/, '') === newPath.replace(/\/$/, '')) return;
+  // The product view carries ?code; every other view drops it so search/saved/
+  // evaluation never inherit a stale code from a previous product deep-dive.
+  const search = view === 'product' && code ? `?code=${encodeURIComponent(code)}` : '';
+  const url = newPath + search + window.location.hash;
+  // No-op if we already are on this exact URL — avoids polluting the history
+  // stack. For the product view, two consecutive products share the same
+  // pathname but differ by ?code, so we must compare the search too (otherwise
+  // back/forward between products would break).
+  const samePath = window.location.pathname.replace(/\/$/, '') === newPath.replace(/\/$/, '');
+  const sameSearch = window.location.search === search;
+  if (samePath && sameSearch) return;
   const method = replace ? 'replaceState' : 'pushState';
-  window.history[method]({ view }, '', url);
+  window.history[method]({ view, code: code || null }, '', url);
 }
 
 function showView(view, opts = {}) {
-  const { updateHistory = true, replace = false } = opts;
+  const { updateHistory = true, replace = false, code = null, skipFocusedRender = false } = opts;
   currentView = view;
 
-  if (updateHistory) pushViewHistory(view, replace);
+  if (updateHistory) pushViewHistory(view, replace, code);
 
-  // Toggle nav active states
-  if (els.navSearch) {
-    els.navSearch.classList.toggle('is-active', view === 'search');
-    els.navSearch.setAttribute('aria-pressed', view === 'search' ? 'true' : 'false');
-    if (view === 'search') els.navSearch.setAttribute('aria-current', '');
-    else els.navSearch.removeAttribute('aria-current');
+  // Toggle nav active states. Primary nav is now Home / Discover / Saved /
+  // Compare (Evaluate demoted to the footer + /about). aria-current uses the
+  // valid "page" token (an empty string is not a valid aria-current value).
+  const navItems = [
+    { el: els.navHome, view: 'home' },
+    { el: els.navDiscover, view: 'discover' },
+    { el: els.navSaved, view: 'saved' },
+    { el: els.navCompare, view: 'compare' },
+  ];
+  for (const { el: navEl, view: navView } of navItems) {
+    if (!navEl) continue;
+    const active = view === navView;
+    navEl.classList.toggle('is-active', active);
+    if (active) navEl.setAttribute('aria-current', 'page');
+    else navEl.removeAttribute('aria-current');
   }
-  if (els.navSaved) {
-    els.navSaved.classList.toggle('is-active', view === 'saved');
-    els.navSaved.setAttribute('aria-pressed', view === 'saved' ? 'true' : 'false');
-    if (view === 'saved') els.navSaved.setAttribute('aria-current', '');
-    else els.navSaved.removeAttribute('aria-current');
-  }
-  if (els.navEvaluation) {
-    els.navEvaluation.classList.toggle('is-active', view === 'evaluation');
-    els.navEvaluation.setAttribute('aria-pressed', view === 'evaluation' ? 'true' : 'false');
-    if (view === 'evaluation') els.navEvaluation.setAttribute('aria-current', '');
-    else els.navEvaluation.removeAttribute('aria-current');
-  }
+
+  // The routed /about and /compare regions are <main> siblings: hide them by
+  // default for EVERY view, then the matching branch below re-shows its own.
+  setHidden(els.aboutView, true);
+  setHidden(els.compareView, true);
 
   // Show/hide sections
-  if (view === 'saved') {
+  if (view === 'home') {
+    // Thin orienting landing: show ONLY the hero. No catalogue is loaded here —
+    // Home never fetches; entering /discover is what loads the shelf.
+    setHidden(els.homeView, false);
+    setDiscoverRegionsHidden(true);
+    setHidden(els.focusedView, true);
+    setHidden(els.favouritesSection, true);
+    setHidden(els.evaluationSection, true);
+    setHidden(els.sourceBadge, true);
+    renderHomeRecentRail();
+  } else if (view === 'saved') {
+    setHidden(els.homeView, true);
     setHidden(els.resultsRegion, true);
     setHidden(els.focusedView, true);
     setHidden(els.favouritesSection, false);
@@ -2178,16 +2385,87 @@ function showView(view, opts = {}) {
       }
     });
   } else if (view === 'evaluation') {
+    setHidden(els.homeView, true);
     setHidden(els.resultsRegion, true);
     setHidden(els.focusedView, true);
     setHidden(els.favouritesSection, true);
     setHidden(els.evaluationSection, false);
     renderEvaluationView();
-  } else {
+  } else if (view === 'product') {
+    // The focused product deep-dive is now its OWN routed view: it owns the
+    // screen and hides the listing/saved/evaluation siblings. focusedProduct is
+    // set by focusProduct (before this call) or restored by restoreFocusedByCode.
+    setHidden(els.homeView, true);
+    setHidden(els.resultsRegion, true);
     setHidden(els.favouritesSection, true);
     setHidden(els.evaluationSection, true);
-    setHidden(els.resultsRegion, false);
+    setHidden(els.focusedView, false);
+    // focusProduct already awaited the render; restore/popstate/saved paths did
+    // not, so render here unless the caller signals it is already painted.
+    if (!skipFocusedRender) rerenderFocused();
+  } else if (view === 'about') {
+    // Routed About: personas (incl. Aina P04) + project/attribution/methodology.
+    // No catalogue load — it is a static informational view.
+    setHidden(els.homeView, true);
+    setHidden(els.favouritesSection, true);
+    setHidden(els.evaluationSection, true);
+    setHidden(els.focusedView, true);
+    setHidden(els.sourceBadge, true);
+    setDiscoverRegionsHidden(true);
+    setHidden(els.aboutView, false);
+  } else if (view === 'compare') {
+    // Routed Compare: the promoted comparison render (ranked summary + transposed
+    // table + Export CSV). The tray on /discover still accumulates selections.
+    setHidden(els.homeView, true);
+    setHidden(els.favouritesSection, true);
+    setHidden(els.evaluationSection, true);
+    setHidden(els.focusedView, true);
+    setHidden(els.sourceBadge, true);
+    setDiscoverRegionsHidden(true);
+    setHidden(els.compareView, false);
+    // Reveal the region first, then render so comparison.js finds its DOM nodes.
+    renderComparisonView();
+  } else {
+    // discover (de-overloaded former search view): controls + results listing.
+    setHidden(els.homeView, true);
+    setHidden(els.favouritesSection, true);
+    setHidden(els.evaluationSection, true);
+    // #focused is shown ONLY on the product view now — hide it here so the
+    // listing view no longer double-renders the deep-dive above the results
+    // (the old long-scroll "inline injection" overload).
+    setHidden(els.focusedView, true);
+    setDiscoverRegionsHidden(false);
     rerenderResults();
+  }
+
+  // Micro-UX: move focus to the new view's title so keyboard/SR users are not
+  // stranded at the top of the body after a client-side route change. Each title
+  // carries tabindex="-1"; preventScroll keeps the viewport stable (the product
+  // view does its own gated scrollIntoView).
+  focusViewTitle(view);
+}
+
+// Map a view to its focusable title node and focus it. Resolves lazily because
+// the evaluation / product titles are JS-rendered after showView's branch runs.
+function focusViewTitle(view) {
+  const selectors = {
+    home: '#home-hero-title',
+    discover: '#results-title',
+    saved: '.saved__title, #favourites h2',
+    evaluation: '.evaluation__title',
+    product: '#focused .focused-title, #focused h2',
+    about: '#about-title',
+    compare: '#compare-title',
+  };
+  const sel = selectors[view];
+  if (!sel) return;
+  const node = document.querySelector(sel);
+  if (!node) return;
+  if (!node.hasAttribute('tabindex')) node.setAttribute('tabindex', '-1');
+  try {
+    node.focus({ preventScroll: true });
+  } catch {
+    node.focus();
   }
 }
 
@@ -2196,10 +2474,11 @@ function showView(view, opts = {}) {
 // product on top. If the product is not in the current list, fetch it and
 // prepend it so the focused card has data to render.
 async function openSavedProductInSearch(code) {
-  showView('search');
-
-  // If the results list is empty (first visit / fresh reload while on /saved),
-  // restore the sample-products view so the user is not dumped on a blank page.
+  // Ensure the listing has data to return to (first visit / fresh reload while
+  // on /saved), so the back-link from the product view lands on a populated
+  // list instead of a blank page. We populate lastResults but do NOT switch to
+  // the search view first — focusProduct routes straight to /product, avoiding
+  // a wasted listing flash.
   if (!lastResults || lastResults.length === 0) {
     lastResults = await getAllSampleProducts();
   }
@@ -2210,23 +2489,80 @@ async function openSavedProductInSearch(code) {
     if (product) lastResults = [product, ...lastResults];
   }
 
-  rerenderResults();
   if (product) {
     focusProduct(product);
+  } else {
+    // Unknown code — fall back to the listing gracefully rather than a blank view.
+    showView('discover');
+    ensureCatalogueLoaded();
   }
 }
 
+// Restore the focused product from a barcode (deep-link on load, or back/
+// forward to a /product?code entry). Single restore path used by popstate AND
+// bootstrap. Never throws on a bad/missing code — falls back to the listing.
+async function restoreFocusedByCode(code, { updateHistory = false, replace = false } = {}) {
+  if (!code) {
+    // Bad/missing code -> graceful listing, no blank page.
+    await ensureCatalogueLoaded();
+    showView('discover', { updateHistory, replace });
+    return;
+  }
+  // Prefer the in-memory list (no network call, works offline with samples).
+  let product = (lastResults || []).find((p) => p.code === code);
+  if (!product) {
+    try {
+      product = await getProductByBarcode(code);
+    } catch {
+      product = null;
+    }
+  }
+  if (!product) {
+    await ensureCatalogueLoaded();
+    showView('discover', { updateHistory, replace });
+    return;
+  }
+  focusedProduct = product;
+  // The URL is already /product?code on a restore, so do not re-push (the
+  // caller decides via updateHistory). _focusedShouldScroll stays false so the
+  // viewport is not yanked — restores land at top-of-view.
+  showView('product', { updateHistory, replace, code });
+}
+
 // ─── event wiring ───────────────────────────────────────────────────────
+
+// Mirror the current theme onto the header toggle's aria-pressed. Pressed = dark.
+// CSS swaps the sun/moon icon via [data-theme] on <html>, so no per-icon JS here.
+function syncThemeToggle(theme) {
+  if (!els.themeToggle) return;
+  els.themeToggle.setAttribute('aria-pressed', theme === 'dark' ? 'true' : 'false');
+}
 
 function wireEvents() {
   els.searchForm?.addEventListener('submit', (e) => {
     e.preventDefault();
     const q = els.searchInput.value.trim();
     const ingredient = els.ingredientInput?.value.trim() || '';
-    showView('search');
+    showView('discover');
     runSearch(q, { ingredient });
   });
 
+  // Home CTAs: both enter /discover. "Inspect" focuses the search field; both
+  // lazily load the catalogue (idempotent — runs once even if the user clicks
+  // both, thanks to the _catalogueLoaded guard).
+  els.homeCtaInspect?.addEventListener('click', () => {
+    showView('discover');
+    ensureCatalogueLoaded();
+    els.searchInput?.focus();
+  });
+  els.homeCtaBrowse?.addEventListener('click', () => {
+    showView('discover');
+    ensureCatalogueLoaded();
+  });
+
+  // H4: the first axis stays health/eco. The price lever remains behind the
+  // Settings "Advanced" surface and is intentionally NOT surfaced this iteration
+  // (approved) — no price slider on the public weighting control.
   els.weightSlider?.addEventListener('input', (e) => {
     const v = Number(e.target.value);
     setWeight(v, null);
@@ -2254,14 +2590,64 @@ function wireEvents() {
   // card so its comparison disappears and it falls back to the category average.
   document.addEventListener('foodlens:usuals-changed', () => { rerenderFocused(); });
   els.scanButton?.addEventListener('click', openBarcodeScanner);
-  els.navSearch?.addEventListener('click', () => showView('search'));
-  els.navSaved?.addEventListener('click', () => showView('saved'));
-  els.navEvaluation?.addEventListener('click', () => showView('evaluation'));
+
+  // Header theme toggle: flips the SAME foodlens.settings.theme the Settings
+  // drawer writes. toggleTheme() persists + applies; syncThemeToggle only mirrors
+  // the button's aria-pressed (no re-write, so no infinite loop).
+  els.themeToggle?.addEventListener('click', () => {
+    const next = toggleTheme();
+    syncThemeToggle(next);
+  });
+  // Keep the header button in sync when the theme changes from the drawer radios.
+  document.addEventListener('foodlens:theme-changed', (e) => {
+    syncThemeToggle(e.detail?.theme);
+  });
+
+  // comparison.js dispatches this instead of importing app.js (one-way import:
+  // app.js imports comparison.js, never the reverse). Routes to /compare.
+  document.addEventListener('foodlens:open-compare', () => showView('compare'));
+
+  // Nav anchors are real <a href> for progressive enhancement (open-in-new-tab
+  // pre-routes to the correct URL). Intercept plain left-clicks for the History
+  // API; let modified clicks / middle-clicks fall through to the browser.
+  const interceptNav = (anchor, run) => {
+    anchor?.addEventListener('click', (e) => {
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
+      e.preventDefault();
+      run();
+    });
+  };
+  interceptNav(els.navHome, () => showView('home'));
+  interceptNav(els.navDiscover, () => { showView('discover'); ensureCatalogueLoaded(); });
+  interceptNav(els.navSaved, () => showView('saved'));
+  interceptNav(els.navCompare, () => showView('compare'));
+
+  // About + Evaluate entry points (home link, footer links, in-about link).
+  interceptNav(els.homeAboutLink, () => showView('about'));
+  interceptNav(els.footerAboutLink, () => showView('about'));
+  interceptNav(els.footerEvalLink, () => showView('evaluation'));
+  interceptNav(els.aboutEvalLink, () => showView('evaluation'));
+  els.compareBackBtn?.addEventListener('click', () => { showView('discover'); ensureCatalogueLoaded(); });
+
+  // Re-render the JS-built Home rail title/tiles on language change, mirroring
+  // categories.js / filters.js. The hero/CTAs use data-i18n(-html) so updateDOM
+  // handles them automatically.
+  window.addEventListener('languageChanged', () => {
+    if (currentView === 'home') renderHomeRecentRail();
+  });
 
   // Back/forward buttons: read the URL and switch view without pushing again.
-  window.addEventListener('popstate', () => {
+  window.addEventListener('popstate', async () => {
     const target = viewFromPath(window.location.pathname);
-    showView(target, { updateHistory: false });
+    if (target === 'product') {
+      await ensureCatalogueLoaded();
+      await restoreFocusedByCode(codeFromSearch(), { updateHistory: false });
+    } else if (target === 'discover') {
+      await ensureCatalogueLoaded();
+      showView('discover', { updateHistory: false });
+    } else {
+      showView(target, { updateHistory: false });
+    }
   });
 }
 
@@ -2343,30 +2729,42 @@ async function bootstrap() {
   initOnboarding();
   initCategories();
   initProductFilters();
-  // Suppress all trackView calls during bootstrap so no sample product
-  // (loaded via runSearch('')) gets recorded as "recently viewed".
+  // Suppress all trackView calls during bootstrap so a deep-link restore never
+  // records a product as "recently viewed".
   startBootstrap();
   renderTelemetryBanner();
-  // Show all sample products on first load so the UI is never empty.
-  await runSearch('');
 
+  // Phase 2: the catalogue is NOT loaded eagerly. Home ("/") is a thin landing
+  // that fetches nothing; the shelf loads only when the user enters /discover.
+  // The recently-viewed widget renders empty on first visit (it self-hides).
   renderRecentlyViewed(els.recentlyViewed, (code) => runSearch(code));
-  if (lastResults.length > 0) {
-    focusProduct(lastResults[0], { skipTrack: true });
-  }
 
   // NOW end bootstrap so real user navigation (product clicks) tracks.
   endBootstrap();
 
-  // Route to the view the URL indicates (e.g. someone opens /saved directly).
-  // replace:true so we don't add a junk entry at the start of the history.
+  // Route to the view the URL indicates. replace:true so we don't add a junk
+  // entry at the start of the history.
   const initialView = viewFromPath(window.location.pathname);
-  if (initialView !== 'search') {
+  if (initialView === 'product') {
+    // Deep link to a product. Load the catalogue first so restoreFocusedByCode
+    // usually resolves in-memory (and the listing exists behind the deep-dive).
+    await ensureCatalogueLoaded();
+    await restoreFocusedByCode(codeFromSearch(), { updateHistory: true, replace: true });
+  } else if (initialView === 'discover') {
+    // Deep link to /discover: load the shelf, then show the listing.
+    await ensureCatalogueLoaded();
+    showView('discover', { replace: true });
+  } else if (initialView === 'saved' || initialView === 'evaluation' || initialView === 'about' || initialView === 'compare') {
+    // Saved / Evaluation / About / Compare: no catalogue load needed. Compare
+    // renders from the (initially empty) tray selection; About is static.
     showView(initialView, { replace: true });
   } else {
-    // Make sure the initial state has { view: 'search' } so popstate works.
-    pushViewHistory('search', true);
+    // "/" and unknown paths → Home. No catalogue load.
+    showView('home', { replace: true });
   }
+
+  // Keep the header theme toggle's aria-pressed in step with the restored theme.
+  syncThemeToggle(getTheme());
 
   // Initialize saved badge count
   updateSavedBadge();

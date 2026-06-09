@@ -169,6 +169,16 @@ function renderRankedSummary(container, products) {
   container.appendChild(list);
 }
 
+// Route entrypoint: app.js calls this from the showView('compare') branch after
+// it reveals the #compare region. Thin wrapper over the existing table/ranked
+// render so all DOM-id contracts (table-header-row, table-body, comparison-ranked)
+// stay intact. The empty-state line is toggled here, never invented.
+export function renderComparisonView() {
+  const empty = document.getElementById('compare-empty');
+  if (empty) empty.hidden = selectedProducts.size > 0;
+  renderComparisonTable();
+}
+
 function renderComparisonTable() {
   const tableHeaderRow = document.getElementById('table-header-row');
   const tableBody = document.getElementById('table-body');
@@ -273,26 +283,15 @@ function renderNutrientLevelsRow(tableBody, products) {
 
 // Iniciar eventos de UI cuando el DOM esté listo
 document.addEventListener('DOMContentLoaded', () => {
+  // "View Comparison" routes to the /compare view instead of opening a dialog.
+  // comparison.js must not import app.js (app.js imports this module), so we
+  // signal via a CustomEvent — app.js listens and calls showView('compare'),
+  // which in turn drives renderComparisonView(). Mirrors foodlens:usuals-changed.
   document.getElementById('open-comparison-btn')?.addEventListener('click', () => {
-    renderComparisonTable();
-    document.getElementById('comparison-modal')?.showModal();
-  });
-
-  document.getElementById('close-modal-btn')?.addEventListener('click', () => {
-    document.getElementById('comparison-modal')?.close();
+    document.dispatchEvent(new CustomEvent('foodlens:open-compare'));
   });
 
   document.getElementById('clear-comparison-btn')?.addEventListener('click', clearSelection);
-
-  const modalElement = document.getElementById('comparison-modal');
-  modalElement?.addEventListener('click', (e) => {
-    const rect = modalElement.getBoundingClientRect();
-    const isInDialog = (rect.top <= e.clientY && e.clientY <= rect.top + rect.height &&
-      rect.left <= e.clientX && e.clientX <= rect.left + rect.width);
-    if (!isInDialog) {
-      modalElement.close();
-    }
-  });
 
   document.getElementById('export-comparison-btn')?.addEventListener('click', () => {
     const products = Array.from(selectedProducts.values());

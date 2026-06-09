@@ -128,6 +128,24 @@ function applyTheme(theme) {
   if (meta) {
     meta.setAttribute('content', nextTheme === 'dark' ? '#141714' : '#FAF6EF');
   }
+  // Cross-component sync channel: the header theme toggle listens for this so its
+  // aria-pressed/icon state stays in step when the theme changes from the drawer
+  // (or vice versa). Mirrors the foodlens:usuals-changed pattern.
+  document.dispatchEvent(new CustomEvent('foodlens:theme-changed', { detail: { theme: nextTheme } }));
+}
+
+// Header toggle helper: flip the persisted theme and return the new value.
+// saveSettings already persists + calls applyTheme (which fires the event), so
+// there is a single source of truth and no risk of a double write.
+function toggleTheme() {
+  const current = getSettings().theme === 'dark' ? 'dark' : 'light';
+  const next = current === 'dark' ? 'light' : 'dark';
+  saveSettings('theme', next);
+  return next;
+}
+
+function getTheme() {
+  return getSettings().theme === 'dark' ? 'dark' : 'light';
 }
 
 function clearProfile() {
@@ -592,6 +610,8 @@ export {
   saveSettings,
   getSettings,
   applyTheme,
+  toggleTheme,
+  getTheme,
   clearProfile,
   show,
   hide,

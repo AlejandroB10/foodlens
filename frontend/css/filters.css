@@ -17,6 +17,12 @@
   margin-bottom: var(--space-4);
 }
 
+/* The controls bar (chips + Diet/Ethics + Allergen filters) is discover-only;
+   honour the [hidden] attribute so it does not leak onto Home. */
+.search-controls-bar[hidden] {
+  display: none;
+}
+
 @media (min-width: 720px) {
   .search-controls-bar {
     flex-direction: row;

@@ -4,8 +4,8 @@
   bottom: 0;
   left: 0;
   width: 100%;
-  background-color: #FAF6EF;
-  border-top: 2px solid #1a1a1a;
+  background-color: var(--color-paper);
+  border-top: var(--rule-w-bold, 2px) solid var(--color-rule);
   padding: 1rem 2rem;
   box-shadow: 0 -4px 12px rgba(0,0,0,0.1);
   transform: translateY(100%);
@@ -56,9 +56,9 @@
 
 /* --- MODAL Y TABLA --- */
 .editorial-modal {
-  border: 2px solid #1a1a1a;
-  background-color: #FAF6EF;
-  color: #1a1a1a;
+  border: var(--rule-w-bold, 2px) solid var(--color-rule);
+  background-color: var(--color-paper);
+  color: var(--color-ink);
   padding: 0;
   width: min(94vw, 1000px);
   max-width: 1000px;
@@ -76,7 +76,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 1.5rem 2rem;
-  border-bottom: 2px solid #1a1a1a;
+  border-bottom: var(--rule-w-bold, 2px) solid var(--color-rule);
 }
 
 .modal-header h2 {
@@ -132,9 +132,9 @@
   font-size: 0.9rem;
 }
 
-.editorial-table th, 
+.editorial-table th,
 .editorial-table td {
-  border: 1px solid #1a1a1a;
+  border: var(--rule-w, 1px) solid var(--color-rule);
   padding: 1rem;
   text-align: center;
 }
@@ -142,7 +142,7 @@
 .editorial-table .attr-col {
   text-align: left;
   font-weight: bold;
-  background-color: rgba(0,0,0,0.03);
+  background-color: var(--color-paper-2);
 }
 
 /* F-34: best value per nutrient row (lower is better for sugar/salt/sat-fat/
@@ -150,8 +150,8 @@
    so it reads in both light and dark mode. */
 .editorial-table td.cell--winner {
   font-weight: 700;
-  background-color: rgba(26, 26, 26, 0.06);
-  box-shadow: inset 0 0 0 2px #1a1a1a;
+  background-color: var(--color-paper-2);
+  box-shadow: inset 0 0 0 2px var(--color-ink);
 }
 
 .editorial-table td.cell--winner::after {
@@ -170,19 +170,136 @@
 .cell-chip {
   display: inline-block;
   padding: 0.15rem 0.5rem;
-  border: 1px solid #1a1a1a;
+  border: var(--rule-w, 1px) solid var(--color-rule);
   border-radius: 999px;
   font-size: 0.72rem;
   white-space: nowrap;
 }
 
-.cell-chip--low { background-color: #d8efd8; }
-.cell-chip--moderate { background-color: #fdf0cc; }
-.cell-chip--high { background-color: #f7d9d4; }
+.cell-chip--low { background-color: color-mix(in srgb, var(--color-eco-a) 22%, transparent); }
+.cell-chip--moderate { background-color: color-mix(in srgb, var(--color-nutri-c) 22%, transparent); }
+.cell-chip--high { background-color: color-mix(in srgb, var(--color-nutri-e) 22%, transparent); }
 .cell-chip--unknown {
   background-color: transparent;
   border-style: dashed;
-  color: #666;
+  color: var(--color-ink-mute);
+}
+
+/* ─── /compare ROUTED VIEW (Phase 3) ─────────────────────────────────────────
+   The comparison render was promoted from a <dialog> to a routed #compare region
+   so it inverts correctly in dark mode. Token-only overrides of the editorial
+   table (the legacy .editorial-modal/.editorial-table hex values stay for any
+   non-routed reuse, but inside .compare-view everything maps to design tokens). */
+
+.compare-view {
+  display: grid;
+  gap: 1.5rem;
+  padding: 1rem 0 3rem;
+  color: var(--color-ink);
+}
+
+.compare-view__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+  justify-content: space-between;
+  border-bottom: var(--rule-w-bold, 2px) solid var(--color-rule);
+  padding-bottom: 1rem;
+}
+
+.compare-view__head-text { min-width: 0; }
+
+.compare-view__title {
+  font-family: var(--font-display, 'Newsreader', Georgia, serif);
+  font-style: italic;
+  font-size: clamp(1.6rem, 3.5vw, 2.4rem);
+  font-weight: 500;
+  color: var(--color-ink);
+  margin: 0 0 0.4rem;
+}
+
+.compare-view__title:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 4px;
+}
+
+.compare-view__intro {
+  font-family: var(--font-body, 'Bricolage Grotesque', system-ui, sans-serif);
+  font-size: 0.92rem;
+  line-height: 1.6;
+  color: var(--color-ink-soft);
+  max-width: 56ch;
+  margin: 0;
+}
+
+.compare-view__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.compare-view__empty {
+  font-family: var(--font-body, 'Bricolage Grotesque', system-ui, sans-serif);
+  font-size: 0.95rem;
+  color: var(--color-ink-soft);
+  margin: 0;
+}
+
+/* The transposed table keeps its horizontal scroll on narrow screens. */
+.compare-view .table-responsive {
+  padding: 0;
+  overflow-x: auto;
+}
+
+.compare-view .editorial-table {
+  color: var(--color-ink);
+}
+
+.compare-view .editorial-table th,
+.compare-view .editorial-table td {
+  border-color: var(--color-rule);
+}
+
+.compare-view .editorial-table .attr-col {
+  background-color: var(--color-paper-2);
+}
+
+.compare-view .editorial-table td.cell--winner {
+  background-color: var(--color-paper-2);
+  box-shadow: inset 0 0 0 2px var(--color-ink);
+}
+
+.compare-view .cell-chip {
+  border-color: var(--color-rule);
+  color: var(--color-ink);
+}
+
+/* Nutrient-level tints mapped to grade tokens so they read in both themes
+   (the legacy fixed pastels do not invert). */
+.compare-view .cell-chip--low {
+  background-color: color-mix(in srgb, var(--color-eco-a) 22%, transparent);
+}
+.compare-view .cell-chip--moderate {
+  background-color: color-mix(in srgb, var(--color-nutri-c) 22%, transparent);
+}
+.compare-view .cell-chip--high {
+  background-color: color-mix(in srgb, var(--color-nutri-e) 22%, transparent);
+}
+.compare-view .cell-chip--unknown {
+  background-color: transparent;
+  border-style: dashed;
+  color: var(--color-ink-mute);
+}
+
+@media (max-width: 560px) {
+  .compare-view__head {
+    align-items: flex-start;
+  }
+  .compare-view .editorial-table th,
+  .compare-view .editorial-table td {
+    padding: 0.6rem;
+  }
 }
 
 /* --- ESTILO DEL SELECTOR EN LA TARJETA (DISEÑO EDITORIAL CENTRADO) --- */

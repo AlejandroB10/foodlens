@@ -54,6 +54,17 @@
             <button class="lang-btn" data-lang="ca">CA</button>
           </div>
 
+          <button type="button" class="theme-toggle" id="theme-toggle" aria-pressed="false" data-i18n-aria="header.theme" aria-label="Switch theme">
+            <svg class="theme-toggle__icon theme-toggle__icon--moon" viewBox="0 0 24 24" aria-hidden="true" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+            </svg>
+            <svg class="theme-toggle__icon theme-toggle__icon--sun" viewBox="0 0 24 24" aria-hidden="true" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="4"/>
+              <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/>
+            </svg>
+            <span class="visually-hidden" data-i18n="header.theme">Switch theme</span>
+          </button>
+
           <button type="button" class="settings-trigger" data-action="settings" aria-label="Open settings">
             <svg viewBox="0 0 24 24" aria-hidden="true" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
               <circle cx="12" cy="12" r="3"/>
@@ -66,6 +77,24 @@
     </header>
 
     <main>
+
+      <section id="home" class="home" aria-labelledby="home-hero-title" hidden>
+        <div class="home__hero">
+          <p class="home__eyebrow small-caps" data-i18n="home.eyebrow">Two scores. One number. No lectures.</p>
+          <h2 id="home-hero-title" tabindex="-1" class="home__statement" data-i18n-html="home.statement">
+            See a food's <em>Health</em> and <em>Eco</em> scores side by side, with one verifiable number explaining why.
+          </h2>
+          <div class="home__cta-row">
+            <button type="button" id="home-cta-inspect" class="btn btn--primary" data-i18n="home.cta.inspect">Inspect a product</button>
+            <button type="button" id="home-cta-browse" class="btn btn--ghost" data-i18n="home.cta.browse">Browse the shelf</button>
+          </div>
+          <a href="/about" id="home-about-link" class="home__about" data-i18n="home.about">About FoodLens</a>
+        </div>
+        <section id="home-recent" class="home__recent" aria-label="Continue where you left off" hidden>
+          <h3 class="home__recent-title" data-i18n="home.recent">Pick up where you left off</h3>
+          <div id="home-recent-rail" class="home__recent-rail"></div>
+        </section>
+      </section>
 
       <section class="search" aria-labelledby="search-label">
         <h2 id="search-label" class="visually-hidden" data-i18n="search.label">Search products</h2>
@@ -143,31 +172,37 @@
       <nav class="site-nav" aria-label="Main navigation">
         <ul class="site-nav__list">
           <li>
-            <button type="button" class="site-nav__link" id="nav-search" aria-pressed="true">
+            <a class="site-nav__link" id="nav-home" href="/">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="16" height="16">
+                <path d="M3 11.5 12 4l9 7.5"/><path d="M5 10v10h14V10"/>
+              </svg>
+              <span data-i18n="nav.home">Home</span>
+            </a>
+          </li>
+          <li>
+            <a class="site-nav__link" id="nav-discover" href="/discover">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="16" height="16">
                 <circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/>
               </svg>
-              <span data-i18n="nav.search">Search</span>
-            </button>
+              <span data-i18n="nav.discover">Discover</span>
+            </a>
           </li>
           <li>
-            <button type="button" class="site-nav__link" id="nav-saved" aria-pressed="false">
+            <a class="site-nav__link" id="nav-saved" href="/saved">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="16" height="16">
                 <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
               </svg>
               <span data-i18n="nav.saved">Saved</span>
               <span id="saved-badge" class="saved-badge" hidden aria-hidden="true">0</span>
-            </button>
+            </a>
           </li>
           <li>
-            <button type="button" class="site-nav__link" id="nav-evaluation" aria-pressed="false">
+            <a class="site-nav__link" id="nav-compare" href="/compare">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" width="16" height="16">
-                <path d="M9 11l2 2 4-4"/>
-                <path d="M5 4h14v16H5z"/>
-                <path d="M9 17h6"/>
+                <path d="M9 3H4v18h5z"/><path d="M20 3h-5v18h5z"/><path d="M12 2v20"/>
               </svg>
-              <span data-i18n="nav.evaluate">Evaluate</span>
-            </button>
+              <span data-i18n="nav.compare">Compare</span>
+            </a>
           </li>
         </ul>
       </nav>
@@ -201,7 +236,7 @@
 
       <section id="results" class="results" aria-labelledby="results-title">
         <div class="section-head">
-          <h2 id="results-title" data-i18n="ui.results">Results</h2>
+          <h2 id="results-title" tabindex="-1" data-i18n="ui.results">Results</h2>
           <p id="results-count" class="results-count" aria-live="polite">Loading…</p>
         </div>
 
@@ -219,83 +254,154 @@
         <div id="results-more" class="results-more"></div>
       </section>
 
+      <section id="about" class="about-view" aria-labelledby="about-title" hidden>
+        <header class="about-view__intro">
+          <h2 id="about-title" tabindex="-1" class="about-view__title" data-i18n="about.title">About FoodLens</h2>
+          <p class="about-view__lead" data-i18n="about.intro">
+            FoodLens is a course prototype that scores food on two axes — Health and Eco — and explains its reasoning in one verifiable sentence, never a lecture.
+          </p>
+        </header>
+
+        <section class="personas-showcase" aria-labelledby="personas-title">
+          <header class="personas-showcase__header">
+            <p class="personas-showcase__eyebrow" data-i18n="personas.eyebrow">Meet the team</p>
+            <h3 id="personas-title" class="personas-showcase__title" data-i18n-html="personas.title">
+              Four ways FoodLens <em>thinks</em> about food
+            </h3>
+            <p class="personas-showcase__subtitle" data-i18n="personas.subtitle">
+              Every feature is tested against four real people — not abstractions. See who we built this for.
+            </p>
+          </header>
+
+          <div class="personas-showcase__grid">
+
+            <article class="persona-card">
+              <div class="persona-card__meta">
+                <h4 class="persona-card__name">Marc Vidal</h4>
+                <span class="persona-card__badge">P01</span>
+              </div>
+              <p class="persona-card__role">27 · software engineer · Palma</p>
+              <blockquote class="persona-card__quote" data-i18n="persona.p1.quote">
+                "I can live with a score I disagree with if I can see why it was given and decide for myself."
+              </blockquote>
+              <p class="persona-card__description" data-i18n="persona.p1.desc">
+                Time-poor. Cooks weeknights. Trusts algorithms only when the reasoning is visible. Configures once if it saves repeated decision effort. FoodLens shows him the contrastive sentence upfront — top card in under 15 seconds.
+              </p>
+            </article>
+
+            <article class="persona-card">
+              <div class="persona-card__meta">
+                <h4 class="persona-card__name">Pau Estarellas</h4>
+                <span class="persona-card__badge">P02</span>
+              </div>
+              <p class="persona-card__role">22 · maths undergrad · Barcelona</p>
+              <blockquote class="persona-card__quote" data-i18n="persona.p2.quote">
+                "Tell me: compared to what you usually buy, this one has thirty percent less sugar and almost the same saturated fat."
+              </blockquote>
+              <p class="persona-card__description" data-i18n="persona.p2.desc">
+                Tight budget, minimal cooking routine. Sceptical of marketing. Demands a number he can verify. Every claim in the contrastive sentence is one tap away from the drill-down nutrient table.
+              </p>
+            </article>
+
+            <article class="persona-card">
+              <div class="persona-card__meta">
+                <h4 class="persona-card__name">Lluís Tomàs</h4>
+                <span class="persona-card__badge">P03</span>
+              </div>
+              <p class="persona-card__role">26 · marketing professional · Madrid</p>
+              <blockquote class="persona-card__quote" data-i18n="persona.p3.quote">
+                "What convinces me is a sharp sentence with a data point in it."
+              </blockquote>
+              <p class="persona-card__description" data-i18n="persona.p3.desc">
+                Knows greenwashing from the inside. Wants a sharp contrastive sentence with a datum. Resists moralising. The system never claims authority — every comparison is grounded in data, never in "our recommendation."
+              </p>
+            </article>
+
+            <article class="persona-card">
+              <div class="persona-card__meta">
+                <h4 class="persona-card__name">Aina Servera</h4>
+                <span class="persona-card__badge">P04</span>
+              </div>
+              <p class="persona-card__role" data-i18n="persona.p4.role">24 · convenience-led shopper · Palma</p>
+              <blockquote class="persona-card__quote" data-i18n="persona.p4.quote">
+                "Just tell me which one is the honest choice in ten seconds — I don't have time for a lecture."
+              </blockquote>
+              <p class="persona-card__description" data-i18n="persona.p4.desc">
+                Shops fast on a tight budget between school runs. Wants a quick, honest call between two options without being judged for it. FoodLens gives her both badges and one sentence at a glance — no guilt, no friction.
+              </p>
+            </article>
+
+          </div>
+        </section>
+
+        <section class="about-view__project">
+          <p data-i18n="about.methodology">
+            The design is grounded in six WA3 interviews and a thematic analysis: five key insights and seven design hooks. Every screen is checked against the four personas above.
+          </p>
+          <p data-i18n-html="footer.p1">
+            <span class="small-caps">FoodLens</span> is the WA4 prototype of the
+            <em>Transparent Multi-Objective Food Recommendations</em> project at
+            UIB — Master in Intelligent Systems, course 11755 Human-Computer
+            Interaction.
+          </p>
+          <p data-i18n-html="footer.p2">
+            Data sourced from <a href="https://world.openfoodfacts.org" rel="noopener" target="_blank">Open Food Facts</a>,
+            an open, collaborative database of food products from around the
+            world. Scores reflect the official Nutri-Score (French public health
+            authority) and Environmental Score (ADEME) methodologies — we
+            consume them, we do not recompute them.
+          </p>
+          <p data-i18n-html="footer.p3">
+            Built with vanilla HTML, CSS and JavaScript. No build step. Open
+            <code>index.html</code> to run.
+          </p>
+          <div class="about-view__links">
+            <a href="/evaluation" id="about-eval-link" class="about-view__link" data-i18n="about.eval_link">Evaluate the prototype</a>
+            <span class="about-view__link-hint" data-i18n="about.eval_hint">Optional research instrument for the WA5 study — not part of the shopping flow.</span>
+          </div>
+        </section>
+      </section>
+
+      <section id="compare" class="compare-view" aria-labelledby="compare-title" hidden>
+        <header class="compare-view__head">
+          <div class="compare-view__head-text">
+            <h2 id="compare-title" tabindex="-1" class="compare-view__title" data-i18n="compare.title">Compare your shelf</h2>
+            <p class="compare-view__intro" data-i18n="compare.intro">
+              A ranked list out, one verifiable line per product. Add items from Discover, then read them side by side.
+            </p>
+          </div>
+          <div class="compare-view__actions">
+            <button type="button" id="compare-back-btn" class="btn btn--ghost" data-i18n="compare.back">Back to Discover</button>
+            <button id="export-comparison-btn" class="btn btn--ghost" aria-label="Export to CSV" data-i18n="compare.export">Export CSV</button>
+          </div>
+        </header>
+        <p id="compare-empty" class="compare-view__empty" data-i18n="compare.empty" hidden>
+          No products selected yet. Add some from Discover to compare them here.
+        </p>
+        <div id="comparison-ranked" class="ranked-summary"></div>
+        <div class="table-responsive">
+          <table id="comparison-table" class="editorial-table">
+            <thead>
+              <tr id="table-header-row">
+                <th scope="col" class="attr-col" data-i18n="compare.attr">Attributes</th>
+              </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+      </section>
+
     </main>
 
-    <section class="personas-showcase" aria-labelledby="personas-title">
-      <header class="personas-showcase__header">
-        <p class="personas-showcase__eyebrow" data-i18n="personas.eyebrow">Meet the team</p>
-        <h2 id="personas-title" class="personas-showcase__title" data-i18n-html="personas.title">
-          Three ways FoodLens <em>thinks</em> about food
-        </h2>
-        <p class="personas-showcase__subtitle" data-i18n="personas.subtitle">
-          Every feature is tested against three real people — not abstractions. See who we built this for.
-        </p>
-      </header>
-
-      <div class="personas-showcase__grid">
-
-        <article class="persona-card">
-          <div class="persona-card__meta">
-            <h3 class="persona-card__name">Marc Vidal</h3>
-            <span class="persona-card__badge">P01</span>
-          </div>
-          <p class="persona-card__role">27 · software engineer · Palma</p>
-          <blockquote class="persona-card__quote" data-i18n="persona.p1.quote">
-            "I can live with a score I disagree with if I can see why it was given and decide for myself."
-          </blockquote>
-          <p class="persona-card__description" data-i18n="persona.p1.desc">
-            Time-poor. Cooks weeknights. Trusts algorithms only when the reasoning is visible. Configures once if it saves repeated decision effort. FoodLens shows him the contrastive sentence upfront — top card in under 15 seconds.
-          </p>
-        </article>
-
-        <article class="persona-card">
-          <div class="persona-card__meta">
-            <h3 class="persona-card__name">Pau Estarellas</h3>
-            <span class="persona-card__badge">P02</span>
-          </div>
-          <p class="persona-card__role">22 · maths undergrad · Barcelona</p>
-          <blockquote class="persona-card__quote" data-i18n="persona.p2.quote">
-            "Tell me: compared to what you usually buy, this one has thirty percent less sugar and almost the same saturated fat."
-          </blockquote>
-          <p class="persona-card__description" data-i18n="persona.p2.desc">
-            Tight budget, minimal cooking routine. Sceptical of marketing. Demands a number he can verify. Every claim in the contrastive sentence is one tap away from the drill-down nutrient table.
-          </p>
-        </article>
-
-        <article class="persona-card">
-          <div class="persona-card__meta">
-            <h3 class="persona-card__name">Lluís Tomàs</h3>
-            <span class="persona-card__badge">P03</span>
-          </div>
-          <p class="persona-card__role">26 · marketing professional · Madrid</p>
-          <blockquote class="persona-card__quote" data-i18n="persona.p3.quote">
-            "What convinces me is a sharp sentence with a data point in it."
-          </blockquote>
-          <p class="persona-card__description" data-i18n="persona.p3.desc">
-            Knows greenwashing from the inside. Wants a sharp contrastive sentence with a datum. Resists moralising. The system never claims authority — every comparison is grounded in data, never in "our recommendation."
-          </p>
-        </article>
-
-      </div>
-    </section>
-
     <footer class="site-footer" role="contentinfo">
-      <p data-i18n-html="footer.p1">
-        <span class="small-caps">FoodLens</span> is the WA4 prototype of the
-        <em>Transparent Multi-Objective Food Recommendations</em> project at
-        UIB — Master in Intelligent Systems, course 11755 Human-Computer
-        Interaction.
-      </p>
-      <p data-i18n-html="footer.p2">
-        Data sourced from <a href="https://world.openfoodfacts.org" rel="noopener" target="_blank">Open Food Facts</a>,
-        an open, collaborative database of food products from around the
-        world. Scores reflect the official Nutri-Score (French public health
-        authority) and Environmental Score (ADEME) methodologies — we
-        consume them, we do not recompute them.
-      </p>
-      <p data-i18n-html="footer.p3">
-        Built with vanilla HTML, CSS and JavaScript. No build step. Open
-        <code>index.html</code> to run.
+      <nav class="site-footer__nav" aria-label="Secondary navigation">
+        <a href="/" class="site-footer__link" data-i18n="nav.home">Home</a>
+        <a href="/discover" class="site-footer__link" data-i18n="nav.discover">Discover</a>
+        <a href="/about" id="footer-about-link" class="site-footer__link" data-i18n="footer.nav.about">About</a>
+        <a href="/evaluation" id="footer-eval-link" class="site-footer__link" data-i18n="footer.nav.evaluate">Evaluate the prototype</a>
+      </nav>
+      <p class="site-footer__attribution" data-i18n-html="footer.attribution_short">
+        Data from <a href="https://world.openfoodfacts.org" rel="noopener" target="_blank">Open Food Facts</a>. Scores reflect the official Nutri-Score and Environmental Score methodologies — we consume them, we do not recompute them.
       </p>
     </footer>
 
@@ -318,27 +424,6 @@
       </div>
     </div>
   </div>
-
-  <dialog id="comparison-modal" class="editorial-modal">
-    <div class="modal-header">
-      <h2 data-i18n="compare.modal.title">Product Comparison</h2>
-      <div style="display: flex; gap: 1rem; align-items: center;">
-        <button id="export-comparison-btn" class="btn btn--ghost" aria-label="Export to CSV" data-i18n="compare.export">Export CSV</button>
-        <button id="close-modal-btn" class="icon-btn" aria-label="Close comparison">✕</button>
-      </div>
-    </div>
-    <div id="comparison-ranked" class="ranked-summary"></div>
-    <div class="table-responsive">
-      <table id="comparison-table" class="editorial-table">
-        <thead>
-          <tr id="table-header-row">
-            <th scope="col" class="attr-col" data-i18n="compare.attr">Attributes</th>
-          </tr>
-        </thead>
-        <tbody id="table-body"></tbody>
-      </table>
-    </div>
-  </dialog>
 
   <script type="module" src="./js/app.js"></script>
 </body>
